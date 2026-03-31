@@ -1,25 +1,30 @@
 import { useGame, ZONE_LABELS, ZONE_POINTS } from "@/context/GameContext";
+import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, courtLineColor, getZoneFromPoint } from "@/lib/courtGeometry";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Undo2 } from "lucide-react";
 
-// Determine zone from click position (percentage-based)
-const getZone = (xPct: number, yPct: number): number => {
-  // y > 66% = paint area, mid section = mid-range, top = three
-  const isLeft = xPct < 50;
-
-  if (yPct > 66) {
-    // Paint
-    if (xPct >= 32 && xPct <= 68) return isLeft ? 1 : 2;
-    // If outside paint box but bottom, still mid-range
-    return isLeft ? 3 : 4;
-  }
-  if (yPct > 33) {
-    return isLeft ? 3 : 4;
-  }
-  return isLeft ? 5 : 6;
-};
+const CourtLines = () => (
+  <g>
+    <rect x="0" y="0" width="400" height="500" fill="none" stroke={courtLineColor} strokeWidth="2" />
+    <rect x="140" y="0" width="120" height="200" fill="none" stroke={courtLineColor} strokeWidth="1.5" />
+    <line x1="175" y1="35" x2="225" y2="35" stroke={courtLineColor} strokeWidth="2" />
+    <circle cx="200" cy="50" r="8" fill="none" stroke={courtLineColor} strokeWidth="1.5" />
+    <path d="M 140,200 Q 140,260 200,260 Q 260,260 260,200" fill="none" stroke={courtLineColor} strokeWidth="1" strokeDasharray="6,3" />
+    <path d="M 40,0 Q 40,400 200,400 Q 360,400 360,0" fill="none" stroke={courtLineColor} strokeWidth="1.5" strokeDasharray="6,3" />
+    <circle cx="200" cy="440" r="30" fill="none" stroke={courtLineColor} strokeWidth="1" opacity="0.3" />
+    {/* Zone number labels */}
+    {[1, 2, 3, 4, 5, 6].map(z => {
+      const pos = ZONE_LABEL_POS[z];
+      return (
+        <text key={z} x={pos.x} y={pos.y + 22} textAnchor="middle" fill={courtLineColor} fontSize="10" opacity="0.4">
+          Z{z} ({ZONE_POINTS[z]}pt)
+        </text>
+      );
+    })}
+  </g>
+);
 
 const ShotTracker = () => {
   const { shots, addShot, removeShot, players, selectedPlayerId, selectPlayer } = useGame();
@@ -36,7 +41,7 @@ const ShotTracker = () => {
     const rect = svg.getBoundingClientRect();
     const xPct = ((e.clientX - rect.left) / rect.width) * 100;
     const yPct = ((e.clientY - rect.top) / rect.height) * 100;
-    const zone = getZone(xPct, yPct);
+    const zone = getZoneFromPoint(xPct, yPct);
     setPendingPos({ x: xPct, y: yPct, zone });
   };
 
@@ -66,8 +71,8 @@ const ShotTracker = () => {
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        Click on the court to place a shot, then mark it as Made or Missed. 
-        <span className="text-shot-made font-medium"> Green</span> = made, 
+        Click on the court to place a shot, then mark it as Made or Missed.
+        <span className="text-shot-made font-medium"> Green</span> = made,
         <span className="text-shot-missed font-medium"> Red</span> = missed.
       </p>
 
@@ -90,33 +95,12 @@ const ShotTracker = () => {
       <div className="relative">
         <svg
           ref={courtRef}
-          viewBox="0 0 400 300"
+          viewBox={COURT_VIEWBOX}
           className="w-full rounded-md cursor-crosshair"
           style={{ background: "hsl(var(--court-bg))" }}
           onClick={handleCourtClick}
         >
-          {/* Court lines */}
-          <rect x="0" y="0" width="400" height="300" fill="none" stroke="hsl(var(--court-line))" strokeWidth="2" />
-          <path d="M 50,300 Q 50,60 200,40 Q 350,60 350,300" fill="none" stroke="hsl(var(--court-line))" strokeWidth="1.5" strokeDasharray="6,3" />
-          <rect x="130" y="200" width="140" height="100" fill="none" stroke="hsl(var(--court-line))" strokeWidth="1.5" />
-          <circle cx="200" cy="200" r="40" fill="none" stroke="hsl(var(--court-line))" strokeWidth="1" strokeDasharray="4,3" />
-          <circle cx="200" cy="285" r="6" fill="none" stroke="hsl(var(--court-line))" strokeWidth="1.5" />
-          <line x1="190" y1="295" x2="210" y2="295" stroke="hsl(var(--court-line))" strokeWidth="2" />
-
-          {/* Zone labels */}
-          {[1, 2, 3, 4, 5, 6].map(z => {
-            const positions: Record<number, { x: number; y: number }> = {
-              1: { x: 165, y: 270 }, 2: { x: 235, y: 270 },
-              3: { x: 80, y: 230 }, 4: { x: 320, y: 230 },
-              5: { x: 60, y: 70 }, 6: { x: 340, y: 70 },
-            };
-            const pos = positions[z];
-            return (
-              <text key={z} x={pos.x} y={pos.y} textAnchor="middle" fill="hsl(var(--court-line))" fontSize="10" opacity="0.5">
-                Z{z} ({ZONE_POINTS[z]}pt)
-              </text>
-            );
-          })}
+          <CourtLines />
 
           {/* Shot pins */}
           <AnimatePresence>
@@ -124,11 +108,11 @@ const ShotTracker = () => {
               <motion.circle
                 key={shot.id}
                 cx={(shot.x / 100) * 400}
-                cy={(shot.y / 100) * 300}
-                r="5"
+                cy={(shot.y / 100) * 500}
+                r="6"
                 fill={shot.made ? "hsl(var(--shot-made))" : "hsl(var(--shot-missed))"}
                 stroke="white"
-                strokeWidth="1"
+                strokeWidth="1.5"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 0.85 }}
                 exit={{ scale: 0, opacity: 0 }}
@@ -141,8 +125,8 @@ const ShotTracker = () => {
           {pendingPos && (
             <motion.circle
               cx={(pendingPos.x / 100) * 400}
-              cy={(pendingPos.y / 100) * 300}
-              r="8"
+              cy={(pendingPos.y / 100) * 500}
+              r="9"
               fill="hsl(var(--primary))"
               stroke="white"
               strokeWidth="2"
@@ -162,25 +146,13 @@ const ShotTracker = () => {
               exit={{ opacity: 0, y: 10 }}
               className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2"
             >
-              <Button
-                onClick={() => confirmShot(true)}
-                className="bg-shot-made hover:bg-shot-made/80 text-primary-foreground font-bold shadow-lg"
-              >
+              <Button onClick={() => confirmShot(true)} className="bg-shot-made hover:bg-shot-made/80 text-primary-foreground font-bold shadow-lg">
                 ✓ Made
               </Button>
-              <Button
-                onClick={() => confirmShot(false)}
-                className="bg-shot-missed hover:bg-shot-missed/80 text-primary-foreground font-bold shadow-lg"
-              >
+              <Button onClick={() => confirmShot(false)} className="bg-shot-missed hover:bg-shot-missed/80 text-primary-foreground font-bold shadow-lg">
                 ✗ Missed
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => setPendingPos(null)}
-                className="text-xs"
-              >
-                Cancel
-              </Button>
+              <Button variant="outline" onClick={() => setPendingPos(null)} className="text-xs">Cancel</Button>
             </motion.div>
           )}
         </AnimatePresence>
