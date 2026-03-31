@@ -14,16 +14,16 @@ export interface Player {
   name: string;
 }
 
-// Zone point values: zones 1-2 = 1pt (paint), 3-4 = 2pt (mid-range), 5-6 = 3pt (perimeter)
-export const ZONE_POINTS: Record<number, number> = { 1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3 };
+// Zone 1=paint(1pt), 2-3=mid-range(2pt), 4-6=three-point(3pt)
+export const ZONE_POINTS: Record<number, number> = { 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3 };
 
 export const ZONE_LABELS: Record<number, string> = {
-  1: "Left Paint",
-  2: "Right Paint",
-  3: "Left Mid-Range",
-  4: "Right Mid-Range",
-  5: "Left Three",
-  6: "Right Three",
+  1: "Paint",
+  2: "Left Mid-Range",
+  3: "Right Mid-Range",
+  4: "Left Corner Three",
+  5: "Center Three",
+  6: "Right Corner Three",
 };
 
 export interface ZoneStats {
