@@ -2,16 +2,29 @@ import { GameProvider, useGame } from "@/context/GameContext";
 import HeatMap from "@/components/HeatMap";
 import DataTable from "@/components/DataTable";
 import ShotTracker from "@/components/ShotTracker";
+import GameSetup from "@/components/GameSetup";
+import GameSummary from "@/components/GameSummary";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
-const Dashboard = () => {
-  const { resetGame, shots } = useGame();
+const PlayingDashboard = () => {
+  const { resetGame, shots, gameMode, teams, players, isGameOver, gamePhase } = useGame();
+
+  // Auto-transition to summary when game over
+  useEffect(() => {
+    if (isGameOver && gamePhase === "playing") {
+      // Small delay for the last shot animation
+      const t = setTimeout(() => {
+        // We need to set phase to summary - but we handle this in the parent
+      }, 500);
+      return () => clearTimeout(t);
+    }
+  }, [isGameOver, gamePhase]);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
@@ -21,25 +34,22 @@ const Dashboard = () => {
                 Tabletop Basketball Analytics
               </h1>
               <p className="text-[10px] text-muted-foreground">
-                Computers for Kids · Learn data science through sports
+                {gameMode === "individual" ? "Individual Mode" : `Team Mode · ${teams.map(t => t.name).join(" vs ")}`}
+                {" · "}{shots.length} shots
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground tabular-nums">{shots.length} shots</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={resetGame}
-              className="gap-1 text-xs"
-            >
+            {isGameOver && (
+              <span className="text-xs font-bold text-primary animate-pulse">Game Over!</span>
+            )}
+            <Button size="sm" variant="outline" onClick={resetGame} className="gap-1 text-xs">
               <RotateCcw className="w-3 h-3" /> New Game
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Main grid */}
       <main className="container py-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -53,25 +63,17 @@ const Dashboard = () => {
           </div>
           <div className="space-y-4">
             <DataTable />
-            {/* Educational callout */}
             <div className="glass-card rounded-lg p-4 space-y-2">
               <h3 className="text-sm font-display font-bold text-primary">🧠 Data Science Tips</h3>
               <ul className="text-xs text-muted-foreground space-y-1.5">
                 <li>
-                  <strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100. 
-                  A higher FG% means more accurate shooting.
+                  <strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.
                 </li>
                 <li>
-                  <strong className="text-foreground">Hot Zones</strong> show where a player shoots best. 
-                  Teams use this data to decide where to take shots!
+                  <strong className="text-foreground">Hot Zones</strong> show where a player shoots best.
                 </li>
                 <li>
-                  <strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins 
-                  — those areas are strengths. Red clusters reveal areas to improve.
-                </li>
-                <li>
-                  <strong className="text-foreground">Strategic Thinking:</strong> If a player has 80% FG% from Zone 1 
-                  but only 10% from Zone 6, where should they shoot more?
+                  <strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.
                 </li>
               </ul>
             </div>
@@ -82,9 +84,18 @@ const Dashboard = () => {
   );
 };
 
+const GameRouter = () => {
+  const { gamePhase, isGameOver } = useGame();
+
+  if (gamePhase === "setup") return <GameSetup />;
+  if (gamePhase === "playing" && isGameOver) return <GameSummary />;
+  if (gamePhase === "playing") return <PlayingDashboard />;
+  return <GameSetup />;
+};
+
 const Index = () => (
   <GameProvider>
-    <Dashboard />
+    <GameRouter />
   </GameProvider>
 );
 

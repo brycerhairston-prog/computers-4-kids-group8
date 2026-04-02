@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 
 export interface Shot {
   id: string;
   playerId: string;
-  zone: number; // 1-6
+  zone: number;
   made: boolean;
-  x: number; // percentage position on court
+  x: number;
   y: number;
 }
 
@@ -14,7 +14,16 @@ export interface Player {
   name: string;
 }
 
-// Zone 1=paint(1pt), 2-3=mid-range(2pt), 4-6=three-point(3pt)
+export interface Team {
+  id: string;
+  name: string;
+  playerIds: string[];
+}
+
+export type GameMode = "individual" | "team";
+export type TeamSelectionMode = "random" | "manual" | "fair";
+export type GamePhase = "setup" | "playing" | "summary";
+
 export const ZONE_POINTS: Record<number, number> = { 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3 };
 
 export const ZONE_LABELS: Record<number, string> = {
@@ -32,19 +41,35 @@ export interface ZoneStats {
   fgPct: number;
 }
 
+export const INDIVIDUAL_SHOT_LIMIT = 20;
+export const TEAM_SHOT_LIMIT = 30;
+
 interface GameState {
   players: Player[];
+  teams: Team[];
   shots: Shot[];
   selectedPlayerId: string | null;
+  gameMode: GameMode;
+  gamePhase: GamePhase;
+  teamSelectionMode: TeamSelectionMode;
   addPlayer: (name: string) => void;
   removePlayer: (id: string) => void;
   selectPlayer: (id: string | null) => void;
   addShot: (shot: Omit<Shot, "id">) => void;
   removeShot: (id: string) => void;
   getZoneStats: (zone: number, playerId?: string) => ZoneStats;
-  getPlayerStats: (playerId: string) => { makes: number; totalPoints: number; zones: Record<number, ZoneStats> };
+  getPlayerStats: (playerId: string) => { makes: number; attempts: number; totalPoints: number; zones: Record<number, ZoneStats> };
+  getTeamStats: (teamId: string) => { makes: number; attempts: number; totalPoints: number; zones: Record<number, ZoneStats> };
   resetGame: () => void;
   exportCSV: () => string;
+  setGameMode: (mode: GameMode) => void;
+  setTeamSelectionMode: (mode: TeamSelectionMode) => void;
+  setTeams: (teams: Team[]) => void;
+  startGame: () => void;
+  isGameOver: boolean;
+  getPlayerShotCount: (playerId: string) => number;
+  getTeamShotCount: (teamId: string) => number;
+  getPlayerTeam: (playerId: string) => Team | undefined;
 }
 
 const GameContext = createContext<GameState | null>(null);
@@ -58,12 +83,23 @@ export const useGame = () => {
 let idCounter = 0;
 const genId = () => `id-${++idCounter}-${Date.now()}`;
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [players, setPlayers] = useState<Player[]>([
-    { id: genId(), name: "Player 1" },
-  ]);
+  const [players, setPlayers] = useState<Player[]>([{ id: genId(), name: "Player 1" }]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [shots, setShots] = useState<Shot[]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [gameMode, setGameMode] = useState<GameMode>("individual");
+  const [gamePhase, setGamePhase] = useState<GamePhase>("setup");
+  const [teamSelectionMode, setTeamSelectionMode] = useState<TeamSelectionMode>("random");
 
   const addPlayer = useCallback((name: string) => {
     setPlayers(prev => [...prev, { id: genId(), name }]);
@@ -76,6 +112,32 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const selectPlayer = useCallback((id: string | null) => setSelectedPlayerId(id), []);
+
+  const getPlayerShotCount = useCallback((playerId: string) => {
+    return shots.filter(s => s.playerId === playerId).length;
+  }, [shots]);
+
+  const getTeamShotCount = useCallback((teamId: string) => {
+    const team = teams.find(t => t.id === teamId);
+    if (!team) return 0;
+    return shots.filter(s => team.playerIds.includes(s.playerId)).length;
+  }, [shots, teams]);
+
+  const getPlayerTeam = useCallback((playerId: string) => {
+    return teams.find(t => t.playerIds.includes(playerId));
+  }, [teams]);
+
+  const isGameOver = useMemo(() => {
+    if (gamePhase !== "playing") return false;
+    if (gameMode === "individual") {
+      return players.length > 0 && players.every(p => shots.filter(s => s.playerId === p.id).length >= INDIVIDUAL_SHOT_LIMIT);
+    } else {
+      return teams.length > 0 && teams.every(t => {
+        const teamShots = shots.filter(s => t.playerIds.includes(s.playerId)).length;
+        return teamShots >= TEAM_SHOT_LIMIT;
+      });
+    }
+  }, [gamePhase, gameMode, players, teams, shots]);
 
   const addShot = useCallback((shot: Omit<Shot, "id">) => {
     setShots(prev => [...prev, { ...shot, id: genId() }]);
@@ -102,12 +164,64 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const zm = zoneShots.filter(s => s.made).length;
       zones[z] = { makes: zm, attempts: zoneShots.length, fgPct: zoneShots.length > 0 ? (zm / zoneShots.length) * 100 : 0 };
     }
-    return { makes, totalPoints, zones };
+    return { makes, attempts: playerShots.length, totalPoints, zones };
   }, [shots]);
+
+  const getTeamStats = useCallback((teamId: string) => {
+    const team = teams.find(t => t.id === teamId);
+    if (!team) return { makes: 0, attempts: 0, totalPoints: 0, zones: {} as Record<number, ZoneStats> };
+    const teamShots = shots.filter(s => team.playerIds.includes(s.playerId));
+    const makes = teamShots.filter(s => s.made).length;
+    const totalPoints = teamShots.filter(s => s.made).reduce((sum, s) => sum + ZONE_POINTS[s.zone], 0);
+    const zones: Record<number, ZoneStats> = {};
+    for (let z = 1; z <= 6; z++) {
+      const zoneShots = teamShots.filter(s => s.zone === z);
+      const zm = zoneShots.filter(s => s.made).length;
+      zones[z] = { makes: zm, attempts: zoneShots.length, fgPct: zoneShots.length > 0 ? (zm / zoneShots.length) * 100 : 0 };
+    }
+    return { makes, attempts: teamShots.length, totalPoints, zones };
+  }, [shots, teams]);
 
   const resetGame = useCallback(() => {
     setShots([]);
+    setTeams([]);
+    setGamePhase("setup");
+    setSelectedPlayerId(null);
   }, []);
+
+  const startGame = useCallback(() => {
+    setShots([]);
+    if (gameMode === "team" && teams.length === 0) {
+      // Auto-generate teams based on selection mode
+      if (teamSelectionMode === "random") {
+        const shuffled = shuffleArray(players);
+        const mid = Math.ceil(shuffled.length / 2);
+        setTeams([
+          { id: genId(), name: "Team A", playerIds: shuffled.slice(0, mid).map(p => p.id) },
+          { id: genId(), name: "Team B", playerIds: shuffled.slice(mid).map(p => p.id) },
+        ]);
+      } else if (teamSelectionMode === "fair") {
+        // Sort by historical performance (totalPoints) and alternate pick
+        const sorted = [...players].sort((a, b) => {
+          const aStats = getPlayerStats(a.id);
+          const bStats = getPlayerStats(b.id);
+          return bStats.totalPoints - aStats.totalPoints;
+        });
+        const teamA: string[] = [];
+        const teamB: string[] = [];
+        sorted.forEach((p, i) => {
+          if (i % 2 === 0) teamA.push(p.id);
+          else teamB.push(p.id);
+        });
+        setTeams([
+          { id: genId(), name: "Team A", playerIds: teamA },
+          { id: genId(), name: "Team B", playerIds: teamB },
+        ]);
+      }
+      // "manual" mode: teams should already be set via setTeams before calling startGame
+    }
+    setGamePhase("playing");
+  }, [gameMode, teams.length, teamSelectionMode, players, getPlayerStats]);
 
   const exportCSV = useCallback(() => {
     const header = "Player,Zone 1,Zone 2,Zone 3,Zone 4,Zone 5,Zone 6,Total Makes,Total Points\n";
@@ -121,10 +235,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <GameContext.Provider value={{
-      players, shots, selectedPlayerId,
+      players, teams, shots, selectedPlayerId, gameMode, gamePhase, teamSelectionMode,
       addPlayer, removePlayer, selectPlayer,
-      addShot, removeShot, getZoneStats, getPlayerStats,
-      resetGame, exportCSV,
+      addShot, removeShot, getZoneStats, getPlayerStats, getTeamStats,
+      resetGame, exportCSV, setGameMode, setTeamSelectionMode, setTeams, startGame,
+      isGameOver, getPlayerShotCount, getTeamShotCount, getPlayerTeam,
     }}>
       {children}
     </GameContext.Provider>
