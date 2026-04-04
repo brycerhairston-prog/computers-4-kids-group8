@@ -66,7 +66,7 @@ const HeatMap = () => {
           );
         })}
 
-        <CourtLines />
+        <CourtBackground />
       </svg>
 
       {/* Legend */}

@@ -137,7 +137,7 @@ const ShotTracker = () => {
           className={`w-full rounded-md ${canShoot ? "cursor-crosshair" : "cursor-not-allowed opacity-70"}`}
           style={{ background: "hsl(var(--court-bg))" }}
           onClick={handleCourtClick}>
-          <CourtLines />
+          <CourtBackground />
           <AnimatePresence>
             {visibleShots.map(shot => (
               <motion.circle key={shot.id}
