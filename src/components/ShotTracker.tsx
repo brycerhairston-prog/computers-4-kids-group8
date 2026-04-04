@@ -6,25 +6,8 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Undo2 } from "lucide-react";
 
-const CourtLines = () => (
-  <g>
-    <rect x="0" y="0" width="400" height="500" fill="none" stroke={courtLineColor} strokeWidth="2" />
-    <rect x="140" y="300" width="120" height="200" fill="none" stroke={courtLineColor} strokeWidth="1.5" />
-    <line x1="175" y1="465" x2="225" y2="465" stroke={courtLineColor} strokeWidth="2" />
-    <circle cx="200" cy="450" r="8" fill="none" stroke={courtLineColor} strokeWidth="1.5" />
-    <path d="M 140,300 Q 140,240 200,240 Q 260,240 260,300" fill="none" stroke={courtLineColor} strokeWidth="1" strokeDasharray="6,3" />
-    <path d="M 40,500 Q 40,100 200,100 Q 360,100 360,500" fill="none" stroke={courtLineColor} strokeWidth="1.5" strokeDasharray="6,3" />
-    <line x1="0" y1="0" x2="400" y2="0" stroke={courtLineColor} strokeWidth="1" opacity="0.3" />
-    <circle cx="200" cy="60" r="30" fill="none" stroke={courtLineColor} strokeWidth="1" opacity="0.3" />
-    {[1, 2, 3, 4, 5, 6].map(z => {
-      const pos = ZONE_LABEL_POS[z];
-      return (
-        <text key={z} x={pos.x} y={pos.y + 22} textAnchor="middle" fill={courtLineColor} fontSize="10" opacity="0.4">
-          Z{z} ({ZONE_POINTS[z]}pt)
-        </text>
-      );
-    })}
-  </g>
+const CourtBackground = () => (
+  <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="xMidYMid slice" />
 );
 
 const ShotTracker = () => {
