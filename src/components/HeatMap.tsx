@@ -1,6 +1,7 @@
 import { useGame, ZONE_LABELS, ZONE_POINTS } from "@/context/GameContext";
-import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, courtLineColor } from "@/lib/courtGeometry";
+import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
 import { motion } from "framer-motion";
+import courtImage from "@/assets/court-layout.png";
 
 const getHeatColor = (fgPct: number): string => {
   if (fgPct === 0) return "hsl(var(--muted))";

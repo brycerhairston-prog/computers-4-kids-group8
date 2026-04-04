@@ -1,5 +1,6 @@
 import { useGame, ZONE_LABELS, ZONE_POINTS, INDIVIDUAL_SHOT_LIMIT, TEAM_SHOT_LIMIT } from "@/context/GameContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, courtLineColor, getZoneFromPoint } from "@/lib/courtGeometry";
+import courtImage from "@/assets/court-layout.png";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
