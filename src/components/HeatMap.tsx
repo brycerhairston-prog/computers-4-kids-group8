@@ -39,34 +39,32 @@ const HeatMap = () => {
         Colors show Field Goal % (FG%) — the percentage of shots made. Hotter = more accurate zone.
       </p>
 
-      <svg viewBox={COURT_VIEWBOX} className="w-full rounded-md overflow-hidden" style={{ background: "hsl(var(--court-bg))" }}>
-        {/* Zone overlays */}
+      <svg viewBox={COURT_VIEWBOX} className="w-full rounded-md overflow-hidden" style={{ background: "white" }}>
+        <CourtBackground />
+        {/* Zone overlays on top of court image */}
         {[1, 2, 3, 4, 5, 6].map(zone => {
           const stats = getZoneStats(zone, selectedPlayerId || undefined);
           const color = getHeatColor(stats.fgPct);
-          const opacity = getHeatOpacity(stats.fgPct);
           const pos = ZONE_LABEL_POS[zone];
           return (
             <g key={zone}>
               <motion.path
                 d={ZONE_PATHS[zone]}
                 fill={color}
-                opacity={opacity}
                 initial={{ opacity: 0 }}
-                animate={{ opacity }}
+                animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
+                style={{ mixBlendMode: "multiply" }}
               />
-              <text x={pos.x} y={pos.y - 12} textAnchor="middle" fill="white" fontSize="13" fontWeight="700">
+              <text x={pos.x} y={pos.y - 12} textAnchor="middle" fill="black" fontSize="13" fontWeight="700">
                 {stats.makes}/{stats.attempts}
               </text>
-              <text x={pos.x} y={pos.y + 6} textAnchor="middle" fill="white" fontSize="11" opacity="0.8">
+              <text x={pos.x} y={pos.y + 6} textAnchor="middle" fill="black" fontSize="11" opacity="0.8">
                 {stats.fgPct.toFixed(0)}%
               </text>
             </g>
           );
         })}
-
-        <CourtBackground />
       </svg>
 
       {/* Legend */}
