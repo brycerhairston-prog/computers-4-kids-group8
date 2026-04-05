@@ -26,7 +26,7 @@ const legendItems = [
 ];
 
 const CourtBackground = () => (
-  <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="xMidYMid slice" />
+  <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
 );
 
 const HeatMap = () => {
