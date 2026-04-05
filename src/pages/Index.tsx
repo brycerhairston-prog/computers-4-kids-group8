@@ -5,6 +5,7 @@ import ShotTracker from "@/components/ShotTracker";
 import GameSetup from "@/components/GameSetup";
 import GameSummary from "@/components/GameSummary";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
