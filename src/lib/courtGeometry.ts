@@ -1,92 +1,172 @@
 // Shared court SVG geometry for consistent rendering across components.
-// ViewBox: 0 0 400 500, basket at BOTTOM.
-// Matches court-layout.png: paint rectangle, 3-pt arc (ellipse) with straight corner sections,
-// and two diagonal lines separating corner-3 from center-3.
+// ViewBox: 0 0 400 500, basket at TOP.
+// Geometry is aligned to the full uncropped court-layout image.
 
-// Ellipse parameters for the 3-point arc: center (200, 490), rx=181, ry=239
-// Straight corner sections: x=20 (left) and x=380 (right) from y=500 to y=465
-// Left diagonal: (0, 251) to (20, 465)
-// Right diagonal: (400, 251) to (380, 465)
+type Point = { x: number; y: number };
 
-// Zone SVG paths (basket at bottom)
-export const ZONE_PATHS: Record<number, string> = {
-  // Zone 1 – Paint (rectangle at bottom-center)
-  1: "M 133,296 L 266,296 L 266,500 L 133,500 Z",
-
-  // Zone 2 – Left mid-range (inside 3pt line, left of center, excluding paint)
-  2: "M 20,500 L 20,465 A 181,239 0 0 1 200,251 L 200,296 L 133,296 L 133,500 Z",
-
-  // Zone 3 – Right mid-range (inside 3pt line, right of center, excluding paint)
-  3: "M 380,500 L 380,465 A 181,239 0 0 0 200,251 L 200,296 L 266,296 L 266,500 Z",
-
-  // Zone 4 – Left corner three (small corner outside 3pt line, left of diagonal)
-  4: "M 0,251 L 20,465 L 20,500 L 0,500 Z",
-
-  // Zone 5 – Center/top three (outside 3pt arc, between diagonals)
-  5: "M 0,0 L 0,251 L 20,465 A 181,239 0 1 1 380,465 L 400,251 L 400,0 Z",
-
-  // Zone 6 – Right corner three (small corner outside 3pt line, right of diagonal)
-  6: "M 400,251 L 380,465 L 380,500 L 400,500 Z",
+const BIG_ARC = {
+  cx: 200,
+  cy: 147.5,
+  rx: 186.5,
+  ry: 150.5,
 };
+
+const PAINT = {
+  left: 133.5,
+  right: 266.5,
+  top: 0,
+  bottom: 200,
+};
+
+const LEFT_DIAGONAL_TOP: Point = { x: 108, y: 278 };
+const RIGHT_DIAGONAL_TOP: Point = { x: 292, y: 278 };
+const LEFT_DIAGONAL_BOTTOM: Point = { x: 43, y: 500 };
+const RIGHT_DIAGONAL_BOTTOM: Point = { x: 357, y: 500 };
+
+const LEFT_ARC_EXTREME: Point = { x: BIG_ARC.cx - BIG_ARC.rx, y: BIG_ARC.cy };
+const RIGHT_ARC_EXTREME: Point = { x: BIG_ARC.cx + BIG_ARC.rx, y: BIG_ARC.cy };
+const ARC_BOTTOM: Point = { x: BIG_ARC.cx, y: BIG_ARC.cy + BIG_ARC.ry };
+
+const ARC_SAMPLES = 36;
+const LEFT_DIAGONAL_ANGLE = Math.acos((LEFT_DIAGONAL_TOP.x - BIG_ARC.cx) / BIG_ARC.rx);
+const RIGHT_DIAGONAL_ANGLE = Math.acos((RIGHT_DIAGONAL_TOP.x - BIG_ARC.cx) / BIG_ARC.rx);
+
+function sampleEllipseArc(startAngle: number, endAngle: number, steps = ARC_SAMPLES): Point[] {
+  const points: Point[] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const t = startAngle + ((endAngle - startAngle) * i) / steps;
+    points.push({
+      x: BIG_ARC.cx + BIG_ARC.rx * Math.cos(t),
+      y: BIG_ARC.cy + BIG_ARC.ry * Math.sin(t),
+    });
+  }
+  return points;
+}
+
+function pathFromPolygon(points: Point[]): string {
+  return `M ${points.map((point) => `${point.x},${point.y}`).join(" L ")} Z`;
+}
+
+function isPointOnSegment(point: Point, a: Point, b: Point): boolean {
+  const cross = (point.y - a.y) * (b.x - a.x) - (point.x - a.x) * (b.y - a.y);
+  if (Math.abs(cross) > 0.5) return false;
+
+  const dot = (point.x - a.x) * (b.x - a.x) + (point.y - a.y) * (b.y - a.y);
+  if (dot < 0) return false;
+
+  const squaredLength = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+  return dot <= squaredLength;
+}
+
+function isPointInPolygon(point: Point, polygon: Point[]): boolean {
+  for (let i = 0; i < polygon.length; i += 1) {
+    const next = (i + 1) % polygon.length;
+    if (isPointOnSegment(point, polygon[i], polygon[next])) return true;
+  }
+
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const yi = polygon[i].y;
+    const xj = polygon[j].x;
+    const yj = polygon[j].y;
+
+    const intersects = ((yi > point.y) !== (yj > point.y))
+      && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
+
+    if (intersects) inside = !inside;
+  }
+
+  return inside;
+}
+
+const leftArcToBottom = sampleEllipseArc(Math.PI, Math.PI / 2);
+const bottomToRightArc = sampleEllipseArc(Math.PI / 2, 0);
+const leftOuterArc = sampleEllipseArc(Math.PI, LEFT_DIAGONAL_ANGLE);
+const centerOuterArc = sampleEllipseArc(LEFT_DIAGONAL_ANGLE, RIGHT_DIAGONAL_ANGLE);
+const rightOuterArc = sampleEllipseArc(RIGHT_DIAGONAL_ANGLE, 0);
+
+const ZONE_POLYGONS: Record<number, Point[]> = {
+  1: [
+    { x: PAINT.left, y: PAINT.top },
+    { x: PAINT.right, y: PAINT.top },
+    { x: PAINT.right, y: PAINT.bottom },
+    { x: PAINT.left, y: PAINT.bottom },
+  ],
+  2: [
+    { x: LEFT_ARC_EXTREME.x, y: 0 },
+    { x: PAINT.left, y: 0 },
+    { x: PAINT.left, y: PAINT.bottom },
+    { x: ARC_BOTTOM.x, y: PAINT.bottom },
+    ARC_BOTTOM,
+    ...leftArcToBottom.slice(0, -1).reverse(),
+  ],
+  3: [
+    { x: PAINT.right, y: 0 },
+    { x: RIGHT_ARC_EXTREME.x, y: 0 },
+    RIGHT_ARC_EXTREME,
+    ...bottomToRightArc.slice(1),
+    ARC_BOTTOM,
+    { x: ARC_BOTTOM.x, y: PAINT.bottom },
+    { x: PAINT.right, y: PAINT.bottom },
+  ],
+  4: [
+    { x: 0, y: 0 },
+    { x: LEFT_ARC_EXTREME.x, y: 0 },
+    LEFT_ARC_EXTREME,
+    ...leftOuterArc.slice(1),
+    LEFT_DIAGONAL_BOTTOM,
+    { x: 0, y: 500 },
+  ],
+  5: [
+    LEFT_DIAGONAL_BOTTOM,
+    LEFT_DIAGONAL_TOP,
+    ...centerOuterArc.slice(1),
+    RIGHT_DIAGONAL_BOTTOM,
+  ],
+  6: [
+    { x: RIGHT_ARC_EXTREME.x, y: 0 },
+    { x: 400, y: 0 },
+    { x: 400, y: 500 },
+    RIGHT_DIAGONAL_BOTTOM,
+    ...rightOuterArc.slice(0, -1).reverse(),
+  ],
+};
+
+// Zone SVG paths
+export const ZONE_PATHS: Record<number, string> = Object.fromEntries(
+  Object.entries(ZONE_POLYGONS).map(([zone, polygon]) => [Number(zone), pathFromPolygon(polygon)]),
+) as Record<number, string>;
 
 // Label positions for zone stats
 export const ZONE_LABEL_POS: Record<number, { x: number; y: number }> = {
-  1: { x: 200, y: 400 },
-  2: { x: 75, y: 390 },
-  3: { x: 325, y: 390 },
-  4: { x: 10, y: 440 },
-  5: { x: 200, y: 100 },
-  6: { x: 390, y: 440 },
+  1: { x: 200, y: 120 },
+  2: { x: 75, y: 105 },
+  3: { x: 325, y: 105 },
+  4: { x: 25, y: 310 },
+  5: { x: 200, y: 365 },
+  6: { x: 375, y: 310 },
 };
 
-// Court lines SVG elements as a reusable string
 export const COURT_VIEWBOX = "0 0 400 500";
 
 // Determine which zone a point (in percentage coords) falls into
 export function getZoneFromPoint(xPct: number, yPct: number): number {
-  const x = (xPct / 100) * 400;
-  const y = (yPct / 100) * 500;
+  const point = {
+    x: (xPct / 100) * 400,
+    y: (yPct / 100) * 500,
+  };
 
-  // Zone 1: Paint rectangle
-  if (x >= 133 && x <= 266 && y >= 296) return 1;
-
-  // Check if inside the 3-point line
-  // Ellipse: center (200, 490), rx=181, ry=239
-  const dx = (x - 200) / 181;
-  const dy = (490 - y) / 239;
-  const insideEllipse = (dx * dx + dy * dy) <= 1;
-  // Also count the straight-section rectangles as inside
-  const inCornerRect = (x >= 20 && x <= 380 && y >= 465);
-  const insideThreePt = insideEllipse || inCornerRect;
-
-  if (insideThreePt) {
-    // Inside 3pt but not paint → mid-range
-    return x < 200 ? 2 : 3;
+  for (const zone of [1, 2, 3, 4, 5, 6]) {
+    if (isPointInPolygon(point, ZONE_POLYGONS[zone])) return zone;
   }
 
-  // Outside the 3-point line – determine zone 4, 5, or 6 using diagonal lines
-  // Left diagonal: (0, 251) to (20, 465)
-  // Right diagonal: (400, 251) to (380, 465)
-  let leftDiagX: number;
-  if (y < 251) {
-    leftDiagX = 0;
-  } else if (y > 465) {
-    leftDiagX = 20;
-  } else {
-    leftDiagX = 20 * (y - 251) / (465 - 251);
+  if (point.y <= BIG_ARC.cy + BIG_ARC.ry) {
+    return point.x < 200 ? 2 : 3;
   }
 
-  let rightDiagX: number;
-  if (y < 251) {
-    rightDiagX = 400;
-  } else if (y > 465) {
-    rightDiagX = 380;
-  } else {
-    rightDiagX = 400 - 20 * (y - 251) / (465 - 251);
-  }
-
-  if (x < leftDiagX) return 4;
-  if (x > rightDiagX) return 6;
+  if (point.x < 200) return 4;
+  if (point.x > 200) return 6;
   return 5;
 }
 
