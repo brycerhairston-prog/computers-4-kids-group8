@@ -4,12 +4,12 @@ import { motion } from "framer-motion";
 import courtImage from "@/assets/court-layout.png";
 
 const getHeatColor = (fgPct: number): string => {
-  if (fgPct === 0) return "hsl(var(--muted))";
-  if (fgPct <= 12.5) return "hsl(var(--heat-ice))";
-  if (fgPct <= 25) return "hsl(var(--heat-cold))";
-  if (fgPct <= 37.5) return "hsl(var(--heat-cool))";
-  if (fgPct <= 50) return "hsl(var(--heat-warm))";
-  return "hsl(var(--heat-hot))";
+  if (fgPct === 0) return "rgba(59, 130, 246, 0.6)"; // blue
+  if (fgPct <= 20) return "rgba(99, 102, 241, 0.7)"; // indigo
+  if (fgPct <= 40) return "rgba(168, 85, 247, 0.7)"; // purple
+  if (fgPct <= 60) return "rgba(234, 88, 12, 0.7)";  // orange
+  if (fgPct <= 80) return "rgba(239, 68, 68, 0.75)";  // red
+  return "rgba(220, 38, 38, 0.85)"; // deep red
 };
 
 const getHeatOpacity = (fgPct: number): number => {
