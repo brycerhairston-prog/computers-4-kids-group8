@@ -59,8 +59,18 @@ const PlayingDashboard = () => {
           className="grid grid-cols-1 lg:grid-cols-2 gap-4"
         >
           <div className="space-y-4">
-            <ShotTracker />
-            <HeatMap />
+            <Tabs defaultValue="tracker" className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="tracker" className="flex-1">📍 Shot Tracker</TabsTrigger>
+                <TabsTrigger value="heatmap" className="flex-1">🔥 Heat Map</TabsTrigger>
+              </TabsList>
+              <TabsContent value="tracker">
+                <ShotTracker />
+              </TabsContent>
+              <TabsContent value="heatmap">
+                <HeatMap />
+              </TabsContent>
+            </Tabs>
           </div>
           <div className="space-y-4">
             <DataTable />
