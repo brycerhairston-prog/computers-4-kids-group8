@@ -12,9 +12,8 @@ const getHeatColor = (fgPct: number): string => {
   return "rgba(220, 38, 38, 0.85)"; // deep red
 };
 
-const getHeatOpacity = (fgPct: number): number => {
-  if (fgPct === 0) return 0.3;
-  return 0.5 + (fgPct / 100) * 0.4;
+const getHeatOpacity = (_fgPct: number): number => {
+  return 1;
 };
 
 const legendItems = [
