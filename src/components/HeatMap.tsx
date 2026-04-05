@@ -17,11 +17,12 @@ const getHeatOpacity = (_fgPct: number): number => {
 };
 
 const legendItems = [
-  { label: "0–12.5%", color: "bg-heat-ice" },
-  { label: "12.5–25%", color: "bg-heat-cold" },
-  { label: "25–37.5%", color: "bg-heat-cool" },
-  { label: "37.5–50%", color: "bg-heat-warm" },
-  { label: "50–100%", color: "bg-heat-hot" },
+  { label: "0%", color: "bg-blue-500" },
+  { label: "1–20%", color: "bg-indigo-500" },
+  { label: "21–40%", color: "bg-purple-500" },
+  { label: "41–60%", color: "bg-orange-600" },
+  { label: "61–80%", color: "bg-red-500" },
+  { label: "81–100%", color: "bg-red-700" },
 ];
 
 const CourtBackground = () => (
