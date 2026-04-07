@@ -1,4 +1,4 @@
-import { GameProvider, useGame, type Player, type Shot, type GamePhase, type TeamSelectionMode } from "@/context/GameContext";
+import { GameProvider, useGame, type Player, type Shot, type GamePhase, type GameMode, type Team, type TeamSelectionMode } from "@/context/GameContext";
 import { MultiplayerProvider, useMultiplayer } from "@/context/MultiplayerContext";
 import HeatMap from "@/components/HeatMap";
 import DataTable from "@/components/DataTable";
@@ -10,18 +10,23 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+let idCounter = 0;
+const genId = () => `team-${++idCounter}-${Date.now()}`;
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 const PlayingDashboard = () => {
   const { resetGame, shots, gameMode, teams, players, isGameOver, gamePhase } = useGame();
   const mp = useMultiplayer();
-
-  useEffect(() => {
-    if (isGameOver && gamePhase === "playing") {
-      const t = setTimeout(() => {}, 500);
-      return () => clearTimeout(t);
-    }
-  }, [isGameOver, gamePhase]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -116,35 +121,116 @@ const PlayingDashboard = () => {
 const GameRouter = () => {
   const game = useGame();
   const mp = useMultiplayer();
-  const [teamModeTransition, setTeamModeTransition] = useState(false);
+  const hasFinishedRef = useRef(false);
 
-  const handleStartTeamMode = useCallback(async (selectionMode: TeamSelectionMode) => {
-    // Clear shots for team mode, set game mode and start
-    game.setGameMode("team");
-    game.setTeamSelectionMode(selectionMode);
+  // Host auto-finishes individual mode when all players hit 20 shots
+  useEffect(() => {
+    if (
+      mp.isMultiplayer &&
+      mp.isHost &&
+      game.isGameOver &&
+      game.gameMode === "individual" &&
+      mp.session?.status === "playing" &&
+      !hasFinishedRef.current
+    ) {
+      hasFinishedRef.current = true;
+      mp.finishIndividualMode();
+    }
+  }, [mp.isMultiplayer, mp.isHost, game.isGameOver, game.gameMode, mp.session?.status]);
 
-    if (selectionMode === "manual") {
-      // For manual, we need the manual teams - handled in GameSummary which passes them
-      // Actually manual teams are set inside GameSummary already via the context
+  // Reset the ref when going back to playing
+  useEffect(() => {
+    if (mp.session?.status === "playing") {
+      hasFinishedRef.current = false;
+    }
+  }, [mp.session?.status]);
+
+  const handleStartTeamMode = useCallback(async (selectionMode: TeamSelectionMode, manualTeams?: { teamA: string[]; teamB: string[] }) => {
+    let computedTeams: Team[];
+
+    if (selectionMode === "manual" && manualTeams) {
+      computedTeams = [
+        { id: genId(), name: "Team A", playerIds: manualTeams.teamA },
+        { id: genId(), name: "Team B", playerIds: manualTeams.teamB },
+      ];
+    } else if (selectionMode === "fair") {
+      // Sort by individual performance and alternate
+      const sorted = [...game.players].sort((a, b) => {
+        const aStats = game.getPlayerStats(a.id);
+        const bStats = game.getPlayerStats(b.id);
+        return bStats.totalPoints - aStats.totalPoints;
+      });
+      const teamA: string[] = [];
+      const teamB: string[] = [];
+      sorted.forEach((p, i) => {
+        if (i % 2 === 0) teamA.push(p.id);
+        else teamB.push(p.id);
+      });
+      computedTeams = [
+        { id: genId(), name: "Team A", playerIds: teamA },
+        { id: genId(), name: "Team B", playerIds: teamB },
+      ];
+    } else {
+      // Random
+      const shuffled = shuffleArray(game.players);
+      const mid = Math.ceil(shuffled.length / 2);
+      computedTeams = [
+        { id: genId(), name: "Team A", playerIds: shuffled.slice(0, mid).map(p => p.id) },
+        { id: genId(), name: "Team B", playerIds: shuffled.slice(mid).map(p => p.id) },
+      ];
     }
 
-    // Clear shots and start team game
     if (mp.isMultiplayer && mp.session) {
-      mp.updateGameMode("team");
-      await mp.clearMultiplayerShots();
+      // This clears shots + sets mode + saves teams to DB — all devices will sync
+      await mp.startTeamMode(computedTeams);
+    } else {
+      // Local mode — pass teams directly to startGame
+      game.startGame({ mode: "team", teams: computedTeams });
     }
-    game.startGame();
-    setTeamModeTransition(false);
   }, [game, mp]);
 
+  // Determine what to show
+  const sessionStatus = mp.session?.status;
+
   if (!mp.isMultiplayer) return <Lobby />;
-  if (mp.session?.status === "waiting") return <Lobby />;
-  if (game.isGameOver) return <GameSummary onStartTeamMode={game.gameMode === "individual" ? handleStartTeamMode : undefined} />;
-  return <PlayingDashboard />;
+  if (sessionStatus === "waiting") return <Lobby />;
+
+  // Individual done — show summary (all devices)
+  if (sessionStatus === "individual_done") {
+    return (
+      <GameSummary
+        onStartTeamMode={mp.isHost ? handleStartTeamMode : undefined}
+      />
+    );
+  }
+
+  // Team playing — show playing dashboard
+  if (sessionStatus === "team_playing") {
+    // If team game is over, show summary
+    if (game.isGameOver) {
+      return <GameSummary />;
+    }
+    return <PlayingDashboard />;
+  }
+
+  // Playing (individual mode)
+  if (sessionStatus === "playing") {
+    // Local isGameOver for individual — host will trigger finishIndividualMode
+    if (game.isGameOver) {
+      return (
+        <GameSummary
+          onStartTeamMode={mp.isHost ? handleStartTeamMode : undefined}
+        />
+      );
+    }
+    return <PlayingDashboard />;
+  }
+
+  return <Lobby />;
 };
 
 const MultiplayerGameWrapper = () => {
-  const { isMultiplayer, session, sessionPlayers, sessionShots } = useMultiplayer();
+  const { isMultiplayer, session, sessionPlayers, sessionShots, teamAssignments } = useMultiplayer();
 
   const players: Player[] = useMemo(() =>
     sessionPlayers.map(p => ({ id: p.id, name: p.name, color: p.color })),
@@ -164,7 +250,16 @@ const MultiplayerGameWrapper = () => {
   );
 
   const phase: GamePhase | undefined = isMultiplayer
-    ? (session?.status === "playing" ? "playing" : "setup")
+    ? (() => {
+        const status = session?.status;
+        if (status === "playing" || status === "team_playing") return "playing";
+        if (status === "individual_done") return "summary";
+        return "setup";
+      })()
+    : undefined;
+
+  const externalGameMode: GameMode | undefined = isMultiplayer
+    ? (session?.game_mode === "team" ? "team" : "individual")
     : undefined;
 
   return (
@@ -172,6 +267,8 @@ const MultiplayerGameWrapper = () => {
       externalPlayers={isMultiplayer ? players : undefined}
       externalShots={isMultiplayer ? shots : undefined}
       externalPhase={phase}
+      externalTeams={isMultiplayer ? (teamAssignments ?? undefined) : undefined}
+      externalGameMode={externalGameMode}
     >
       <GameRouter />
     </GameProvider>
