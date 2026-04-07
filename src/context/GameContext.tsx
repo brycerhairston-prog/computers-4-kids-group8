@@ -191,14 +191,14 @@ export const GameProvider: React.FC<GameProviderProps> = ({
   const isGameOver = useMemo(() => {
     if (gamePhase !== "playing") return false;
     if (gameMode === "individual") {
-      return players.length > 0 && players.every(p => shots.filter(s => s.playerId === p.id).length >= INDIVIDUAL_SHOT_LIMIT);
+      return players.length > 0 && players.every(p => activeShots.filter(s => s.playerId === p.id).length >= INDIVIDUAL_SHOT_LIMIT);
     } else {
       return teams.length > 0 && teams.every(t => {
-        const teamShots = shots.filter(s => t.playerIds.includes(s.playerId)).length;
-        return teamShots >= TEAM_SHOT_LIMIT;
+        const tShots = activeShots.filter(s => t.playerIds.includes(s.playerId)).length;
+        return tShots >= TEAM_SHOT_LIMIT;
       });
     }
-  }, [gamePhase, gameMode, players, teams, shots]);
+  }, [gamePhase, gameMode, players, teams, activeShots]);
 
   const addShot = useCallback((shot: Omit<Shot, "id">) => {
     setShots(prev => [...prev, { ...shot, id: genId() }]);
