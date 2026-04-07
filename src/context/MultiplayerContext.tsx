@@ -31,6 +31,26 @@ function generateGameCode(): string {
   return code;
 }
 
+const SESSION_STORAGE_KEY = "bb-session-info";
+
+function saveSessionToStorage(sessionId: string, localPlayerIds: string[], isHost: boolean) {
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ sessionId, localPlayerIds, isHost }));
+}
+
+function clearSessionStorage() {
+  localStorage.removeItem(SESSION_STORAGE_KEY);
+}
+
+function loadSessionFromStorage(): { sessionId: string; localPlayerIds: string[]; isHost: boolean } | null {
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 interface MultiplayerState {
   isMultiplayer: boolean;
   session: GameSession | null;
