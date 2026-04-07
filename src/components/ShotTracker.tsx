@@ -107,8 +107,8 @@ const ShotTracker = () => {
     setPendingPos(null);
   };
 
-  const visibleShots = selectedPlayerId ? shots.filter(s => s.playerId === selectedPlayerId) : shots;
-  const lastShot = shots.length > 0 ? shots[shots.length - 1] : null;
+  const visibleShots = selectedPlayerId ? activeShots.filter(s => s.playerId === selectedPlayerId) : activeShots;
+  const lastShot = activeShots.length > 0 ? activeShots[activeShots.length - 1] : null;
 
   return (
     <div className="glass-card rounded-lg p-4 space-y-3">
