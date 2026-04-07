@@ -129,7 +129,7 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: 400, y: 0 },
     { x: 400, y: 500 },
     RIGHT_DIAGONAL_BOTTOM,
-    ...rightOuterArc.slice(0, -1).reverse(),
+    ...rightOuterArc,
   ],
 };
 
