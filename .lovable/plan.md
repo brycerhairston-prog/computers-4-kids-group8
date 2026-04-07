@@ -1,29 +1,31 @@
 
 
-## Fix: Realtime updates not reaching the host when players join
+## Fix: Input Focus Loss + Team Mode Shot Carryover
 
-### Root Cause
+### Issue 1: Input loses focus after each keystroke
 
-The `session_players` and `session_shots` tables use the default replica identity (`d`), which only includes the primary key (`id`) in realtime change events. The subscription in `MultiplayerContext.tsx` uses a filter like `session_id=eq.${sessionId}`, but Supabase Realtime cannot match this filter because `session_id` is not included in the change payload under the default replica identity.
+**Root cause**: `PlayerNameInputs` is defined as a nested component function inside `Lobby`'s render body (line 130). Every keystroke triggers `setPlayerNames`, which re-renders `Lobby`, which re-creates the `PlayerNameInputs` function reference, causing React to unmount and remount all inputs — losing focus.
 
-This means INSERT events for new players are silently dropped by the filter on the host's side.
+**Fix**: Inline the JSX directly instead of wrapping it in a nested component. Replace the `<PlayerNameInputs />` usage on lines 213 and 254 with the actual markup, and remove the `PlayerNameInputs` function definition (lines 130-158).
 
-### Fix
+### Issue 2: Team mode says players hit shot limit
 
-**1. Database migration — set `REPLICA IDENTITY FULL` on all three tables**
+**Root cause**: When transitioning from Individual to Team mode, shots are not cleared. Two paths fail:
 
-This tells Postgres to include ALL columns in the change event, so the `session_id` filter can match correctly.
+1. **Multiplayer path**: `handleStartTeamMode` in `Index.tsx` calls `game.startGame()` which sets local shots to `[]`, but `externalShots` from the database immediately overwrites this via the `useEffect` sync. The individual-mode shots remain in `session_shots` table.
 
-```sql
-ALTER TABLE public.session_players REPLICA IDENTITY FULL;
-ALTER TABLE public.session_shots REPLICA IDENTITY FULL;
-ALTER TABLE public.game_sessions REPLICA IDENTITY FULL;
-```
+2. **Shot limit check**: `ShotTracker` checks `getPlayerShotCount(playerId)` against `INDIVIDUAL_SHOT_LIMIT` (20). Since individual-mode shots are still present, every player already has 20 shots, so `canShoot` is `false`.
 
-This is a single migration, no code changes needed. The existing subscription logic in `MultiplayerContext.tsx` is already correct — it just needs the full row data to arrive via Realtime.
+**Fix**:
+- In `MultiplayerContext`, add a `clearMultiplayerShots` function that deletes all `session_shots` rows for the current session.
+- In `Index.tsx`'s `handleStartTeamMode`, call `clearMultiplayerShots()` before starting the team game.
+- In `GameContext.startGame()`, ensure shots are cleared (already done for local mode).
 
-### What this fixes
-- Host sees new players join in real time
-- All devices see shots appear instantly
-- Game status changes (waiting → playing) propagate correctly
+### Files to modify
+
+1. **`src/components/Lobby.tsx`** — Remove `PlayerNameInputs` as a nested component; inline the player name inputs directly at both usage sites (lines 213 and 254).
+
+2. **`src/context/MultiplayerContext.tsx`** — Add `clearMultiplayerShots()` method that runs `DELETE FROM session_shots WHERE session_id = ?`.
+
+3. **`src/pages/Index.tsx`** — In `handleStartTeamMode`, call `mp.clearMultiplayerShots()` before `game.startGame()` so the database is clean and the synced external shots reset.
 
