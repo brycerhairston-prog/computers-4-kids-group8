@@ -251,6 +251,7 @@ const MultiplayerGameWrapper = () => {
       made: s.made,
       x: s.x,
       y: s.y,
+      mode: (s as any).mode || "individual",
     })),
     [sessionShots]
   );
