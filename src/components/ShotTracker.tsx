@@ -5,7 +5,7 @@ import courtImage from "@/assets/court-layout.png";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Undo2, ChevronDown, ChevronRight } from "lucide-react";
+import { Undo2, ChevronDown, ChevronRight, Lock } from "lucide-react";
 
 const CourtBackground = () => (
   <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
