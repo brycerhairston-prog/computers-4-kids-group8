@@ -52,6 +52,9 @@ interface MultiplayerState {
   updateGameMode: (mode: string) => Promise<void>;
   finishIndividualMode: () => Promise<void>;
   startTeamMode: (teams: Team[]) => Promise<void>;
+  addPlayerToStation: (name: string) => Promise<void>;
+  removePlayer: (playerId: string) => Promise<void>;
+  leaveSession: () => Promise<void>;
 }
 
 const MultiplayerContext = createContext<MultiplayerState | null>(null);
