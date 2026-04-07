@@ -243,44 +243,33 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
             {/* Manual team assignment */}
             {teamSelectionMode === "manual" && players.length >= 2 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-primary">Team A</h4>
-                    {manualTeamA.map(id => {
-                      const p = players.find(pl => pl.id === id);
-                      return p ? (
-                        <div key={id} className="text-xs bg-primary/10 rounded px-2 py-1 flex justify-between">
-                          {p.name}
-                          <button onClick={() => toggleManualAssign(id, "a")} className="text-muted-foreground hover:text-destructive">×</button>
-                        </div>
-                      ) : null;
-                    })}
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-accent">Team B</h4>
-                    {manualTeamB.map(id => {
-                      const p = players.find(pl => pl.id === id);
-                      return p ? (
-                        <div key={id} className="text-xs bg-accent/10 rounded px-2 py-1 flex justify-between">
-                          {p.name}
-                          <button onClick={() => toggleManualAssign(id, "b")} className="text-muted-foreground hover:text-destructive">×</button>
-                        </div>
-                      ) : null;
-                    })}
-                  </div>
+                <div className={`grid gap-3`} style={{ gridTemplateColumns: `repeat(${Math.min(teamCount, 4)}, 1fr)` }}>
+                  {Array.from({ length: teamCount }, (_, i) => (
+                    <div key={i} className="space-y-1">
+                      <h4 className="text-xs font-bold text-primary">Team {TEAM_LETTERS[i]}</h4>
+                      {(manualTeams[i] || []).map(id => {
+                        const p = players.find(pl => pl.id === id);
+                        return p ? (
+                          <div key={id} className="text-xs bg-primary/10 rounded px-2 py-1 flex justify-between">
+                            {p.name}
+                            <button onClick={() => removeFromTeam(id)} className="text-muted-foreground hover:text-destructive">×</button>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  ))}
                 </div>
                 {unassignedPlayers.length > 0 && (
                   <div className="space-y-1">
                     <h4 className="text-xs text-muted-foreground">Unassigned:</h4>
                     <div className="flex flex-wrap gap-1">
                       {unassignedPlayers.map(p => (
-                        <div key={p.id} className="flex gap-1">
-                          <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" onClick={() => toggleManualAssign(p.id, "a")}>
-                            {p.name} → A
-                          </Button>
-                          <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" onClick={() => toggleManualAssign(p.id, "b")}>
-                            {p.name} → B
-                          </Button>
+                        <div key={p.id} className="flex gap-1 flex-wrap">
+                          {Array.from({ length: teamCount }, (_, i) => (
+                            <Button key={i} size="sm" variant="outline" className="text-[10px] h-6 px-2" onClick={() => assignToTeam(p.id, i)}>
+                              {p.name} → {TEAM_LETTERS[i]}
+                            </Button>
+                          ))}
                         </div>
                       ))}
                     </div>
