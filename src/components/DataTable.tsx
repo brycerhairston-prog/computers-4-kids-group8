@@ -2,7 +2,7 @@ import { useGame, ZONE_POINTS, ZONE_LABELS } from "@/context/GameContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Plus, Trash2, Download } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Tooltip,
@@ -64,7 +64,7 @@ const DataTable = () => {
               ))}
               <th className="text-center py-2 px-1">Makes</th>
               <th className="text-center py-2 px-1">Pts</th>
-              <th className="py-2 px-1" />
+              
             </tr>
           </thead>
           <tbody>
@@ -94,16 +94,6 @@ const DataTable = () => {
                     })}
                     <td className="text-center py-2 px-1 font-semibold text-accent tabular-nums">{stats.makes}</td>
                     <td className="text-center py-2 px-1 font-bold text-primary tabular-nums">{stats.totalPoints}</td>
-                    <td className="py-2 px-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); removePlayer(player.id); }}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </td>
                   </motion.tr>
                 );
               })}
