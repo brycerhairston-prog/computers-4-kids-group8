@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import courtImage from "@/assets/court-layout.png";
 
 const getHeatColor = (fgPct: number): string => {
-  if (fgPct === 0) return "rgba(59, 130, 246, 0.6)"; // blue
+  if (fgPct === 0) return "rgba(255, 255, 255, 0)"; // transparent (white)
   if (fgPct <= 20) return "rgba(99, 102, 241, 0.7)"; // indigo
   if (fgPct <= 40) return "rgba(168, 85, 247, 0.7)"; // purple
   if (fgPct <= 60) return "rgba(234, 88, 12, 0.7)";  // orange
