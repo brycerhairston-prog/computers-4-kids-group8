@@ -201,8 +201,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({
   }, [gamePhase, gameMode, players, teams, activeShots]);
 
   const addShot = useCallback((shot: Omit<Shot, "id">) => {
-    setShots(prev => [...prev, { ...shot, id: genId() }]);
-  }, []);
+    setShots(prev => [...prev, { ...shot, id: genId(), mode: shot.mode || gameMode }]);
+  }, [gameMode]);
 
   const removeShot = useCallback((id: string) => {
     setShots(prev => prev.filter(s => s.id !== id));
