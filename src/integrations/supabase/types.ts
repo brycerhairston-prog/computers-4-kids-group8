@@ -22,6 +22,7 @@ export type Database = {
           host_device_id: string | null
           id: string
           status: string
+          team_assignments: Json | null
         }
         Insert: {
           created_at?: string
@@ -30,6 +31,7 @@ export type Database = {
           host_device_id?: string | null
           id?: string
           status?: string
+          team_assignments?: Json | null
         }
         Update: {
           created_at?: string
@@ -38,6 +40,7 @@ export type Database = {
           host_device_id?: string | null
           id?: string
           status?: string
+          team_assignments?: Json | null
         }
         Relationships: []
       }
