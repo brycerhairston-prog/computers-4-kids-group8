@@ -2,15 +2,17 @@ import { useGame, ZONE_LABELS, ZONE_POINTS } from "@/context/GameContext";
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale } from "lucide-react";
+import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale, Minus, Plus } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
-import { useState } from "react";
-import type { TeamSelectionMode } from "@/context/GameContext";
+import { useMemo, useState } from "react";
+import type { TeamSelectionMode, Team } from "@/context/GameContext";
 
 const COLORS = ["hsl(142, 71%, 45%)", "hsl(0, 84%, 60%)", "hsl(45, 93%, 47%)", "hsl(217, 91%, 60%)", "hsl(280, 68%, 60%)", "hsl(190, 90%, 50%)"];
 
+const TEAM_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 interface GameSummaryProps {
-  onStartTeamMode?: (selectionMode: TeamSelectionMode, manualTeams?: { teamA: string[]; teamB: string[] }) => void;
+  onStartTeamMode?: (selectionMode: TeamSelectionMode, teamCount: number, manualTeams?: Team[]) => void;
 }
 
 const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
@@ -18,8 +20,24 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
   const mp = useMultiplayer();
   const [showTeamSetup, setShowTeamSetup] = useState(false);
   const [teamSelectionMode, setTeamSelectionMode] = useState<TeamSelectionMode>("random");
-  const [manualTeamA, setManualTeamA] = useState<string[]>([]);
-  const [manualTeamB, setManualTeamB] = useState<string[]>([]);
+  // Dynamic manual teams: index → player ids
+  const [manualTeams, setManualTeams] = useState<Record<number, string[]>>({});
+
+  // Compute default team count from unique stations
+  const defaultTeamCount = useMemo(() => {
+    if (mp.isMultiplayer && mp.sessionPlayers.length > 0) {
+      const uniqueDevices = new Set(mp.sessionPlayers.map(p => p.device_id));
+      return Math.max(2, uniqueDevices.size);
+    }
+    return 2;
+  }, [mp.isMultiplayer, mp.sessionPlayers]);
+
+  const [teamCount, setTeamCount] = useState<number>(defaultTeamCount);
+
+  // Keep teamCount in sync if defaultTeamCount changes
+  useMemo(() => {
+    setTeamCount(defaultTeamCount);
+  }, [defaultTeamCount]);
 
   const handleExport = () => {
     const csv = exportCSV();
@@ -34,30 +52,53 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
 
   const handleStartTeamMode = () => {
     if (teamSelectionMode === "manual") {
-      const unassigned = players.filter(p => !manualTeamA.includes(p.id) && !manualTeamB.includes(p.id));
-      if (unassigned.length > 0 || manualTeamA.length === 0 || manualTeamB.length === 0) return;
-      onStartTeamMode?.(teamSelectionMode, { teamA: manualTeamA, teamB: manualTeamB });
+      const allAssigned = players.every(p =>
+        Object.values(manualTeams).some(ids => ids.includes(p.id))
+      );
+      const allTeamsHavePlayers = Array.from({ length: teamCount }, (_, i) => i).every(
+        i => (manualTeams[i] || []).length > 0
+      );
+      if (!allAssigned || !allTeamsHavePlayers) return;
+
+      const builtTeams: Team[] = Array.from({ length: teamCount }, (_, i) => ({
+        id: `team-manual-${i}-${Date.now()}`,
+        name: `Team ${TEAM_LETTERS[i]}`,
+        playerIds: manualTeams[i] || [],
+      }));
+      onStartTeamMode?.(teamSelectionMode, teamCount, builtTeams);
     } else {
-      onStartTeamMode?.(teamSelectionMode);
+      onStartTeamMode?.(teamSelectionMode, teamCount);
     }
   };
 
-  const toggleManualAssign = (playerId: string, team: "a" | "b") => {
-    if (team === "a") {
-      setManualTeamB(prev => prev.filter(id => id !== playerId));
-      setManualTeamA(prev =>
-        prev.includes(playerId) ? prev.filter(id => id !== playerId) : [...prev, playerId]
-      );
-    } else {
-      setManualTeamA(prev => prev.filter(id => id !== playerId));
-      setManualTeamB(prev =>
-        prev.includes(playerId) ? prev.filter(id => id !== playerId) : [...prev, playerId]
-      );
-    }
+  const assignToTeam = (playerId: string, teamIndex: number) => {
+    setManualTeams(prev => {
+      const next = { ...prev };
+      // Remove from all teams first
+      for (const key of Object.keys(next)) {
+        next[Number(key)] = next[Number(key)].filter(id => id !== playerId);
+      }
+      // Add to target team
+      next[teamIndex] = [...(next[teamIndex] || []), playerId];
+      return next;
+    });
   };
 
-  const unassignedPlayers = players.filter(p => !manualTeamA.includes(p.id) && !manualTeamB.includes(p.id));
-  const manualReady = manualTeamA.length > 0 && manualTeamB.length > 0 && unassignedPlayers.length === 0;
+  const removeFromTeam = (playerId: string) => {
+    setManualTeams(prev => {
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        next[Number(key)] = next[Number(key)].filter(id => id !== playerId);
+      }
+      return next;
+    });
+  };
+
+  const unassignedPlayers = players.filter(p =>
+    !Object.values(manualTeams).some(ids => ids.includes(p.id))
+  );
+  const manualReady = unassignedPlayers.length === 0 &&
+    Array.from({ length: teamCount }, (_, i) => i).every(i => (manualTeams[i] || []).length > 0);
 
   const playerSummaries = players.map(p => {
     const stats = getPlayerStats(p.id);
