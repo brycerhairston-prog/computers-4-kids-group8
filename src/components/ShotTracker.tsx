@@ -145,14 +145,14 @@ const ShotTracker = () => {
 
   // Show practice shots with different styling, plus active shots
   const courtShots = useMemo(() => {
-    const base = selectedPlayerId ? activeShots.filter(s => s.playerId === selectedPlayerId) : activeShots;
-    // In individual mode also show practice shots for active player
+    const filterId = selectedPlayerId || activePlayerId;
+    const base = filterId ? activeShots.filter(s => s.playerId === filterId) : activeShots;
     if (gameMode === "individual" && activePlayerId) {
-      const pShots = practiceShots.filter(s => !selectedPlayerId || s.playerId === selectedPlayerId);
+      const pShots = practiceShots.filter(s => !filterId || s.playerId === filterId);
       return [...pShots.map(s => ({ ...s, isPractice: true })), ...base.map(s => ({ ...s, isPractice: false }))];
     }
     return base.map(s => ({ ...s, isPractice: false }));
-  }, [selectedPlayerId, activeShots, gameMode, activePlayerId, practiceShots]);
+  }, [selectedPlayerId, activePlayerId, activeShots, gameMode, practiceShots]);
 
   const lastShot = useMemo(() => {
     // For undo: consider practice + active shots
