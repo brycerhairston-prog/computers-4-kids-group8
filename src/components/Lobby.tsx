@@ -127,7 +127,7 @@ const Lobby = () => {
     );
   }
 
-  const PlayerNameInputs = () => (
+  const playerNameInputsJsx = (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-foreground">Players at this station</label>
