@@ -12,9 +12,6 @@ const getHeatColor = (fgPct: number): string => {
   return "rgba(220, 38, 38, 0.85)"; // deep red
 };
 
-const getHeatOpacity = (_fgPct: number): number => {
-  return 1;
-};
 
 const legendItems = [
   { label: "0%", color: "bg-blue-500" },
@@ -39,27 +36,50 @@ const HeatMap = () => {
         Colors show Field Goal % (FG%) — the percentage of shots made. Hotter = more accurate zone.
       </p>
 
-      <svg viewBox={COURT_VIEWBOX} className="w-full rounded-md overflow-hidden" style={{ background: "white" }}>
+      <svg viewBox={COURT_VIEWBOX} className="w-full rounded-md overflow-hidden" preserveAspectRatio="xMidYMid meet" style={{ background: "white" }}>
+        <defs>
+          {[1, 2, 3, 4, 5, 6].map(zone => (
+            <clipPath key={`clip-${zone}`} id={`zone-clip-${zone}`}>
+              <path d={ZONE_PATHS[zone]} />
+            </clipPath>
+          ))}
+        </defs>
+
+        {/* Layer 1: Court background */}
         <CourtBackground />
-        {/* Zone overlays on top of court image */}
+
+        {/* Layer 2: Heat map zones (clipped to exact boundaries) */}
         {[1, 2, 3, 4, 5, 6].map(zone => {
           const stats = getZoneStats(zone, selectedPlayerId || undefined);
           const color = getHeatColor(stats.fgPct);
+          return (
+            <motion.rect
+              key={`heat-${zone}`}
+              x="0" y="0" width="400" height="500"
+              fill={color}
+              clipPath={`url(#zone-clip-${zone})`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.55 }}
+              transition={{ duration: 0.5 }}
+            />
+          );
+        })}
+
+        {/* Layer 3: Court image again on top for crisp lines */}
+        <CourtBackground />
+        <rect x="0" y="0" width="400" height="500" fill="none" />
+
+        {/* Layer 4: Zone stat labels on top */}
+        {[1, 2, 3, 4, 5, 6].map(zone => {
+          const stats = getZoneStats(zone, selectedPlayerId || undefined);
           const pos = ZONE_LABEL_POS[zone];
           return (
-            <g key={zone}>
-              <motion.path
-                d={ZONE_PATHS[zone]}
-                fill={color}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                style={{ mixBlendMode: "multiply" }}
-              />
-              <text x={pos.x} y={pos.y - 12} textAnchor="middle" fill="black" fontSize="13" fontWeight="700">
+            <g key={`label-${zone}`}>
+              <rect x={pos.x - 28} y={pos.y - 24} width="56" height="36" rx="4" fill="white" fillOpacity="0.75" />
+              <text x={pos.x} y={pos.y - 8} textAnchor="middle" fill="black" fontSize="13" fontWeight="700">
                 {stats.makes}/{stats.attempts}
               </text>
-              <text x={pos.x} y={pos.y + 6} textAnchor="middle" fill="black" fontSize="11" opacity="0.8">
+              <text x={pos.x} y={pos.y + 8} textAnchor="middle" fill="black" fontSize="11" opacity="0.8">
                 {stats.fgPct.toFixed(0)}%
               </text>
             </g>
