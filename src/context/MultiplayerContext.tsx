@@ -329,6 +329,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
+    clearSessionStorage();
     setSession(null);
     setSessionPlayers([]);
     setSessionShots([]);
