@@ -137,6 +137,12 @@ const ShotTracker = () => {
         </p>
       )}
 
+      {lockedZone !== null && canShoot && (
+        <p className="text-xs text-muted-foreground text-center">
+          🔒 Can't shoot in <span className="font-semibold text-foreground">{ZONE_LABELS[lockedZone]}</span> — pick a different zone
+        </p>
+      )
+
       {/* Player selector */}
       <div className="space-y-2">
         {gameMode === "team" ? (
