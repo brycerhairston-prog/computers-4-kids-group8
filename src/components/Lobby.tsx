@@ -251,7 +251,7 @@ const Lobby = () => {
             className="glass-card rounded-xl p-8 max-w-md w-full space-y-8"
           >
             <div className="text-center space-y-2">
-              <span className="text-5xl">🏀</span>
+              <img src={c4kLogo} alt="C4K" className="w-12 h-12 mx-auto" />
               <h1 className="text-3xl font-display font-bold text-foreground">Tabletop Basketball</h1>
               <p className="text-sm text-muted-foreground">Real-time multiplayer analytics game</p>
             </div>

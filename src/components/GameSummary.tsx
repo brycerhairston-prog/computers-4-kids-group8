@@ -522,7 +522,7 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🏀</span>
+            <img src={c4kLogo} alt="C4K" className="w-8 h-8" />
             <h1 className="text-lg font-display font-bold text-foreground">Game Summary</h1>
           </div>
           <div className="flex gap-2">
