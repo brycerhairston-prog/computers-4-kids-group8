@@ -245,17 +245,17 @@ export const GameProvider: React.FC<GameProviderProps> = ({
   const getTeamStats = useCallback((teamId: string) => {
     const team = teams.find(t => t.id === teamId);
     if (!team) return { makes: 0, attempts: 0, totalPoints: 0, zones: {} as Record<number, ZoneStats> };
-    const teamShots = shots.filter(s => team.playerIds.includes(s.playerId));
-    const makes = teamShots.filter(s => s.made).length;
-    const totalPoints = teamShots.filter(s => s.made).reduce((sum, s) => sum + ZONE_POINTS[s.zone], 0);
+    const tShots = activeShots.filter(s => team.playerIds.includes(s.playerId));
+    const makes = tShots.filter(s => s.made).length;
+    const totalPoints = tShots.filter(s => s.made).reduce((sum, s) => sum + ZONE_POINTS[s.zone], 0);
     const zones: Record<number, ZoneStats> = {};
     for (let z = 1; z <= 6; z++) {
-      const zoneShots = teamShots.filter(s => s.zone === z);
+      const zoneShots = tShots.filter(s => s.zone === z);
       const zm = zoneShots.filter(s => s.made).length;
       zones[z] = { makes: zm, attempts: zoneShots.length, fgPct: zoneShots.length > 0 ? (zm / zoneShots.length) * 100 : 0 };
     }
-    return { makes, attempts: teamShots.length, totalPoints, zones };
-  }, [shots, teams]);
+    return { makes, attempts: tShots.length, totalPoints, zones };
+  }, [activeShots, teams]);
 
   const resetGame = useCallback(() => {
     setShots([]);
