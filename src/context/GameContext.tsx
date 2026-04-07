@@ -181,8 +181,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({
   const getTeamShotCount = useCallback((teamId: string) => {
     const team = teams.find(t => t.id === teamId);
     if (!team) return 0;
-    return shots.filter(s => team.playerIds.includes(s.playerId)).length;
-  }, [shots, teams]);
+    return activeShots.filter(s => team.playerIds.includes(s.playerId)).length;
+  }, [activeShots, teams]);
 
   const getPlayerTeam = useCallback((playerId: string) => {
     return teams.find(t => t.playerIds.includes(playerId));
