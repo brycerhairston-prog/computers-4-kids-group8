@@ -1,3 +1,4 @@
+import { useMultiplayer } from "@/context/MultiplayerContext";
 import { useGame, ZONE_LABELS, ZONE_POINTS } from "@/context/GameContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
 import { motion } from "framer-motion";
@@ -28,6 +29,7 @@ const CourtBackground = () => (
 
 const HeatMap = () => {
   const { getZoneStats, selectedPlayerId } = useGame();
+  const { isMultiplayer, sessionPlayers } = useMultiplayer();
 
   return (
     <div className="glass-card rounded-lg p-4 space-y-3">
@@ -51,6 +53,7 @@ const HeatMap = () => {
         {/* Layer 2: Heat map zones (clipped to exact boundaries) */}
         {[1, 2, 3, 4, 5, 6].map(zone => {
           const stats = getZoneStats(zone, selectedPlayerId || undefined);
+          if (stats.attempts === 0) return null;
           const color = getHeatColor(stats.fgPct);
           return (
             <motion.rect

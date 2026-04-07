@@ -1,4 +1,5 @@
 import { useGame, ZONE_LABELS, ZONE_POINTS, INDIVIDUAL_SHOT_LIMIT, TEAM_SHOT_LIMIT } from "@/context/GameContext";
+import { useMultiplayer } from "@/context/MultiplayerContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, courtLineColor, getZoneFromPoint } from "@/lib/courtGeometry";
 import courtImage from "@/assets/court-layout.png";
 import { useState, useRef } from "react";
@@ -15,6 +16,7 @@ const ShotTracker = () => {
     shots, addShot, removeShot, players, selectedPlayerId, selectPlayer,
     gameMode, teams, getPlayerShotCount, getTeamShotCount, getPlayerTeam, isGameOver,
   } = useGame();
+  const mp = useMultiplayer();
   const courtRef = useRef<SVGSVGElement>(null);
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
 
@@ -60,13 +62,18 @@ const ShotTracker = () => {
 
   const confirmShot = (made: boolean) => {
     if (!pendingPos || !activePlayerId) return;
-    addShot({
+    const shotData = {
       playerId: activePlayerId,
       zone: pendingPos.zone,
       made,
       x: pendingPos.x,
       y: pendingPos.y,
-    });
+    };
+    if (mp.isMultiplayer) {
+      mp.addMultiplayerShot(shotData);
+    } else {
+      addShot(shotData);
+    }
     setPendingPos(null);
   };
 
@@ -80,7 +87,7 @@ const ShotTracker = () => {
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground tabular-nums">{shotCountDisplay}</span>
           {lastShot && (
-            <Button size="sm" variant="ghost" onClick={() => removeShot(lastShot.id)} className="gap-1 text-xs">
+            <Button size="sm" variant="ghost" onClick={() => mp.isMultiplayer ? mp.removeMultiplayerShot(lastShot.id) : removeShot(lastShot.id)} className="gap-1 text-xs">
               <Undo2 className="w-3 h-3" /> Undo
             </Button>
           )}
