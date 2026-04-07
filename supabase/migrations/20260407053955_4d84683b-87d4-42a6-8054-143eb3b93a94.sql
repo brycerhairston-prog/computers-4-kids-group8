@@ -1,0 +1,1 @@
+ALTER TABLE public.game_sessions ADD COLUMN team_assignments jsonb DEFAULT NULL;

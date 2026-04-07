@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import type { Team } from "@/context/GameContext";
 
 type GameSession = Tables<"game_sessions">;
 type SessionPlayer = Tables<"session_players">;
@@ -39,6 +40,7 @@ interface MultiplayerState {
   isHost: boolean;
   isConnected: boolean;
   isLoading: boolean;
+  teamAssignments: Team[] | null;
   createGame: (playerNames: string[]) => Promise<void>;
   joinGame: (code: string, playerNames: string[]) => Promise<void>;
   leaveGame: () => void;
@@ -48,6 +50,8 @@ interface MultiplayerState {
   startMultiplayerGame: () => Promise<void>;
   resetMultiplayerGame: () => Promise<void>;
   updateGameMode: (mode: string) => Promise<void>;
+  finishIndividualMode: () => Promise<void>;
+  startTeamMode: (teams: Team[]) => Promise<void>;
 }
 
 const MultiplayerContext = createContext<MultiplayerState | null>(null);
@@ -69,6 +73,20 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const deviceId = getDeviceId();
+
+  // Parse team assignments from session JSON
+  const teamAssignments: Team[] | null = (() => {
+    if (!session) return null;
+    const raw = (session as any).team_assignments;
+    if (!raw) return null;
+    try {
+      if (typeof raw === "string") return JSON.parse(raw);
+      if (Array.isArray(raw)) return raw as Team[];
+      return null;
+    } catch {
+      return null;
+    }
+  })();
 
   const subscribeToSession = useCallback((sessionId: string) => {
     if (channelRef.current) {
@@ -184,7 +202,6 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
       const existingFromDevice = existingPlayers?.filter(p => p.device_id === deviceId) || [];
       if (existingFromDevice.length > 0) {
-        // Rejoin
         setSession(sessionData);
         setSessionPlayers(existingPlayers || []);
         setLocalPlayerIds(existingFromDevice.map(p => p.id));
@@ -307,7 +324,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       .eq("session_id", session.id);
     await supabase
       .from("game_sessions")
-      .update({ status: "waiting" })
+      .update({ status: "waiting", game_mode: "individual", team_assignments: null } as any)
       .eq("id", session.id);
     setSessionShots([]);
   }, [session]);
@@ -317,6 +334,36 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     await supabase
       .from("game_sessions")
       .update({ game_mode: mode })
+      .eq("id", session.id);
+  }, [session]);
+
+  // Host signals that individual mode is done — all devices will see status change
+  const finishIndividualMode = useCallback(async () => {
+    if (!session) return;
+    await supabase
+      .from("game_sessions")
+      .update({ status: "individual_done" } as any)
+      .eq("id", session.id);
+  }, [session]);
+
+  // Host starts team mode — clears shots, sets teams, updates status atomically
+  const startTeamMode = useCallback(async (teams: Team[]) => {
+    if (!session) return;
+    // Clear shots first
+    await supabase
+      .from("session_shots")
+      .delete()
+      .eq("session_id", session.id);
+    setSessionShots([]);
+
+    // Update session with team data and new status
+    await supabase
+      .from("game_sessions")
+      .update({
+        status: "team_playing",
+        game_mode: "team",
+        team_assignments: teams as any,
+      } as any)
       .eq("id", session.id);
   }, [session]);
 
@@ -338,6 +385,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       isHost,
       isConnected,
       isLoading,
+      teamAssignments,
       createGame,
       joinGame,
       leaveGame,
@@ -347,6 +395,8 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       startMultiplayerGame,
       resetMultiplayerGame,
       updateGameMode,
+      finishIndividualMode,
+      startTeamMode,
     }}>
       {children}
     </MultiplayerContext.Provider>

@@ -10,7 +10,7 @@ import type { TeamSelectionMode } from "@/context/GameContext";
 const COLORS = ["hsl(142, 71%, 45%)", "hsl(0, 84%, 60%)", "hsl(45, 93%, 47%)", "hsl(217, 91%, 60%)", "hsl(280, 68%, 60%)", "hsl(190, 90%, 50%)"];
 
 interface GameSummaryProps {
-  onStartTeamMode?: (selectionMode: TeamSelectionMode) => void;
+  onStartTeamMode?: (selectionMode: TeamSelectionMode, manualTeams?: { teamA: string[]; teamB: string[] }) => void;
 }
 
 const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
@@ -36,8 +36,10 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
     if (teamSelectionMode === "manual") {
       const unassigned = players.filter(p => !manualTeamA.includes(p.id) && !manualTeamB.includes(p.id));
       if (unassigned.length > 0 || manualTeamA.length === 0 || manualTeamB.length === 0) return;
+      onStartTeamMode?.(teamSelectionMode, { teamA: manualTeamA, teamB: manualTeamB });
+    } else {
+      onStartTeamMode?.(teamSelectionMode);
     }
-    onStartTeamMode?.(teamSelectionMode);
   };
 
   const toggleManualAssign = (playerId: string, team: "a" | "b") => {
