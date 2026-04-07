@@ -228,6 +228,20 @@ export const GameProvider: React.FC<GameProviderProps> = ({
     return { makes, attempts: playerShots.length, totalPoints, zones };
   }, [shots]);
 
+  const getPlayerStatsForMode = useCallback((playerId: string, mode: "individual" | "team" | "all") => {
+    const source = mode === "individual" ? individualShots : mode === "team" ? teamShots : allShots;
+    const playerShots = source.filter(s => s.playerId === playerId);
+    const makes = playerShots.filter(s => s.made).length;
+    const totalPoints = playerShots.filter(s => s.made).reduce((sum, s) => sum + ZONE_POINTS[s.zone], 0);
+    const zones: Record<number, ZoneStats> = {};
+    for (let z = 1; z <= 6; z++) {
+      const zoneShots = playerShots.filter(s => s.zone === z);
+      const zm = zoneShots.filter(s => s.made).length;
+      zones[z] = { makes: zm, attempts: zoneShots.length, fgPct: zoneShots.length > 0 ? (zm / zoneShots.length) * 100 : 0 };
+    }
+    return { makes, attempts: playerShots.length, totalPoints, zones };
+  }, [individualShots, teamShots, allShots]);
+
   const getTeamStats = useCallback((teamId: string) => {
     const team = teams.find(t => t.id === teamId);
     if (!team) return { makes: 0, attempts: 0, totalPoints: 0, zones: {} as Record<number, ZoneStats> };
