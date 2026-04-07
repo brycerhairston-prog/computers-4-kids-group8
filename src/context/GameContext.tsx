@@ -163,9 +163,20 @@ export const GameProvider: React.FC<GameProviderProps> = ({
 
   const selectPlayer = useCallback((id: string | null) => setSelectedPlayerId(id), []);
 
+  // Filtered shot arrays by mode
+  const individualShots = useMemo(() => shots.filter(s => s.mode !== "team"), [shots]);
+  const teamShots = useMemo(() => shots.filter(s => s.mode === "team"), [shots]);
+  const allShots = shots;
+
+  // Active shots = shots relevant to current game mode (for counts/limits)
+  const activeShots = useMemo(() => {
+    if (gameMode === "team") return teamShots;
+    return individualShots;
+  }, [gameMode, individualShots, teamShots]);
+
   const getPlayerShotCount = useCallback((playerId: string) => {
-    return shots.filter(s => s.playerId === playerId).length;
-  }, [shots]);
+    return activeShots.filter(s => s.playerId === playerId).length;
+  }, [activeShots]);
 
   const getTeamShotCount = useCallback((teamId: string) => {
     const team = teams.find(t => t.id === teamId);
