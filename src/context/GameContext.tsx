@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
 
 export interface Shot {
   id: string;
@@ -12,6 +12,7 @@ export interface Shot {
 export interface Player {
   id: string;
   name: string;
+  color?: string;
 }
 
 export interface Team {
@@ -70,6 +71,9 @@ interface GameState {
   getPlayerShotCount: (playerId: string) => number;
   getTeamShotCount: (teamId: string) => number;
   getPlayerTeam: (playerId: string) => Team | undefined;
+  setExternalPlayers: (players: Player[]) => void;
+  setExternalShots: (shots: Shot[]) => void;
+  setGamePhaseExternal: (phase: GamePhase) => void;
 }
 
 const GameContext = createContext<GameState | null>(null);
@@ -92,7 +96,7 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a;
 }
 
-export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const GameProvider: React.FC<{ children: React.ReactNode; externalPlayers?: Player[]; externalShots?: Shot[]; externalPhase?: GamePhase }> = ({ children, externalPlayers, externalShots, externalPhase }) => {
   const [players, setPlayers] = useState<Player[]>([{ id: genId(), name: "Player 1" }]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [shots, setShots] = useState<Shot[]>([]);
@@ -100,6 +104,23 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [gameMode, setGameMode] = useState<GameMode>("individual");
   const [gamePhase, setGamePhase] = useState<GamePhase>("setup");
   const [teamSelectionMode, setTeamSelectionMode] = useState<TeamSelectionMode>("random");
+
+  // Sync external data (multiplayer)
+  useEffect(() => {
+    if (externalPlayers) setPlayers(externalPlayers);
+  }, [externalPlayers]);
+
+  useEffect(() => {
+    if (externalShots) setShots(externalShots);
+  }, [externalShots]);
+
+  useEffect(() => {
+    if (externalPhase) setGamePhase(externalPhase);
+  }, [externalPhase]);
+
+  const setExternalPlayers = useCallback((p: Player[]) => setPlayers(p), []);
+  const setExternalShots = useCallback((s: Shot[]) => setShots(s), []);
+  const setGamePhaseExternal = useCallback((p: GamePhase) => setGamePhase(p), []);
 
   const addPlayer = useCallback((name: string) => {
     setPlayers(prev => [...prev, { id: genId(), name }]);
@@ -240,6 +261,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addShot, removeShot, getZoneStats, getPlayerStats, getTeamStats,
       resetGame, exportCSV, setGameMode, setTeamSelectionMode, setTeams, startGame,
       isGameOver, getPlayerShotCount, getTeamShotCount, getPlayerTeam,
+      setExternalPlayers, setExternalShots, setGamePhaseExternal,
     }}>
       {children}
     </GameContext.Provider>
