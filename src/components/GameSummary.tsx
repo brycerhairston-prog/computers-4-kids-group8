@@ -1,9 +1,9 @@
-import { useGame, ZONE_LABELS, ZONE_POINTS } from "@/context/GameContext";
+import { useGame, ZONE_LABELS, ZONE_POINTS, TEAM_SHOT_LIMIT, TEAM_PLAYER_MIN_SHOTS, TEAM_PLAYER_MAX_SHOTS } from "@/context/GameContext";
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale, Minus, Plus } from "lucide-react";
+import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale, Minus, Plus, Ban } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { useMemo, useState, useCallback } from "react";
 import type { TeamSelectionMode, Team, Shot, ZoneStats } from "@/context/GameContext";
@@ -11,7 +11,6 @@ import type { TeamSelectionMode, Team, Shot, ZoneStats } from "@/context/GameCon
 const COLORS = ["hsl(142, 71%, 45%)", "hsl(0, 84%, 60%)", "hsl(45, 93%, 47%)", "hsl(217, 91%, 60%)", "hsl(280, 68%, 60%)", "hsl(190, 90%, 50%)"];
 const TEAM_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-// Helper to compute stats from a given shot array
 function computePlayerStats(playerId: string, shotSource: Shot[]) {
   const playerShots = shotSource.filter(s => s.playerId === playerId);
   const makes = playerShots.filter(s => s.made).length;
@@ -42,7 +41,6 @@ interface GameSummaryProps {
   onStartTeamMode?: (selectionMode: TeamSelectionMode, teamCount: number, manualTeams?: Team[]) => void;
 }
 
-// Reusable stats display components
 const PlayerStatsTable = ({ players, shotSource }: { players: { id: string; name: string }[]; shotSource: Shot[] }) => {
   const summaries = players.map(p => {
     const stats = computePlayerStats(p.id, shotSource);
@@ -199,12 +197,178 @@ const TeamPerformanceSection = ({ teams, players, shotSource }: { teams: Team[];
   );
 };
 
+// ──── Shot Allocation Step ────
+const ShotAllocationStep = ({
+  teams, players, allocations, setAllocations, onNext, onBack,
+}: {
+  teams: Team[];
+  players: { id: string; name: string }[];
+  allocations: Record<string, Record<string, number>>;
+  setAllocations: React.Dispatch<React.SetStateAction<Record<string, Record<string, number>>>>;
+  onNext: () => void;
+  onBack: () => void;
+}) => {
+  const isValid = teams.every(t => {
+    const alloc = allocations[t.id] || {};
+    const total = Object.values(alloc).reduce((s, v) => s + v, 0);
+    const allInRange = t.playerIds.every(pid => {
+      const v = alloc[pid] ?? 0;
+      return v >= TEAM_PLAYER_MIN_SHOTS && v <= TEAM_PLAYER_MAX_SHOTS;
+    });
+    return total === TEAM_SHOT_LIMIT && allInRange;
+  });
+
+  const adjustAlloc = (teamId: string, playerId: string, delta: number) => {
+    setAllocations(prev => {
+      const teamAlloc = { ...(prev[teamId] || {}) };
+      const current = teamAlloc[playerId] ?? 0;
+      const newVal = Math.max(TEAM_PLAYER_MIN_SHOTS, Math.min(TEAM_PLAYER_MAX_SHOTS, current + delta));
+      teamAlloc[playerId] = newVal;
+      return { ...prev, [teamId]: teamAlloc };
+    });
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+      className="glass-card rounded-xl p-5 space-y-4">
+      <h3 className="text-lg font-display font-bold text-foreground text-center">🎯 Shot Allocation</h3>
+      <p className="text-xs text-muted-foreground text-center">
+        Each team gets {TEAM_SHOT_LIMIT} total shots. Assign {TEAM_PLAYER_MIN_SHOTS}–{TEAM_PLAYER_MAX_SHOTS} shots per player.
+      </p>
+
+      {teams.map(t => {
+        const alloc = allocations[t.id] || {};
+        const total = Object.values(alloc).reduce((s, v) => s + v, 0);
+        const teamPlayers = players.filter(p => t.playerIds.includes(p.id));
+
+        return (
+          <div key={t.id} className="space-y-2 border border-border rounded-lg p-3">
+            <div className="flex justify-between items-center">
+              <h4 className="text-sm font-bold text-foreground">{t.name}</h4>
+              <span className={`text-xs font-bold tabular-nums ${total === TEAM_SHOT_LIMIT ? "text-primary" : "text-destructive"}`}>
+                {total}/{TEAM_SHOT_LIMIT} shots
+              </span>
+            </div>
+            {teamPlayers.map(p => {
+              const val = alloc[p.id] ?? 0;
+              return (
+                <div key={p.id} className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium flex-1">{p.name}</span>
+                  <div className="flex items-center gap-1">
+                    <Button size="icon" variant="outline" className="h-6 w-6" disabled={val <= TEAM_PLAYER_MIN_SHOTS}
+                      onClick={() => adjustAlloc(t.id, p.id, -1)}>
+                      <Minus className="w-3 h-3" />
+                    </Button>
+                    <span className="text-xs font-bold w-6 text-center tabular-nums">{val}</span>
+                    <Button size="icon" variant="outline" className="h-6 w-6" disabled={val >= TEAM_PLAYER_MAX_SHOTS}
+                      onClick={() => adjustAlloc(t.id, p.id, 1)}>
+                      <Plus className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+
+      <div className="flex gap-2">
+        <Button variant="outline" className="flex-1" onClick={onBack}>Back</Button>
+        <Button className="flex-1 font-bold" disabled={!isValid} onClick={onNext}>
+          Next: Zone Blocking →
+        </Button>
+      </div>
+    </motion.div>
+  );
+};
+
+// ──── Zone Blocking Step ────
+const ZoneBlockingStep = ({
+  teams, blockedZones, setBlockedZones, onStart, onBack,
+}: {
+  teams: Team[];
+  blockedZones: Record<string, number[]>; // targetTeamId → blocked zone numbers
+  setBlockedZones: React.Dispatch<React.SetStateAction<Record<string, number[]>>>;
+  onStart: () => void;
+  onBack: () => void;
+}) => {
+  const allZones = [1, 2, 3, 4, 5, 6];
+
+  // Each team has 2 zones blocked ON them (by the other teams collectively)
+  const isValid = teams.every(t => (blockedZones[t.id] || []).length === 2);
+
+  const toggleZone = (teamId: string, zone: number) => {
+    setBlockedZones(prev => {
+      const current = prev[teamId] || [];
+      if (current.includes(zone)) {
+        return { ...prev, [teamId]: current.filter(z => z !== zone) };
+      }
+      if (current.length >= 2) return prev; // max 2
+      return { ...prev, [teamId]: [...current, zone] };
+    });
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+      className="glass-card rounded-xl p-5 space-y-4">
+      <h3 className="text-lg font-display font-bold text-foreground text-center">🚫 Zone Blocking</h3>
+      <p className="text-xs text-muted-foreground text-center">
+        Block 2 zones on each team's board. Those zones will be off-limits during team play.
+      </p>
+
+      {teams.map(t => {
+        const blocked = blockedZones[t.id] || [];
+        return (
+          <div key={t.id} className="space-y-2 border border-border rounded-lg p-3">
+            <div className="flex justify-between items-center">
+              <h4 className="text-sm font-bold text-foreground">Block zones for {t.name}</h4>
+              <span className={`text-xs font-bold ${blocked.length === 2 ? "text-primary" : "text-muted-foreground"}`}>
+                {blocked.length}/2 selected
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {allZones.map(z => {
+                const isBlocked = blocked.includes(z);
+                return (
+                  <button key={z} onClick={() => toggleZone(t.id, z)}
+                    className={`text-[10px] py-2 px-1 rounded-md border transition-all ${
+                      isBlocked
+                        ? "border-destructive bg-destructive/10 text-destructive font-bold"
+                        : "border-border hover:border-primary/50 text-muted-foreground"
+                    }`}>
+                    {isBlocked && <Ban className="w-3 h-3 inline mr-0.5" />}
+                    {ZONE_LABELS[z]}
+                    <span className="block text-[9px] opacity-70">{ZONE_POINTS[z]}pt</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      <div className="flex gap-2">
+        <Button variant="outline" className="flex-1" onClick={onBack}>Back</Button>
+        <Button className="flex-1 font-bold" disabled={!isValid} onClick={onStart}>
+          🏀 Start Team Mode
+        </Button>
+      </div>
+    </motion.div>
+  );
+};
+
+type SetupStep = "team-selection" | "shot-allocation" | "zone-blocking";
+
 const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
   const { players, teams, shots, gameMode, getPlayerStats, resetGame, exportCSV, individualShots, teamShots, allShots } = useGame();
   const mp = useMultiplayer();
   const [showTeamSetup, setShowTeamSetup] = useState(false);
+  const [setupStep, setSetupStep] = useState<SetupStep>("team-selection");
   const [teamSelectionMode, setTeamSelectionMode] = useState<TeamSelectionMode>("random");
   const [manualTeams, setManualTeams] = useState<Record<number, string[]>>({});
+  const [pendingTeams, setPendingTeams] = useState<Team[]>([]);
+  const [shotAllocations, setShotAllocations] = useState<Record<string, Record<string, number>>>({});
+  const [blockedZones, setBlockedZones] = useState<Record<string, number[]>>({});
 
   const defaultTeamCount = useMemo(() => {
     if (mp.isMultiplayer && mp.sessionPlayers.length > 0) {
@@ -228,20 +392,92 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
     URL.revokeObjectURL(url);
   };
 
-  const handleStartTeamMode = () => {
+  // Build teams from selection and move to allocation step
+  const handleTeamsSelected = () => {
+    let builtTeams: Team[];
     if (teamSelectionMode === "manual") {
       const allAssigned = players.every(p => Object.values(manualTeams).some(ids => ids.includes(p.id)));
       const allTeamsHavePlayers = Array.from({ length: teamCount }, (_, i) => i).every(i => (manualTeams[i] || []).length > 0);
       if (!allAssigned || !allTeamsHavePlayers) return;
-      const builtTeams: Team[] = Array.from({ length: teamCount }, (_, i) => ({
+      builtTeams = Array.from({ length: teamCount }, (_, i) => ({
         id: `team-manual-${i}-${Date.now()}`,
         name: `Team ${TEAM_LETTERS[i]}`,
         playerIds: manualTeams[i] || [],
       }));
-      onStartTeamMode?.(teamSelectionMode, teamCount, builtTeams);
     } else {
-      onStartTeamMode?.(teamSelectionMode, teamCount);
+      // For random/fair, build placeholder teams to configure allocations
+      builtTeams = Array.from({ length: teamCount }, (_, i) => ({
+        id: `team-${i}-${Date.now()}`,
+        name: `Team ${TEAM_LETTERS[i]}`,
+        playerIds: [] as string[], // will be filled by onStartTeamMode
+      }));
     }
+
+    // For random/fair, we need actual player assignments for allocation
+    if (teamSelectionMode !== "manual") {
+      const TEAM_LETTERS_ARR = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      if (teamSelectionMode === "fair") {
+        const sorted = [...players].sort((a, b) => {
+          const aStats = getPlayerStats(a.id);
+          const bStats = getPlayerStats(b.id);
+          return bStats.totalPoints - aStats.totalPoints;
+        });
+        const buckets: string[][] = Array.from({ length: teamCount }, () => []);
+        let direction = 1;
+        let idx = 0;
+        for (const p of sorted) {
+          buckets[idx].push(p.id);
+          if ((direction === 1 && idx === teamCount - 1) || (direction === -1 && idx === 0)) {
+            direction *= -1;
+          } else {
+            idx += direction;
+          }
+        }
+        builtTeams = buckets.map((ids, i) => ({
+          id: `team-${i}-${Date.now()}`,
+          name: `Team ${TEAM_LETTERS_ARR[i]}`,
+          playerIds: ids,
+        }));
+      } else {
+        // Random
+        const shuffled = [...players].sort(() => Math.random() - 0.5);
+        const buckets: string[][] = Array.from({ length: teamCount }, () => []);
+        shuffled.forEach((p, i) => buckets[i % teamCount].push(p.id));
+        builtTeams = buckets.map((ids, i) => ({
+          id: `team-${i}-${Date.now()}`,
+          name: `Team ${TEAM_LETTERS_ARR[i]}`,
+          playerIds: ids,
+        }));
+      }
+    }
+
+    setPendingTeams(builtTeams);
+
+    // Initialize allocations: even split
+    const allocs: Record<string, Record<string, number>> = {};
+    for (const t of builtTeams) {
+      const count = t.playerIds.length;
+      const base = Math.floor(TEAM_SHOT_LIMIT / count);
+      const remainder = TEAM_SHOT_LIMIT % count;
+      const teamAlloc: Record<string, number> = {};
+      t.playerIds.forEach((pid, i) => {
+        teamAlloc[pid] = Math.min(TEAM_PLAYER_MAX_SHOTS, Math.max(TEAM_PLAYER_MIN_SHOTS, base + (i < remainder ? 1 : 0)));
+      });
+      allocs[t.id] = teamAlloc;
+    }
+    setShotAllocations(allocs);
+    setBlockedZones({});
+    setSetupStep("shot-allocation");
+  };
+
+  const handleStartWithConfig = () => {
+    // Attach allocations and blocked zones to teams
+    const finalTeams = pendingTeams.map(t => ({
+      ...t,
+      shotAllocations: shotAllocations[t.id] || {},
+      blockedZones: blockedZones[t.id] || [],
+    }));
+    onStartTeamMode?.(teamSelectionMode, teamCount, finalTeams);
   };
 
   const assignToTeam = (playerId: string, teamIndex: number) => {
@@ -276,7 +512,6 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
     }
   };
 
-  // Determine if we have data from both modes (show tabbed view)
   const hasIndividualData = individualShots.length > 0;
   const hasTeamData = teamShots.length > 0;
   const showTabbedSummary = hasIndividualData && hasTeamData && gameMode === "team";
@@ -301,22 +536,24 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
       </header>
 
       <main className="container py-6 space-y-6">
-        {/* Team Mode CTA - only show after individual mode when no team data yet */}
+        {/* Team Mode CTA */}
         {gameMode === "individual" && onStartTeamMode && players.length >= 2 && !showTeamSetup && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
             className="glass-card rounded-xl p-5 text-center space-y-3 border-2 border-primary/30">
             <Users className="w-8 h-8 text-primary mx-auto" />
             <h3 className="text-lg font-display font-bold text-foreground">Ready for Team Mode?</h3>
-            <p className="text-sm text-muted-foreground">Use these same players to play a team game (30 shots per team)</p>
-            <Button className="font-bold text-lg h-12 px-8" onClick={() => setShowTeamSetup(true)}>👥 Play Team Mode</Button>
+            <p className="text-sm text-muted-foreground">Use these same players to play a team game ({TEAM_SHOT_LIMIT} shots per team)</p>
+            <Button className="font-bold text-lg h-12 px-8" onClick={() => { setShowTeamSetup(true); setSetupStep("team-selection"); }}>
+              👥 Play Team Mode
+            </Button>
           </motion.div>
         )}
 
-        {/* Team Selection UI */}
-        {showTeamSetup && (
+        {/* Team Setup Flow */}
+        {showTeamSetup && setupStep === "team-selection" && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
             className="glass-card rounded-xl p-5 space-y-4">
-            <h3 className="text-lg font-display font-bold text-foreground text-center">Team Selection</h3>
+            <h3 className="text-lg font-display font-bold text-foreground text-center">Step 1: Team Selection</h3>
             <div className="grid grid-cols-3 gap-2">
               {([
                 { mode: "random" as TeamSelectionMode, icon: Shuffle, label: "Random", desc: "Shuffle players" },
@@ -383,14 +620,35 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
             )}
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => setShowTeamSetup(false)}>Cancel</Button>
-              <Button className="flex-1 font-bold" disabled={teamSelectionMode === "manual" && !manualReady} onClick={handleStartTeamMode}>
-                🏀 Start Team Mode
+              <Button className="flex-1 font-bold" disabled={teamSelectionMode === "manual" && !manualReady} onClick={handleTeamsSelected}>
+                Next: Shot Allocation →
               </Button>
             </div>
           </motion.div>
         )}
 
-        {/* Tabbed Summary for after team mode (has both individual + team data) */}
+        {showTeamSetup && setupStep === "shot-allocation" && (
+          <ShotAllocationStep
+            teams={pendingTeams}
+            players={players}
+            allocations={shotAllocations}
+            setAllocations={setShotAllocations}
+            onNext={() => setSetupStep("zone-blocking")}
+            onBack={() => setSetupStep("team-selection")}
+          />
+        )}
+
+        {showTeamSetup && setupStep === "zone-blocking" && (
+          <ZoneBlockingStep
+            teams={pendingTeams}
+            blockedZones={blockedZones}
+            setBlockedZones={setBlockedZones}
+            onStart={handleStartWithConfig}
+            onBack={() => setSetupStep("shot-allocation")}
+          />
+        )}
+
+        {/* Tabbed Summary */}
         {showTabbedSummary ? (
           <Tabs defaultValue="overall" className="w-full">
             <TabsList className="w-full">
@@ -428,7 +686,6 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
             </TabsContent>
           </Tabs>
         ) : (
-          /* Standard summary (individual mode only, or team mode without prior individual data) */
           <>
             <MvpBanner players={players} shotSource={gameMode === "team" ? teamShots : individualShots} />
             <PlayerBarChart players={players} shotSource={gameMode === "team" ? teamShots : individualShots} />
