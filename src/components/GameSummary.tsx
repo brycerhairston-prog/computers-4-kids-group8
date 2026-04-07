@@ -214,6 +214,32 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
               ))}
             </div>
 
+            {/* Team count selector */}
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-xs text-muted-foreground font-medium">Number of Teams:</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-7 w-7"
+                  disabled={teamCount <= 2}
+                  onClick={() => setTeamCount(c => Math.max(2, c - 1))}
+                >
+                  <Minus className="w-3 h-3" />
+                </Button>
+                <span className="text-sm font-bold w-6 text-center">{teamCount}</span>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-7 w-7"
+                  disabled={teamCount >= Math.min(players.length, 26)}
+                  onClick={() => setTeamCount(c => Math.min(players.length, 26, c + 1))}
+                >
+                  <Plus className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+
             {/* Manual team assignment */}
             {teamSelectionMode === "manual" && players.length >= 2 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
