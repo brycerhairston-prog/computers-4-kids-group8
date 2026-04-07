@@ -1,4 +1,5 @@
 import { useState } from "react";
+import c4kLogo from "@/assets/c4k-logo.png";
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,7 +92,7 @@ const Lobby = () => {
           className="glass-card rounded-xl p-6 max-w-md w-full space-y-6"
         >
           <div className="text-center space-y-2">
-            <span className="text-4xl">🏀</span>
+            <img src={c4kLogo} alt="C4K" className="w-10 h-10 mx-auto" />
             <h1 className="text-2xl font-display font-bold text-foreground">Game Lobby</h1>
             <div className="flex items-center justify-center gap-2">
               <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-yellow-500"} animate-pulse`} />
@@ -250,7 +251,7 @@ const Lobby = () => {
             className="glass-card rounded-xl p-8 max-w-md w-full space-y-8"
           >
             <div className="text-center space-y-2">
-              <span className="text-5xl">🏀</span>
+              <img src={c4kLogo} alt="C4K" className="w-12 h-12 mx-auto" />
               <h1 className="text-3xl font-display font-bold text-foreground">Tabletop Basketball</h1>
               <p className="text-sm text-muted-foreground">Real-time multiplayer analytics game</p>
             </div>

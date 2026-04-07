@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Plus, Trash2, Users, User, Shuffle, Scale, Hand } from "lucide-react";
 import { motion } from "framer-motion";
+import c4kLogo from "@/assets/c4k-logo.png";
 
 const GameSetup = () => {
   const {
@@ -66,7 +67,7 @@ const GameSetup = () => {
         className="glass-card rounded-xl p-6 max-w-lg w-full space-y-6"
       >
         <div className="text-center space-y-1">
-          <span className="text-4xl">🏀</span>
+          <img src={c4kLogo} alt="C4K" className="w-10 h-10 mx-auto" />
           <h1 className="text-2xl font-display font-bold text-foreground">Tabletop Basketball Analytics</h1>
           <p className="text-sm text-muted-foreground">Set up your game below</p>
         </div>
