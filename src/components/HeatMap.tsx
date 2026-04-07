@@ -65,9 +65,6 @@ const HeatMap = () => {
           );
         })}
 
-        {/* Layer 3: Court image again on top for crisp lines */}
-        <CourtBackground />
-        <rect x="0" y="0" width="400" height="500" fill="none" />
 
         {/* Layer 4: Zone stat labels on top */}
         {[1, 2, 3, 4, 5, 6].map(zone => {
