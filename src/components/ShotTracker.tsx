@@ -168,12 +168,14 @@ const ShotTracker = () => {
           <div className="flex gap-1 flex-wrap">
             {players.map(p => {
               const done = getPlayerShotCount(p.id) >= INDIVIDUAL_SHOT_LIMIT;
+              const isLocal = !mp.isMultiplayer || mp.localPlayerIds.includes(p.id);
               return (
                 <Button key={p.id} size="sm"
                   variant={activePlayerId === p.id ? "default" : "outline"}
                   onClick={() => selectPlayer(p.id)}
-                  className={`text-xs h-7 ${done ? "opacity-50" : ""}`}
-                  disabled={done}>
+                  className={`text-xs h-7 gap-1 ${done && isLocal ? "opacity-50" : ""} ${!isLocal ? "opacity-70" : ""}`}
+                  disabled={done && isLocal}>
+                  {!isLocal && <Lock className="w-2.5 h-2.5" />}
                   {p.name} ({getPlayerShotCount(p.id)}/{INDIVIDUAL_SHOT_LIMIT})
                 </Button>
               );
