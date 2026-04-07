@@ -52,7 +52,7 @@ const HeatMap = () => {
         {/* Layer 2: Heat map zones (clipped to exact boundaries) */}
         {[1, 2, 3, 4, 5, 6].map(zone => {
           const stats = getZoneStats(zone, selectedPlayerId || undefined);
-          const color = getHeatColor(stats.fgPct);
+          const color = getHeatColor(stats.fgPct, stats.attempts);
           return (
             <motion.rect
               key={`heat-${zone}`}
