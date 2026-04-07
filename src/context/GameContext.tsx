@@ -96,7 +96,14 @@ interface GameState {
   setGamePhaseExternal: (phase: GamePhase) => void;
 }
 
-const GameContext = createContext<GameState | null>(null);
+type GameContextGlobal = typeof globalThis & {
+  __tabletopBasketballGameContext__?: React.Context<GameState | null>;
+};
+
+const gameContextGlobal = globalThis as GameContextGlobal;
+const GameContext =
+  gameContextGlobal.__tabletopBasketballGameContext__ ??
+  (gameContextGlobal.__tabletopBasketballGameContext__ = createContext<GameState | null>(null));
 
 export const useGame = () => {
   const ctx = useContext(GameContext);
