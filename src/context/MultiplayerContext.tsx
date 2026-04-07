@@ -351,16 +351,10 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       .eq("id", session.id);
   }, [session]);
 
-  // Host starts team mode — clears shots, sets teams, updates status atomically
+  // Host starts team mode — preserves individual shots, updates status
   const startTeamMode = useCallback(async (teams: Team[]) => {
     if (!session) return;
-    // Clear shots first
-    await supabase
-      .from("session_shots")
-      .delete()
-      .eq("session_id", session.id);
-    setSessionShots([]);
-
+    // Don't delete shots — they stay tagged as "individual"
     // Update session with team data and new status
     await supabase
       .from("game_sessions")
