@@ -14,7 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      game_sessions: {
+        Row: {
+          created_at: string
+          game_code: string
+          game_mode: string
+          host_device_id: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          game_code: string
+          game_mode?: string
+          host_device_id?: string | null
+          id?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          game_code?: string
+          game_mode?: string
+          host_device_id?: string | null
+          id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      session_players: {
+        Row: {
+          color: string
+          created_at: string
+          device_id: string
+          id: string
+          name: string
+          session_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          device_id: string
+          id?: string
+          name: string
+          session_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          device_id?: string
+          id?: string
+          name?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_players_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_shots: {
+        Row: {
+          created_at: string
+          id: string
+          made: boolean
+          player_id: string
+          session_id: string
+          x: number
+          y: number
+          zone: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          made: boolean
+          player_id: string
+          session_id: string
+          x: number
+          y: number
+          zone: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          made?: boolean
+          player_id?: string
+          session_id?: string
+          x?: number
+          y?: number
+          zone?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_shots_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "session_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_shots_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
