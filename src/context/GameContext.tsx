@@ -321,9 +321,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({
 
   return (
     <GameContext.Provider value={{
-      players, teams, shots, selectedPlayerId, gameMode, gamePhase, teamSelectionMode,
+      players, teams, shots, individualShots, teamShots, allShots,
+      selectedPlayerId, gameMode, gamePhase, teamSelectionMode,
       addPlayer, removePlayer, selectPlayer,
-      addShot, removeShot, getZoneStats, getPlayerStats, getTeamStats,
+      addShot, removeShot, getZoneStats, getPlayerStats, getPlayerStatsForMode, getTeamStats,
       resetGame, exportCSV, setGameMode, setTeamSelectionMode, setTeams, startGame,
       isGameOver, getPlayerShotCount, getTeamShotCount, getPlayerTeam,
       setExternalPlayers, setExternalShots, setGamePhaseExternal,
