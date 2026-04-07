@@ -140,12 +140,12 @@ export const ZONE_PATHS: Record<number, string> = Object.fromEntries(
 
 // Label positions for zone stats
 export const ZONE_LABEL_POS: Record<number, { x: number; y: number }> = {
-  1: { x: 200, y: 120 },
-  2: { x: 75, y: 105 },
-  3: { x: 325, y: 105 },
-  4: { x: 25, y: 310 },
-  5: { x: 200, y: 365 },
-  6: { x: 375, y: 310 },
+  1: { x: 200, y: 110 },
+  2: { x: 70, y: 100 },
+  3: { x: 330, y: 100 },
+  4: { x: 25, y: 300 },
+  5: { x: 200, y: 360 },
+  6: { x: 375, y: 300 },
 };
 
 export const COURT_VIEWBOX = "0 0 400 500";
