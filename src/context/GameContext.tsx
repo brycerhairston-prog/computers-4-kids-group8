@@ -7,6 +7,7 @@ export interface Shot {
   made: boolean;
   x: number;
   y: number;
+  mode?: string;
 }
 
 export interface Player {
@@ -54,6 +55,9 @@ interface GameState {
   players: Player[];
   teams: Team[];
   shots: Shot[];
+  individualShots: Shot[];
+  teamShots: Shot[];
+  allShots: Shot[];
   selectedPlayerId: string | null;
   gameMode: GameMode;
   gamePhase: GamePhase;
@@ -65,6 +69,7 @@ interface GameState {
   removeShot: (id: string) => void;
   getZoneStats: (zone: number, playerId?: string) => ZoneStats;
   getPlayerStats: (playerId: string) => { makes: number; attempts: number; totalPoints: number; zones: Record<number, ZoneStats> };
+  getPlayerStatsForMode: (playerId: string, mode: "individual" | "team" | "all") => { makes: number; attempts: number; totalPoints: number; zones: Record<number, ZoneStats> };
   getTeamStats: (teamId: string) => { makes: number; attempts: number; totalPoints: number; zones: Record<number, ZoneStats> };
   resetGame: () => void;
   exportCSV: () => string;
@@ -158,15 +163,26 @@ export const GameProvider: React.FC<GameProviderProps> = ({
 
   const selectPlayer = useCallback((id: string | null) => setSelectedPlayerId(id), []);
 
+  // Filtered shot arrays by mode
+  const individualShots = useMemo(() => shots.filter(s => s.mode !== "team"), [shots]);
+  const teamShots = useMemo(() => shots.filter(s => s.mode === "team"), [shots]);
+  const allShots = shots;
+
+  // Active shots = shots relevant to current game mode (for counts/limits)
+  const activeShots = useMemo(() => {
+    if (gameMode === "team") return teamShots;
+    return individualShots;
+  }, [gameMode, individualShots, teamShots]);
+
   const getPlayerShotCount = useCallback((playerId: string) => {
-    return shots.filter(s => s.playerId === playerId).length;
-  }, [shots]);
+    return activeShots.filter(s => s.playerId === playerId).length;
+  }, [activeShots]);
 
   const getTeamShotCount = useCallback((teamId: string) => {
     const team = teams.find(t => t.id === teamId);
     if (!team) return 0;
-    return shots.filter(s => team.playerIds.includes(s.playerId)).length;
-  }, [shots, teams]);
+    return activeShots.filter(s => team.playerIds.includes(s.playerId)).length;
+  }, [activeShots, teams]);
 
   const getPlayerTeam = useCallback((playerId: string) => {
     return teams.find(t => t.playerIds.includes(playerId));
@@ -175,32 +191,32 @@ export const GameProvider: React.FC<GameProviderProps> = ({
   const isGameOver = useMemo(() => {
     if (gamePhase !== "playing") return false;
     if (gameMode === "individual") {
-      return players.length > 0 && players.every(p => shots.filter(s => s.playerId === p.id).length >= INDIVIDUAL_SHOT_LIMIT);
+      return players.length > 0 && players.every(p => activeShots.filter(s => s.playerId === p.id).length >= INDIVIDUAL_SHOT_LIMIT);
     } else {
       return teams.length > 0 && teams.every(t => {
-        const teamShots = shots.filter(s => t.playerIds.includes(s.playerId)).length;
-        return teamShots >= TEAM_SHOT_LIMIT;
+        const tShots = activeShots.filter(s => t.playerIds.includes(s.playerId)).length;
+        return tShots >= TEAM_SHOT_LIMIT;
       });
     }
-  }, [gamePhase, gameMode, players, teams, shots]);
+  }, [gamePhase, gameMode, players, teams, activeShots]);
 
   const addShot = useCallback((shot: Omit<Shot, "id">) => {
-    setShots(prev => [...prev, { ...shot, id: genId() }]);
-  }, []);
+    setShots(prev => [...prev, { ...shot, id: genId(), mode: shot.mode || gameMode }]);
+  }, [gameMode]);
 
   const removeShot = useCallback((id: string) => {
     setShots(prev => prev.filter(s => s.id !== id));
   }, []);
 
   const getZoneStats = useCallback((zone: number, playerId?: string): ZoneStats => {
-    const filtered = shots.filter(s => s.zone === zone && (!playerId || s.playerId === playerId));
+    const filtered = activeShots.filter(s => s.zone === zone && (!playerId || s.playerId === playerId));
     const makes = filtered.filter(s => s.made).length;
     const attempts = filtered.length;
     return { makes, attempts, fgPct: attempts > 0 ? (makes / attempts) * 100 : 0 };
-  }, [shots]);
+  }, [activeShots]);
 
   const getPlayerStats = useCallback((playerId: string) => {
-    const playerShots = shots.filter(s => s.playerId === playerId);
+    const playerShots = activeShots.filter(s => s.playerId === playerId);
     const makes = playerShots.filter(s => s.made).length;
     const totalPoints = playerShots.filter(s => s.made).reduce((sum, s) => sum + ZONE_POINTS[s.zone], 0);
     const zones: Record<number, ZoneStats> = {};
@@ -210,22 +226,36 @@ export const GameProvider: React.FC<GameProviderProps> = ({
       zones[z] = { makes: zm, attempts: zoneShots.length, fgPct: zoneShots.length > 0 ? (zm / zoneShots.length) * 100 : 0 };
     }
     return { makes, attempts: playerShots.length, totalPoints, zones };
-  }, [shots]);
+  }, [activeShots]);
+
+  const getPlayerStatsForMode = useCallback((playerId: string, mode: "individual" | "team" | "all") => {
+    const source = mode === "individual" ? individualShots : mode === "team" ? teamShots : allShots;
+    const playerShots = source.filter(s => s.playerId === playerId);
+    const makes = playerShots.filter(s => s.made).length;
+    const totalPoints = playerShots.filter(s => s.made).reduce((sum, s) => sum + ZONE_POINTS[s.zone], 0);
+    const zones: Record<number, ZoneStats> = {};
+    for (let z = 1; z <= 6; z++) {
+      const zoneShots = playerShots.filter(s => s.zone === z);
+      const zm = zoneShots.filter(s => s.made).length;
+      zones[z] = { makes: zm, attempts: zoneShots.length, fgPct: zoneShots.length > 0 ? (zm / zoneShots.length) * 100 : 0 };
+    }
+    return { makes, attempts: playerShots.length, totalPoints, zones };
+  }, [individualShots, teamShots, allShots]);
 
   const getTeamStats = useCallback((teamId: string) => {
     const team = teams.find(t => t.id === teamId);
     if (!team) return { makes: 0, attempts: 0, totalPoints: 0, zones: {} as Record<number, ZoneStats> };
-    const teamShots = shots.filter(s => team.playerIds.includes(s.playerId));
-    const makes = teamShots.filter(s => s.made).length;
-    const totalPoints = teamShots.filter(s => s.made).reduce((sum, s) => sum + ZONE_POINTS[s.zone], 0);
+    const tShots = activeShots.filter(s => team.playerIds.includes(s.playerId));
+    const makes = tShots.filter(s => s.made).length;
+    const totalPoints = tShots.filter(s => s.made).reduce((sum, s) => sum + ZONE_POINTS[s.zone], 0);
     const zones: Record<number, ZoneStats> = {};
     for (let z = 1; z <= 6; z++) {
-      const zoneShots = teamShots.filter(s => s.zone === z);
+      const zoneShots = tShots.filter(s => s.zone === z);
       const zm = zoneShots.filter(s => s.made).length;
       zones[z] = { makes: zm, attempts: zoneShots.length, fgPct: zoneShots.length > 0 ? (zm / zoneShots.length) * 100 : 0 };
     }
-    return { makes, attempts: teamShots.length, totalPoints, zones };
-  }, [shots, teams]);
+    return { makes, attempts: tShots.length, totalPoints, zones };
+  }, [activeShots, teams]);
 
   const resetGame = useCallback(() => {
     setShots([]);
@@ -239,7 +269,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({
     const effectiveMode = params?.mode ?? gameMode;
     const effectiveTeams = params?.teams;
 
-    setShots([]);
+    // Don't clear shots when switching to team mode — preserve individual shots
+    if (effectiveMode !== "team") setShots([]);
     setGameMode(effectiveMode);
 
     if (effectiveMode === "team") {
@@ -291,9 +322,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({
 
   return (
     <GameContext.Provider value={{
-      players, teams, shots, selectedPlayerId, gameMode, gamePhase, teamSelectionMode,
+      players, teams, shots, individualShots, teamShots, allShots,
+      selectedPlayerId, gameMode, gamePhase, teamSelectionMode,
       addPlayer, removePlayer, selectPlayer,
-      addShot, removeShot, getZoneStats, getPlayerStats, getTeamStats,
+      addShot, removeShot, getZoneStats, getPlayerStats, getPlayerStatsForMode, getTeamStats,
       resetGame, exportCSV, setGameMode, setTeamSelectionMode, setTeams, startGame,
       isGameOver, getPlayerShotCount, getTeamShotCount, getPlayerTeam,
       setExternalPlayers, setExternalShots, setGamePhaseExternal,

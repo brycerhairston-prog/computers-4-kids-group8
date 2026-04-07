@@ -278,8 +278,9 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setIsConnected(false);
   }, []);
 
-  const addMultiplayerShot = useCallback(async (shot: { playerId: string; zone: number; made: boolean; x: number; y: number }) => {
+  const addMultiplayerShot = useCallback(async (shot: { playerId: string; zone: number; made: boolean; x: number; y: number; mode?: string }) => {
     if (!session) return;
+    const currentMode = session.game_mode === "team" ? "team" : "individual";
     const { error } = await supabase
       .from("session_shots")
       .insert({
@@ -289,7 +290,8 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         made: shot.made,
         x: shot.x,
         y: shot.y,
-      });
+        mode: shot.mode || currentMode,
+      } as any);
     if (error) toast.error("Failed to record shot");
   }, [session]);
 
@@ -349,16 +351,10 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       .eq("id", session.id);
   }, [session]);
 
-  // Host starts team mode — clears shots, sets teams, updates status atomically
+  // Host starts team mode — preserves individual shots, updates status
   const startTeamMode = useCallback(async (teams: Team[]) => {
     if (!session) return;
-    // Clear shots first
-    await supabase
-      .from("session_shots")
-      .delete()
-      .eq("session_id", session.id);
-    setSessionShots([]);
-
+    // Don't delete shots — they stay tagged as "individual"
     // Update session with team data and new status
     await supabase
       .from("game_sessions")

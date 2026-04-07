@@ -1,0 +1,1 @@
+ALTER TABLE public.session_shots ADD COLUMN mode text NOT NULL DEFAULT 'individual';

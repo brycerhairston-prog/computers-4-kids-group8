@@ -2,10 +2,11 @@ import { useGame, ZONE_LABELS, ZONE_POINTS, INDIVIDUAL_SHOT_LIMIT, TEAM_SHOT_LIM
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, courtLineColor, getZoneFromPoint } from "@/lib/courtGeometry";
 import courtImage from "@/assets/court-layout.png";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Undo2, ChevronDown, ChevronRight, Lock } from "lucide-react";
+import { toast } from "sonner";
 
 const CourtBackground = () => (
   <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
@@ -15,11 +16,18 @@ const ShotTracker = () => {
   const {
     shots, addShot, removeShot, players, selectedPlayerId, selectPlayer,
     gameMode, teams, getPlayerShotCount, getTeamShotCount, getPlayerTeam, isGameOver,
+    individualShots, teamShots,
   } = useGame();
   const mp = useMultiplayer();
   const courtRef = useRef<SVGSVGElement>(null);
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+
+  // Active shots for current mode (for display on court)
+  const activeShots = useMemo(() => {
+    if (gameMode === "team") return teamShots;
+    return individualShots;
+  }, [gameMode, individualShots, teamShots]);
 
   const activePlayerId = selectedPlayerId || (players.length > 0 ? players[0].id : null);
   const activePlayer = players.find(p => p.id === activePlayerId);
@@ -31,6 +39,14 @@ const ShotTracker = () => {
   const isLocalPlayer = activePlayerId
     ? !mp.isMultiplayer || mp.localPlayerIds.includes(activePlayerId)
     : false;
+
+  // Same-zone restriction: track last shot zone for active player (individual mode only)
+  const lockedZone = useMemo(() => {
+    if (gameMode !== "individual" || !activePlayerId) return null;
+    const playerShots = activeShots.filter(s => s.playerId === activePlayerId);
+    const lastShot = playerShots.at(-1);
+    return lastShot ? lastShot.zone : null;
+  }, [gameMode, activePlayerId, activeShots]);
 
   // Check if current player/team can still shoot
   const canShoot = (() => {
@@ -66,6 +82,11 @@ const ShotTracker = () => {
     const xPct = ((e.clientX - rect.left) / rect.width) * 100;
     const yPct = ((e.clientY - rect.top) / rect.height) * 100;
     const zone = getZoneFromPoint(xPct, yPct);
+    // Same-zone restriction
+    if (lockedZone !== null && zone === lockedZone) {
+      toast.error(`Can't shoot in ${ZONE_LABELS[zone]} twice in a row! Pick a different zone.`);
+      return;
+    }
     setPendingPos({ x: xPct, y: yPct, zone });
   };
 
@@ -86,8 +107,8 @@ const ShotTracker = () => {
     setPendingPos(null);
   };
 
-  const visibleShots = selectedPlayerId ? shots.filter(s => s.playerId === selectedPlayerId) : shots;
-  const lastShot = shots.length > 0 ? shots[shots.length - 1] : null;
+  const visibleShots = selectedPlayerId ? activeShots.filter(s => s.playerId === selectedPlayerId) : activeShots;
+  const lastShot = activeShots.length > 0 ? activeShots[activeShots.length - 1] : null;
 
   return (
     <div className="glass-card rounded-lg p-4 space-y-3">
@@ -113,6 +134,12 @@ const ShotTracker = () => {
           {gameMode === "team"
             ? `${getPlayerTeam(activePlayerId)?.name ?? "Team"} has reached their shot limit! Select another team.`
             : `${activePlayer?.name} has reached their shot limit! Select another player.`}
+        </p>
+      )}
+
+      {lockedZone !== null && canShoot && (
+        <p className="text-xs text-muted-foreground text-center">
+          🔒 Can't shoot in <span className="font-semibold text-foreground">{ZONE_LABELS[lockedZone]}</span> — pick a different zone
         </p>
       )}
 

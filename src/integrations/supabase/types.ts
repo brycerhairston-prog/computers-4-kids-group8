@@ -84,6 +84,7 @@ export type Database = {
           created_at: string
           id: string
           made: boolean
+          mode: string
           player_id: string
           session_id: string
           x: number
@@ -94,6 +95,7 @@ export type Database = {
           created_at?: string
           id?: string
           made: boolean
+          mode?: string
           player_id: string
           session_id: string
           x: number
@@ -104,6 +106,7 @@ export type Database = {
           created_at?: string
           id?: string
           made?: boolean
+          mode?: string
           player_id?: string
           session_id?: string
           x?: number
