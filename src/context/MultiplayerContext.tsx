@@ -96,6 +96,42 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const deviceId = getDeviceId();
+  const sessionRef = useRef<GameSession | null>(null);
+
+  // Keep sessionRef in sync for use in visibility handler
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  // Refetch all state from the database for a given session
+  const refetchAllState = useCallback(async (sessionId: string) => {
+    const [sessionRes, playersRes, shotsRes] = await Promise.all([
+      supabase.from("game_sessions").select().eq("id", sessionId).single(),
+      supabase.from("session_players").select().eq("session_id", sessionId),
+      supabase.from("session_shots").select().eq("session_id", sessionId),
+    ]);
+
+    if (sessionRes.error || !sessionRes.data) {
+      // Session no longer exists — clean up
+      clearSessionStorage();
+      return false;
+    }
+
+    setSession(sessionRes.data);
+    setSessionPlayers(playersRes.data || []);
+    setSessionShots(shotsRes.data || []);
+
+    // Update local player IDs based on device
+    const myPlayers = (playersRes.data || []).filter(p => p.device_id === deviceId);
+    if (myPlayers.length === 0) {
+      // We've been removed
+      clearSessionStorage();
+      return false;
+    }
+    setLocalPlayerIds(myPlayers.map(p => p.id));
+    setIsHost(sessionRes.data.host_device_id === deviceId);
+    return true;
+  }, [deviceId]);
 
   // Parse team assignments from session JSON
   const teamAssignments: Team[] | null = (() => {
