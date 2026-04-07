@@ -485,6 +485,37 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, [session, sessionPlayers, localPlayerIds, leaveGame]);
 
+  // Auto-rejoin saved session on mount
+  useEffect(() => {
+    const saved = loadSessionFromStorage();
+    if (!saved) return;
+    const rejoin = async () => {
+      setIsLoading(true);
+      const success = await refetchAllState(saved.sessionId);
+      if (success) {
+        subscribeToSession(saved.sessionId);
+      }
+      setIsLoading(false);
+    };
+    rejoin();
+  }, [refetchAllState, subscribeToSession]);
+
+  // Reconnect when device wakes up (visibility change)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== "visible") return;
+      const currentSession = sessionRef.current;
+      if (!currentSession) return;
+      await refetchAllState(currentSession.id);
+      subscribeToSession(currentSession.id);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [refetchAllState, subscribeToSession]);
+
   useEffect(() => {
     return () => {
       if (channelRef.current) {
