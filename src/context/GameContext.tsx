@@ -7,6 +7,7 @@ export interface Shot {
   made: boolean;
   x: number;
   y: number;
+  mode?: string;
 }
 
 export interface Player {
