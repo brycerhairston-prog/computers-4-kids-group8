@@ -31,12 +31,12 @@ export type GamePhase = "setup" | "playing" | "summary";
 export const ZONE_POINTS: Record<number, number> = { 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3 };
 
 export const ZONE_LABELS: Record<number, string> = {
-  1: "Paint",
-  2: "Left Mid-Range",
-  3: "Right Mid-Range",
-  4: "Left Corner Three",
-  5: "Center Three",
-  6: "Right Corner Three",
+  1: "Zone 1 - Paint",
+  2: "Zone 2 - Left Mid-Range",
+  3: "Zone 3 - Right Mid-Range",
+  4: "Zone 4 - Left Corner Three",
+  5: "Zone 5 - Center Three",
+  6: "Zone 6 - Right Corner Three",
 };
 
 export interface ZoneStats {
