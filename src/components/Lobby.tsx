@@ -254,6 +254,10 @@ const Lobby = () => {
               <img src={c4kLogo} alt="C4K" className="w-12 h-12 mx-auto" />
               <h1 className="text-3xl font-display font-bold text-foreground">Tabletop Basketball</h1>
               <p className="text-sm text-muted-foreground">Real-time multiplayer analytics game</p>
+              <p className="text-[10px] text-muted-foreground/70 mt-1">
+                Created By: Bryce Hairston, Muhammad Zain Abbas, Kassius Ayres, Christopher Lastrape, Abishek Mugunthan
+                <br />UVA Engineering Undergraduates
+              </p>
             </div>
 
             <div className="space-y-3">
