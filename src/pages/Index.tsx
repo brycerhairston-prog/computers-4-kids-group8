@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
+import c4kLogo from "@/assets/c4k-logo.png";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 let idCounter = 0;
