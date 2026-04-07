@@ -236,23 +236,31 @@ const ShotTracker = () => {
                   </span>
                 </button>
                 {isExpanded && (
-                  <div className="px-3 pb-2 flex gap-1 flex-wrap">
-                    {teamPlayers.map(p => {
-                      const playerShots = getPlayerShotCount(p.id);
-                      const playerLimit = getPlayerShotLimit(p.id);
-                      const playerDone = playerShots >= playerLimit;
-                      const isLocal = !mp.isMultiplayer || mp.localPlayerIds.includes(p.id);
-                      return (
-                        <Button key={p.id} size="sm"
-                          variant={activePlayerId === p.id ? "default" : "outline"}
-                          onClick={() => selectPlayer(p.id)}
-                          className={`text-xs h-7 gap-1 ${!isLocal ? "opacity-70" : ""}`}
-                          disabled={(teamDone || playerDone) && isLocal}>
-                          {!isLocal && <Lock className="w-2.5 h-2.5" />}
-                          {p.name} ({playerShots}/{playerLimit})
-                        </Button>
-                      );
-                    })}
+                <div className="px-3 pb-2 space-y-2">
+                    <div className="flex gap-1 flex-wrap">
+                      {teamPlayers.map(p => {
+                        const playerShots = getPlayerShotCount(p.id);
+                        const playerLimit = getPlayerShotLimit(p.id);
+                        const playerDone = playerShots >= playerLimit;
+                        const isLocal = !mp.isMultiplayer || mp.localPlayerIds.includes(p.id);
+                        return (
+                          <Button key={p.id} size="sm"
+                            variant={activePlayerId === p.id ? "default" : "outline"}
+                            onClick={() => selectPlayer(p.id)}
+                            className={`text-xs h-7 gap-1 ${!isLocal ? "opacity-70" : ""}`}
+                            disabled={(teamDone || playerDone) && isLocal}>
+                            {!isLocal && <Lock className="w-2.5 h-2.5" />}
+                            {p.name} ({playerShots}/{playerLimit})
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    {team.blockedZones && team.blockedZones.length > 0 && (
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <Ban className="w-3 h-3" />
+                        Blocked: {team.blockedZones.map(z => ZONE_LABELS[z]).join(", ")}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -291,13 +299,16 @@ const ShotTracker = () => {
           <CourtBackground />
 
           {/* Blocked zone overlays */}
-          {blockedZones.map(zone => (
-            <g key={`blocked-${zone}`}>
-              <path d={ZONE_PATHS[zone]} fill="hsl(0 84% 60% / 0.2)" stroke="hsl(0 84% 60% / 0.5)" strokeWidth="2" strokeDasharray="8 4" />
-              <text x={ZONE_LABEL_POS[zone].x} y={ZONE_LABEL_POS[zone].y} textAnchor="middle" dominantBaseline="middle"
-                fill="hsl(0 84% 60%)" fontSize="14" fontWeight="bold">🚫</text>
-            </g>
-          ))}
+          {blockedZones.map(zone => {
+            const pos = ZONE_LABEL_POS[zone];
+            return (
+              <g key={`blocked-${zone}`}>
+                <path d={ZONE_PATHS[zone]} fill="hsl(0 84% 60% / 0.2)" stroke="hsl(0 84% 60% / 0.5)" strokeWidth="2" strokeDasharray="8 4" />
+                <line x1={pos.x - 12} y1={pos.y - 12} x2={pos.x + 12} y2={pos.y + 12} stroke="hsl(0 84% 60%)" strokeWidth="4" strokeLinecap="round" />
+                <line x1={pos.x + 12} y1={pos.y - 12} x2={pos.x - 12} y2={pos.y + 12} stroke="hsl(0 84% 60%)" strokeWidth="4" strokeLinecap="round" />
+              </g>
+            );
+          })}
 
           <AnimatePresence>
             {courtShots.map(shot => (
