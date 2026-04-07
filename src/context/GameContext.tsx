@@ -209,11 +209,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({
   }, []);
 
   const getZoneStats = useCallback((zone: number, playerId?: string): ZoneStats => {
-    const filtered = shots.filter(s => s.zone === zone && (!playerId || s.playerId === playerId));
+    const filtered = activeShots.filter(s => s.zone === zone && (!playerId || s.playerId === playerId));
     const makes = filtered.filter(s => s.made).length;
     const attempts = filtered.length;
     return { makes, attempts, fgPct: attempts > 0 ? (makes / attempts) * 100 : 0 };
-  }, [shots]);
+  }, [activeShots]);
 
   const getPlayerStats = useCallback((playerId: string) => {
     const playerShots = activeShots.filter(s => s.playerId === playerId);
