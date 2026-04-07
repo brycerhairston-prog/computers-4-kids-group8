@@ -6,9 +6,9 @@ type Point = { x: number; y: number };
 
 const BIG_ARC = {
   cx: 200,
-  cy: 147.5,
-  rx: 186.5,
-  ry: 150.5,
+  cy: 128,
+  rx: 180,
+  ry: 165,
 };
 
 const PAINT = {
