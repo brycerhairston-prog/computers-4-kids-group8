@@ -5,7 +5,7 @@ import courtImage from "@/assets/court-layout.png";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Undo2, ChevronDown, ChevronRight } from "lucide-react";
+import { Undo2, ChevronDown, ChevronRight, Lock } from "lucide-react";
 
 const CourtBackground = () => (
   <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
@@ -27,9 +27,14 @@ const ShotTracker = () => {
   // Auto-expand the first team if none expanded
   const effectiveExpandedTeam = expandedTeam ?? (teams.length > 0 ? teams[0].id : null);
 
+  // Ownership check: in multiplayer, only allow editing players added on this device
+  const isLocalPlayer = activePlayerId
+    ? !mp.isMultiplayer || mp.localPlayerIds.includes(activePlayerId)
+    : false;
+
   // Check if current player/team can still shoot
   const canShoot = (() => {
-    if (!activePlayerId || isGameOver) return false;
+    if (!activePlayerId || isGameOver || !isLocalPlayer) return false;
     if (gameMode === "individual") {
       return getPlayerShotCount(activePlayerId) < INDIVIDUAL_SHOT_LIMIT;
     } else {
@@ -90,7 +95,12 @@ const ShotTracker = () => {
         <h2 className="text-lg font-display font-bold text-foreground">📍 Shot Tracker</h2>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground tabular-nums">{shotCountDisplay}</span>
-          {lastShot && (
+          {!isLocalPlayer && mp.isMultiplayer && activePlayerId && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Lock className="w-3 h-3" /> View Only
+            </span>
+          )}
+          {lastShot && isLocalPlayer && (
             <Button size="sm" variant="ghost" onClick={() => mp.isMultiplayer ? mp.removeMultiplayerShot(lastShot.id) : removeShot(lastShot.id)} className="gap-1 text-xs">
               <Undo2 className="w-3 h-3" /> Undo
             </Button>
@@ -137,12 +147,14 @@ const ShotTracker = () => {
                   <div className="px-3 pb-2 flex gap-1 flex-wrap">
                     {teamPlayers.map(p => {
                       const playerShots = getPlayerShotCount(p.id);
+                      const isLocal = !mp.isMultiplayer || mp.localPlayerIds.includes(p.id);
                       return (
                         <Button key={p.id} size="sm"
                           variant={activePlayerId === p.id ? "default" : "outline"}
                           onClick={() => selectPlayer(p.id)}
-                          className="text-xs h-7"
-                          disabled={teamDone}>
+                          className={`text-xs h-7 gap-1 ${!isLocal ? "opacity-70" : ""}`}
+                          disabled={teamDone && isLocal}>
+                          {!isLocal && <Lock className="w-2.5 h-2.5" />}
                           {p.name} ({playerShots})
                         </Button>
                       );
@@ -156,12 +168,14 @@ const ShotTracker = () => {
           <div className="flex gap-1 flex-wrap">
             {players.map(p => {
               const done = getPlayerShotCount(p.id) >= INDIVIDUAL_SHOT_LIMIT;
+              const isLocal = !mp.isMultiplayer || mp.localPlayerIds.includes(p.id);
               return (
                 <Button key={p.id} size="sm"
                   variant={activePlayerId === p.id ? "default" : "outline"}
                   onClick={() => selectPlayer(p.id)}
-                  className={`text-xs h-7 ${done ? "opacity-50" : ""}`}
-                  disabled={done}>
+                  className={`text-xs h-7 gap-1 ${done && isLocal ? "opacity-50" : ""} ${!isLocal ? "opacity-70" : ""}`}
+                  disabled={done && isLocal}>
+                  {!isLocal && <Lock className="w-2.5 h-2.5" />}
                   {p.name} ({getPlayerShotCount(p.id)}/{INDIVIDUAL_SHOT_LIMIT})
                 </Button>
               );
