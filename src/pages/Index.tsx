@@ -149,7 +149,8 @@ const GameRouter = () => {
     let computedTeams: Team[];
     const TEAM_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    if (selectionMode === "manual" && manualTeams) {
+    // If fully configured teams are passed in (with blockedZones/shotAllocations), use them directly
+    if (manualTeams && manualTeams.length > 0) {
       computedTeams = manualTeams;
     } else if (selectionMode === "fair") {
       // Snake draft: sort by points desc, then alternate direction across teams
