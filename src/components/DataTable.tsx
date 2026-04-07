@@ -64,7 +64,7 @@ const DataTable = () => {
               ))}
               <th className="text-center py-2 px-1">Makes</th>
               <th className="text-center py-2 px-1">Pts</th>
-              <th className="py-2 px-1" />
+              
             </tr>
           </thead>
           <tbody>
