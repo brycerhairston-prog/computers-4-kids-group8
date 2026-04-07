@@ -31,6 +31,26 @@ function generateGameCode(): string {
   return code;
 }
 
+const SESSION_STORAGE_KEY = "bb-session-info";
+
+function saveSessionToStorage(sessionId: string, localPlayerIds: string[], isHost: boolean) {
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ sessionId, localPlayerIds, isHost }));
+}
+
+function clearSessionStorage() {
+  localStorage.removeItem(SESSION_STORAGE_KEY);
+}
+
+function loadSessionFromStorage(): { sessionId: string; localPlayerIds: string[]; isHost: boolean } | null {
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 interface MultiplayerState {
   isMultiplayer: boolean;
   session: GameSession | null;
@@ -76,6 +96,42 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const deviceId = getDeviceId();
+  const sessionRef = useRef<GameSession | null>(null);
+
+  // Keep sessionRef in sync for use in visibility handler
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  // Refetch all state from the database for a given session
+  const refetchAllState = useCallback(async (sessionId: string) => {
+    const [sessionRes, playersRes, shotsRes] = await Promise.all([
+      supabase.from("game_sessions").select().eq("id", sessionId).single(),
+      supabase.from("session_players").select().eq("session_id", sessionId),
+      supabase.from("session_shots").select().eq("session_id", sessionId),
+    ]);
+
+    if (sessionRes.error || !sessionRes.data) {
+      // Session no longer exists — clean up
+      clearSessionStorage();
+      return false;
+    }
+
+    setSession(sessionRes.data);
+    setSessionPlayers(playersRes.data || []);
+    setSessionShots(shotsRes.data || []);
+
+    // Update local player IDs based on device
+    const myPlayers = (playersRes.data || []).filter(p => p.device_id === deviceId);
+    if (myPlayers.length === 0) {
+      // We've been removed
+      clearSessionStorage();
+      return false;
+    }
+    setLocalPlayerIds(myPlayers.map(p => p.id));
+    setIsHost(sessionRes.data.host_device_id === deviceId);
+    return true;
+  }, [deviceId]);
 
   // Parse team assignments from session JSON
   const teamAssignments: Team[] | null = (() => {
@@ -174,6 +230,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setLocalPlayerIds(playerData.map(p => p.id));
       setIsHost(true);
 
+      saveSessionToStorage(sessionData.id, playerData.map(p => p.id), true);
       subscribeToSession(sessionData.id);
       toast.success(`Game created! Code: ${gameCode}`);
     } catch (err: any) {
@@ -216,6 +273,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
           .eq("session_id", sessionData.id);
         setSessionShots(shots || []);
 
+        saveSessionToStorage(sessionData.id, existingFromDevice.map(p => p.id), sessionData.host_device_id === deviceId);
         subscribeToSession(sessionData.id);
         toast.success(`Rejoined game ${normalizedCode}!`);
         return;
@@ -256,6 +314,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .eq("session_id", sessionData.id);
       setSessionShots(shots || []);
 
+      saveSessionToStorage(sessionData.id, playerData.map(p => p.id), sessionData.host_device_id === deviceId);
       subscribeToSession(sessionData.id);
       toast.success(`Joined game ${normalizedCode} with ${playerNames.length} player${playerNames.length > 1 ? "s" : ""}!`);
     } catch (err: any) {
@@ -270,6 +329,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
+    clearSessionStorage();
     setSession(null);
     setSessionPlayers([]);
     setSessionShots([]);
@@ -424,6 +484,37 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       leaveGame();
     }
   }, [session, sessionPlayers, localPlayerIds, leaveGame]);
+
+  // Auto-rejoin saved session on mount
+  useEffect(() => {
+    const saved = loadSessionFromStorage();
+    if (!saved) return;
+    const rejoin = async () => {
+      setIsLoading(true);
+      const success = await refetchAllState(saved.sessionId);
+      if (success) {
+        subscribeToSession(saved.sessionId);
+      }
+      setIsLoading(false);
+    };
+    rejoin();
+  }, [refetchAllState, subscribeToSession]);
+
+  // Reconnect when device wakes up (visibility change)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== "visible") return;
+      const currentSession = sessionRef.current;
+      if (!currentSession) return;
+      await refetchAllState(currentSession.id);
+      subscribeToSession(currentSession.id);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [refetchAllState, subscribeToSession]);
 
   useEffect(() => {
     return () => {
