@@ -95,7 +95,12 @@ const ShotTracker = () => {
         <h2 className="text-lg font-display font-bold text-foreground">📍 Shot Tracker</h2>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground tabular-nums">{shotCountDisplay}</span>
-          {lastShot && (
+          {!isLocalPlayer && mp.isMultiplayer && activePlayerId && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Lock className="w-3 h-3" /> View Only
+            </span>
+          )}
+          {lastShot && isLocalPlayer && (
             <Button size="sm" variant="ghost" onClick={() => mp.isMultiplayer ? mp.removeMultiplayerShot(lastShot.id) : removeShot(lastShot.id)} className="gap-1 text-xs">
               <Undo2 className="w-3 h-3" /> Undo
             </Button>
