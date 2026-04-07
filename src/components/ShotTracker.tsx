@@ -1,11 +1,11 @@
-import { useGame, ZONE_LABELS, ZONE_POINTS, INDIVIDUAL_SHOT_LIMIT, TEAM_SHOT_LIMIT } from "@/context/GameContext";
+import { useGame, ZONE_LABELS, ZONE_POINTS, INDIVIDUAL_SHOT_LIMIT, TEAM_SHOT_LIMIT, PRACTICE_SHOT_LIMIT } from "@/context/GameContext";
 import { useMultiplayer } from "@/context/MultiplayerContext";
-import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, courtLineColor, getZoneFromPoint } from "@/lib/courtGeometry";
+import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, getZoneFromPoint } from "@/lib/courtGeometry";
 import courtImage from "@/assets/court-layout.png";
 import { useState, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Undo2, ChevronDown, ChevronRight, Lock } from "lucide-react";
+import { Undo2, ChevronDown, ChevronRight, Lock, Ban } from "lucide-react";
 import { toast } from "sonner";
 
 const CourtBackground = () => (
@@ -16,7 +16,9 @@ const ShotTracker = () => {
   const {
     shots, addShot, removeShot, players, selectedPlayerId, selectPlayer,
     gameMode, teams, getPlayerShotCount, getTeamShotCount, getPlayerTeam, isGameOver,
-    individualShots, teamShots,
+    individualShots, teamShots, practiceShots,
+    isPlayerInPractice, getPlayerPracticeShotCount, getPlayerShotLimit,
+    isZoneBlockedForPlayer,
   } = useGame();
   const mp = useMultiplayer();
   const courtRef = useRef<SVGSVGElement>(null);
@@ -32,45 +34,64 @@ const ShotTracker = () => {
   const activePlayerId = selectedPlayerId || (players.length > 0 ? players[0].id : null);
   const activePlayer = players.find(p => p.id === activePlayerId);
 
-  // Auto-expand the first team if none expanded
   const effectiveExpandedTeam = expandedTeam ?? (teams.length > 0 ? teams[0].id : null);
 
-  // Ownership check: in multiplayer, only allow editing players added on this device
+  // Ownership check
   const isLocalPlayer = activePlayerId
     ? !mp.isMultiplayer || mp.localPlayerIds.includes(activePlayerId)
     : false;
 
-  // Same-zone restriction: track last shot zone for active player (individual mode only)
+  // Practice mode check
+  const inPractice = activePlayerId ? isPlayerInPractice(activePlayerId) : false;
+  const practiceCount = activePlayerId ? getPlayerPracticeShotCount(activePlayerId) : 0;
+
+  // Same-zone restriction: only in individual mode AND not in practice
   const lockedZone = useMemo(() => {
-    if (gameMode !== "individual" || !activePlayerId) return null;
-    const playerShots = activeShots.filter(s => s.playerId === activePlayerId);
-    const lastShot = playerShots.at(-1);
+    if (gameMode !== "individual" || !activePlayerId || inPractice) return null;
+    const playerIndividualShots = individualShots.filter(s => s.playerId === activePlayerId);
+    const lastShot = playerIndividualShots.at(-1);
     return lastShot ? lastShot.zone : null;
-  }, [gameMode, activePlayerId, activeShots]);
+  }, [gameMode, activePlayerId, individualShots, inPractice]);
+
+  // Blocked zones for current player in team mode
+  const blockedZones = useMemo(() => {
+    if (gameMode !== "team" || !activePlayerId) return [];
+    const team = teams.find(t => t.playerIds.includes(activePlayerId));
+    return team?.blockedZones || [];
+  }, [gameMode, activePlayerId, teams]);
 
   // Check if current player/team can still shoot
   const canShoot = (() => {
     if (!activePlayerId || isGameOver || !isLocalPlayer) return false;
+    if (inPractice) return true; // always can shoot during practice
     if (gameMode === "individual") {
       return getPlayerShotCount(activePlayerId) < INDIVIDUAL_SHOT_LIMIT;
     } else {
       const team = getPlayerTeam(activePlayerId);
       if (!team) return false;
-      return getTeamShotCount(team.id) < TEAM_SHOT_LIMIT;
+      const teamDone = getTeamShotCount(team.id) >= TEAM_SHOT_LIMIT;
+      if (teamDone) return false;
+      // Per-player limit in team mode
+      const playerLimit = getPlayerShotLimit(activePlayerId);
+      const playerCount = getPlayerShotCount(activePlayerId);
+      return playerCount < playerLimit;
     }
   })();
 
   // Shot count display
   const shotCountDisplay = (() => {
     if (!activePlayerId) return "";
+    if (inPractice) return `Practice: ${practiceCount}/${PRACTICE_SHOT_LIMIT}`;
     if (gameMode === "individual") {
       const count = getPlayerShotCount(activePlayerId);
       return `${count}/${INDIVIDUAL_SHOT_LIMIT} shots`;
     } else {
       const team = getPlayerTeam(activePlayerId);
       if (!team) return "";
-      const count = getTeamShotCount(team.id);
-      return `${team.name}: ${count}/${TEAM_SHOT_LIMIT} shots`;
+      const teamCount = getTeamShotCount(team.id);
+      const playerCount = getPlayerShotCount(activePlayerId);
+      const playerLimit = getPlayerShotLimit(activePlayerId);
+      return `${team.name}: ${teamCount}/${TEAM_SHOT_LIMIT} · ${activePlayer?.name}: ${playerCount}/${playerLimit}`;
     }
   })();
 
@@ -82,22 +103,32 @@ const ShotTracker = () => {
     const xPct = ((e.clientX - rect.left) / rect.width) * 100;
     const yPct = ((e.clientY - rect.top) / rect.height) * 100;
     const zone = getZoneFromPoint(xPct, yPct);
-    // Same-zone restriction
+
+    // Same-zone restriction (individual, non-practice)
     if (lockedZone !== null && zone === lockedZone) {
       toast.error(`Can't shoot in ${ZONE_LABELS[zone]} twice in a row! Pick a different zone.`);
       return;
     }
+
+    // Blocked zone (team mode)
+    if (blockedZones.includes(zone)) {
+      toast.error(`${ZONE_LABELS[zone]} is blocked for your team! Pick a different zone.`);
+      return;
+    }
+
     setPendingPos({ x: xPct, y: yPct, zone });
   };
 
   const confirmShot = (made: boolean) => {
     if (!pendingPos || !activePlayerId) return;
+    const shotMode = inPractice ? "practice" : gameMode;
     const shotData = {
       playerId: activePlayerId,
       zone: pendingPos.zone,
       made,
       x: pendingPos.x,
       y: pendingPos.y,
+      mode: shotMode,
     };
     if (mp.isMultiplayer) {
       mp.addMultiplayerShot(shotData);
@@ -105,10 +136,29 @@ const ShotTracker = () => {
       addShot(shotData);
     }
     setPendingPos(null);
+
+    // Toast when practice ends
+    if (inPractice && practiceCount + 1 >= PRACTICE_SHOT_LIMIT) {
+      toast.success(`${activePlayer?.name}'s practice is complete! Real shots now count.`);
+    }
   };
 
-  const visibleShots = selectedPlayerId ? activeShots.filter(s => s.playerId === selectedPlayerId) : activeShots;
-  const lastShot = activeShots.length > 0 ? activeShots[activeShots.length - 1] : null;
+  // Show practice shots with different styling, plus active shots
+  const courtShots = useMemo(() => {
+    const base = selectedPlayerId ? activeShots.filter(s => s.playerId === selectedPlayerId) : activeShots;
+    // In individual mode also show practice shots for active player
+    if (gameMode === "individual" && activePlayerId) {
+      const pShots = practiceShots.filter(s => !selectedPlayerId || s.playerId === selectedPlayerId);
+      return [...pShots.map(s => ({ ...s, isPractice: true })), ...base.map(s => ({ ...s, isPractice: false }))];
+    }
+    return base.map(s => ({ ...s, isPractice: false }));
+  }, [selectedPlayerId, activeShots, gameMode, activePlayerId, practiceShots]);
+
+  const lastShot = useMemo(() => {
+    // For undo: consider practice + active shots
+    const allCurrentShots = [...practiceShots, ...activeShots];
+    return allCurrentShots.length > 0 ? allCurrentShots[allCurrentShots.length - 1] : null;
+  }, [practiceShots, activeShots]);
 
   return (
     <div className="glass-card rounded-lg p-4 space-y-3">
@@ -116,6 +166,9 @@ const ShotTracker = () => {
         <h2 className="text-lg font-display font-bold text-foreground">📍 Shot Tracker</h2>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground tabular-nums">{shotCountDisplay}</span>
+          {inPractice && (
+            <span className="text-xs font-semibold text-accent-foreground bg-accent rounded px-1.5 py-0.5">Practice</span>
+          )}
           {!isLocalPlayer && mp.isMultiplayer && activePlayerId && (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Lock className="w-3 h-3" /> View Only
@@ -129,10 +182,17 @@ const ShotTracker = () => {
         </div>
       </div>
 
-      {!canShoot && !isGameOver && activePlayerId && (
+      {!canShoot && !isGameOver && activePlayerId && !inPractice && (
         <p className="text-xs text-primary font-semibold text-center">
           {gameMode === "team"
-            ? `${getPlayerTeam(activePlayerId)?.name ?? "Team"} has reached their shot limit! Select another team.`
+            ? (() => {
+                const playerLimit = getPlayerShotLimit(activePlayerId);
+                const playerCount = getPlayerShotCount(activePlayerId);
+                if (playerCount >= playerLimit) {
+                  return `${activePlayer?.name} has reached their ${playerLimit}-shot limit! Select another player.`;
+                }
+                return `${getPlayerTeam(activePlayerId)?.name ?? "Team"} has reached their shot limit!`;
+              })()
             : `${activePlayer?.name} has reached their shot limit! Select another player.`}
         </p>
       )}
@@ -143,10 +203,15 @@ const ShotTracker = () => {
         </p>
       )}
 
+      {blockedZones.length > 0 && gameMode === "team" && (
+        <p className="text-xs text-muted-foreground text-center">
+          🚫 Blocked zones: {blockedZones.map(z => ZONE_LABELS[z]).join(", ")}
+        </p>
+      )}
+
       {/* Player selector */}
       <div className="space-y-2">
         {gameMode === "team" ? (
-          // Team mode: collapsible Team A / Team B sections
           teams.map(team => {
             const isExpanded = effectiveExpandedTeam === team.id;
             const teamShotCount = getTeamShotCount(team.id);
@@ -174,15 +239,17 @@ const ShotTracker = () => {
                   <div className="px-3 pb-2 flex gap-1 flex-wrap">
                     {teamPlayers.map(p => {
                       const playerShots = getPlayerShotCount(p.id);
+                      const playerLimit = getPlayerShotLimit(p.id);
+                      const playerDone = playerShots >= playerLimit;
                       const isLocal = !mp.isMultiplayer || mp.localPlayerIds.includes(p.id);
                       return (
                         <Button key={p.id} size="sm"
                           variant={activePlayerId === p.id ? "default" : "outline"}
                           onClick={() => selectPlayer(p.id)}
                           className={`text-xs h-7 gap-1 ${!isLocal ? "opacity-70" : ""}`}
-                          disabled={teamDone && isLocal}>
+                          disabled={(teamDone || playerDone) && isLocal}>
                           {!isLocal && <Lock className="w-2.5 h-2.5" />}
-                          {p.name} ({playerShots})
+                          {p.name} ({playerShots}/{playerLimit})
                         </Button>
                       );
                     })}
@@ -194,8 +261,11 @@ const ShotTracker = () => {
         ) : (
           <div className="flex gap-1 flex-wrap">
             {players.map(p => {
-              const done = getPlayerShotCount(p.id) >= INDIVIDUAL_SHOT_LIMIT;
+              const pInPractice = isPlayerInPractice(p.id);
+              const done = !pInPractice && getPlayerShotCount(p.id) >= INDIVIDUAL_SHOT_LIMIT;
               const isLocal = !mp.isMultiplayer || mp.localPlayerIds.includes(p.id);
+              const pCount = pInPractice ? getPlayerPracticeShotCount(p.id) : getPlayerShotCount(p.id);
+              const pLimit = pInPractice ? PRACTICE_SHOT_LIMIT : INDIVIDUAL_SHOT_LIMIT;
               return (
                 <Button key={p.id} size="sm"
                   variant={activePlayerId === p.id ? "default" : "outline"}
@@ -203,7 +273,8 @@ const ShotTracker = () => {
                   className={`text-xs h-7 gap-1 ${done && isLocal ? "opacity-50" : ""} ${!isLocal ? "opacity-70" : ""}`}
                   disabled={done && isLocal}>
                   {!isLocal && <Lock className="w-2.5 h-2.5" />}
-                  {p.name} ({getPlayerShotCount(p.id)}/{INDIVIDUAL_SHOT_LIMIT})
+                  {pInPractice && "🏋️ "}
+                  {p.name} ({pCount}/{pLimit})
                 </Button>
               );
             })}
@@ -218,13 +289,25 @@ const ShotTracker = () => {
           style={{ background: "hsl(var(--court-bg))" }}
           onClick={handleCourtClick}>
           <CourtBackground />
+
+          {/* Blocked zone overlays */}
+          {blockedZones.map(zone => (
+            <g key={`blocked-${zone}`}>
+              <path d={ZONE_PATHS[zone]} fill="hsl(0 84% 60% / 0.2)" stroke="hsl(0 84% 60% / 0.5)" strokeWidth="2" strokeDasharray="8 4" />
+              <text x={ZONE_LABEL_POS[zone].x} y={ZONE_LABEL_POS[zone].y} textAnchor="middle" dominantBaseline="middle"
+                fill="hsl(0 84% 60%)" fontSize="14" fontWeight="bold">🚫</text>
+            </g>
+          ))}
+
           <AnimatePresence>
-            {visibleShots.map(shot => (
+            {courtShots.map(shot => (
               <motion.circle key={shot.id}
-                cx={(shot.x / 100) * 400} cy={(shot.y / 100) * 500} r="6"
-                fill={shot.made ? "hsl(var(--shot-made))" : "hsl(var(--shot-missed))"}
-                stroke="white" strokeWidth="1.5"
-                initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.85 }}
+                cx={(shot.x / 100) * 400} cy={(shot.y / 100) * 500} r={shot.isPractice ? 5 : 6}
+                fill={shot.isPractice ? "hsl(var(--muted-foreground))" : (shot.made ? "hsl(var(--shot-made))" : "hsl(var(--shot-missed))")}
+                stroke="white" strokeWidth={shot.isPractice ? 1 : 1.5}
+                strokeDasharray={shot.isPractice ? "3 2" : undefined}
+                opacity={shot.isPractice ? 0.5 : 0.85}
+                initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: shot.isPractice ? 0.5 : 0.85 }}
                 exit={{ scale: 0, opacity: 0 }} transition={{ type: "spring", stiffness: 300 }} />
             ))}
           </AnimatePresence>
@@ -254,6 +337,7 @@ const ShotTracker = () => {
 
       {activePlayer && pendingPos && (
         <p className="text-xs text-center text-muted-foreground">
+          {inPractice && <span className="text-accent-foreground font-semibold">[Practice] </span>}
           Placing shot for <span className="text-primary font-semibold">{activePlayer.name}</span> in{" "}
           <span className="font-medium">{ZONE_LABELS[pendingPos.zone]}</span> ({ZONE_POINTS[pendingPos.zone]}pt zone)
         </p>

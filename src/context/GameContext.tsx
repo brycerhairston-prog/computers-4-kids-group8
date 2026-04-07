@@ -20,6 +20,8 @@ export interface Team {
   id: string;
   name: string;
   playerIds: string[];
+  shotAllocations?: Record<string, number>;
+  blockedZones?: number[];
 }
 
 export type GameMode = "individual" | "team";
@@ -45,6 +47,9 @@ export interface ZoneStats {
 
 export const INDIVIDUAL_SHOT_LIMIT = 20;
 export const TEAM_SHOT_LIMIT = 30;
+export const PRACTICE_SHOT_LIMIT = 5;
+export const TEAM_PLAYER_MIN_SHOTS = 5;
+export const TEAM_PLAYER_MAX_SHOTS = 15;
 
 interface StartGameParams {
   mode?: GameMode;
@@ -57,6 +62,7 @@ interface GameState {
   shots: Shot[];
   individualShots: Shot[];
   teamShots: Shot[];
+  practiceShots: Shot[];
   allShots: Shot[];
   selectedPlayerId: string | null;
   gameMode: GameMode;
@@ -79,8 +85,12 @@ interface GameState {
   startGame: (params?: StartGameParams) => void;
   isGameOver: boolean;
   getPlayerShotCount: (playerId: string) => number;
+  getPlayerPracticeShotCount: (playerId: string) => number;
+  getPlayerShotLimit: (playerId: string) => number;
   getTeamShotCount: (teamId: string) => number;
   getPlayerTeam: (playerId: string) => Team | undefined;
+  isPlayerInPractice: (playerId: string) => boolean;
+  isZoneBlockedForPlayer: (playerId: string, zone: number) => boolean;
   setExternalPlayers: (players: Player[]) => void;
   setExternalShots: (shots: Shot[]) => void;
   setGamePhaseExternal: (phase: GamePhase) => void;
@@ -126,26 +136,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({
   const [gamePhase, setGamePhase] = useState<GamePhase>("setup");
   const [teamSelectionMode, setTeamSelectionMode] = useState<TeamSelectionMode>("random");
 
-  // Sync external data (multiplayer)
-  useEffect(() => {
-    if (externalPlayers) setPlayers(externalPlayers);
-  }, [externalPlayers]);
-
-  useEffect(() => {
-    if (externalShots) setShots(externalShots);
-  }, [externalShots]);
-
-  useEffect(() => {
-    if (externalPhase) setGamePhase(externalPhase);
-  }, [externalPhase]);
-
-  useEffect(() => {
-    if (externalTeams) setTeams(externalTeams);
-  }, [externalTeams]);
-
-  useEffect(() => {
-    if (externalGameMode) setGameMode(externalGameMode);
-  }, [externalGameMode]);
+  useEffect(() => { if (externalPlayers) setPlayers(externalPlayers); }, [externalPlayers]);
+  useEffect(() => { if (externalShots) setShots(externalShots); }, [externalShots]);
+  useEffect(() => { if (externalPhase) setGamePhase(externalPhase); }, [externalPhase]);
+  useEffect(() => { if (externalTeams) setTeams(externalTeams); }, [externalTeams]);
+  useEffect(() => { if (externalGameMode) setGameMode(externalGameMode); }, [externalGameMode]);
 
   const setExternalPlayers = useCallback((p: Player[]) => setPlayers(p), []);
   const setExternalShots = useCallback((s: Shot[]) => setShots(s), []);
@@ -164,19 +159,42 @@ export const GameProvider: React.FC<GameProviderProps> = ({
   const selectPlayer = useCallback((id: string | null) => setSelectedPlayerId(id), []);
 
   // Filtered shot arrays by mode
-  const individualShots = useMemo(() => shots.filter(s => s.mode !== "team"), [shots]);
+  const practiceShots = useMemo(() => shots.filter(s => s.mode === "practice"), [shots]);
+  const individualShots = useMemo(() => shots.filter(s => s.mode === "individual"), [shots]);
   const teamShots = useMemo(() => shots.filter(s => s.mode === "team"), [shots]);
-  const allShots = shots;
+  const allShots = useMemo(() => shots.filter(s => s.mode !== "practice"), [shots]);
 
-  // Active shots = shots relevant to current game mode (for counts/limits)
+  // Active shots = shots relevant to current game mode (excludes practice)
   const activeShots = useMemo(() => {
     if (gameMode === "team") return teamShots;
     return individualShots;
   }, [gameMode, individualShots, teamShots]);
 
+  const getPlayerPracticeShotCount = useCallback((playerId: string) => {
+    return practiceShots.filter(s => s.playerId === playerId).length;
+  }, [practiceShots]);
+
+  const isPlayerInPractice = useCallback((playerId: string) => {
+    if (gameMode !== "individual") return false;
+    return getPlayerPracticeShotCount(playerId) < PRACTICE_SHOT_LIMIT;
+  }, [gameMode, getPlayerPracticeShotCount]);
+
   const getPlayerShotCount = useCallback((playerId: string) => {
     return activeShots.filter(s => s.playerId === playerId).length;
   }, [activeShots]);
+
+  const getPlayerShotLimit = useCallback((playerId: string) => {
+    if (gameMode === "team") {
+      const team = teams.find(t => t.playerIds.includes(playerId));
+      if (team?.shotAllocations?.[playerId] != null) {
+        return team.shotAllocations[playerId];
+      }
+      // Fallback: even split
+      if (team) return Math.floor(TEAM_SHOT_LIMIT / team.playerIds.length);
+      return TEAM_SHOT_LIMIT;
+    }
+    return INDIVIDUAL_SHOT_LIMIT;
+  }, [gameMode, teams]);
 
   const getTeamShotCount = useCallback((teamId: string) => {
     const team = teams.find(t => t.id === teamId);
@@ -187,6 +205,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({
   const getPlayerTeam = useCallback((playerId: string) => {
     return teams.find(t => t.playerIds.includes(playerId));
   }, [teams]);
+
+  const isZoneBlockedForPlayer = useCallback((playerId: string, zone: number) => {
+    if (gameMode !== "team") return false;
+    const team = teams.find(t => t.playerIds.includes(playerId));
+    if (!team?.blockedZones) return false;
+    return team.blockedZones.includes(zone);
+  }, [gameMode, teams]);
 
   const isGameOver = useMemo(() => {
     if (gamePhase !== "playing") return false;
@@ -269,16 +294,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({
     const effectiveMode = params?.mode ?? gameMode;
     const effectiveTeams = params?.teams;
 
-    // Don't clear shots when switching to team mode — preserve individual shots
     if (effectiveMode !== "team") setShots([]);
     setGameMode(effectiveMode);
 
     if (effectiveMode === "team") {
       if (effectiveTeams && effectiveTeams.length > 0) {
-        // Teams provided explicitly — use them directly
         setTeams(effectiveTeams);
       } else if (teams.length === 0) {
-        // Auto-generate teams based on selection mode
         if (teamSelectionMode === "random") {
           const shuffled = shuffleArray(players);
           const mid = Math.ceil(shuffled.length / 2);
@@ -322,12 +344,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({
 
   return (
     <GameContext.Provider value={{
-      players, teams, shots, individualShots, teamShots, allShots,
+      players, teams, shots, individualShots, teamShots, practiceShots, allShots,
       selectedPlayerId, gameMode, gamePhase, teamSelectionMode,
       addPlayer, removePlayer, selectPlayer,
       addShot, removeShot, getZoneStats, getPlayerStats, getPlayerStatsForMode, getTeamStats,
       resetGame, exportCSV, setGameMode, setTeamSelectionMode, setTeams, startGame,
-      isGameOver, getPlayerShotCount, getTeamShotCount, getPlayerTeam,
+      isGameOver, getPlayerShotCount, getPlayerPracticeShotCount, getPlayerShotLimit,
+      getTeamShotCount, getPlayerTeam, isPlayerInPractice, isZoneBlockedForPlayer,
       setExternalPlayers, setExternalShots, setGamePhaseExternal,
     }}>
       {children}
