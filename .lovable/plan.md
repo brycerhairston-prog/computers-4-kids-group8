@@ -1,40 +1,60 @@
 
 
-## Plan: Dynamic Team Count Based on Stations
+## Plan: Final Combined Summary, Same-Zone Restriction
 
-### What Changes
+### Three Features
 
-Currently the app is hardcoded to 2 teams (Team A and Team B). This plan adds:
+**1. Same-zone back-to-back restriction (Individual mode)**
 
-1. **A "Number of Teams" selector** on the summary screen's team setup UI — lets the host pick 2, 3, 4, etc. teams before choosing Random/Manual/Fair
-2. **Dynamic team generation** — Random, Fair, and Manual modes all create N teams instead of always 2
-3. **Updated Manual assignment UI** — shows N team columns instead of just A/B
-4. **Updated ShotTracker team tabs** — collapsible sections for all N teams, not just 2
+In individual mode, prevent a player from shooting in the same zone they just shot in. Show a visual indicator on the court and a message saying which zone is locked.
+
+**Changes:**
+- `ShotTracker.tsx`: Track `lastShotZone` per player from the shots array. In `handleCourtClick`, if the detected zone matches the player's last shot zone, show a toast/message and reject the click. Add a visual overlay or dim effect on the locked zone.
+- Works for both local and multiplayer — check the last shot for the active player from the `shots` array.
+
+**2. Preserve individual shots for final summary**
+
+Currently `startTeamMode` deletes all shots from the DB before team play. We need to preserve individual-mode shots separately.
+
+**Changes:**
+- `MultiplayerContext.tsx`: In `startTeamMode`, instead of deleting shots, add a `game_mode` column to `session_shots` to tag shots as "individual" or "team". **Alternative (no migration):** Store individual shot snapshots in `game_sessions.team_assignments` JSON (alongside teams). This avoids a migration.
+- **Chosen approach:** Add a `mode` column to `session_shots` via migration (default "individual"). When team mode starts, don't delete shots — just tag new team shots as "team". Filter shots by mode in the playing views.
+- `GameContext.tsx`: Add `individualShots` and `teamShots` filtered arrays. During team play, only show team-mode shots on the court/tracker.
+
+**3. Final summary with Individual / Team / Combined tabs**
+
+After team mode ends, show a tabbed summary with three views.
+
+**Changes:**
+- `GameSummary.tsx`: When `gameMode === "team"` and game is over, render a `Tabs` component with:
+  - **Individual** tab: Stats computed from individual-mode shots only
+  - **Team** tab: Current team stats (from team-mode shots)
+  - **Overall** tab: Combined stats from both modes — total points, total FG%, MVP across both rounds
+- `Index.tsx`: Pass both individual and team shots to `GameSummary` via props or context.
 
 ### Files to modify
 
 | File | Change |
 |------|--------|
-| `src/components/GameSummary.tsx` | Add team count selector (default = number of stations in multiplayer, or 2). Refactor manual assignment from hardcoded teamA/teamB to a dynamic `manualTeams: Record<number, string[]>`. Update `onStartTeamMode` signature to pass N teams. |
-| `src/pages/Index.tsx` | Update `handleStartTeamMode` to accept a `teamCount` param and generate N teams for random/fair modes using round-robin distribution instead of binary split. |
-| `src/components/ShotTracker.tsx` | Already uses `teams.map(...)` for collapsible sections — no changes needed since it's already dynamic. |
-| `src/context/GameContext.tsx` | No changes — `Team[]` already supports N teams. |
+| Migration | Add `mode` column (`text`, default `'individual'`) to `session_shots` |
+| `src/context/MultiplayerContext.tsx` | Stop deleting shots on team start; tag new team shots with `mode: 'team'`; expose `individualShots` and `teamShots` filtered arrays |
+| `src/context/GameContext.tsx` | Accept `externalIndividualShots`; expose `individualShots` |
+| `src/pages/Index.tsx` | Pass individual shots through; filter team-mode shots for PlayingDashboard |
+| `src/components/ShotTracker.tsx` | Add same-zone restriction logic; show locked zone message |
+| `src/components/GameSummary.tsx` | Add Tabs (Individual / Team / Overall) for final summary after team mode |
 
-### Key Details
+### Migration SQL
 
-**Team naming**: Teams are named alphabetically — Team A, B, C, D, etc.
-
-**Random mode with N teams**: Shuffle players, distribute round-robin across N teams.
-
-**Fair mode with N teams**: Sort players by points descending, snake-draft across N teams (1→N, N→1, repeat).
-
-**Manual mode**: Show N columns. Each player gets N buttons ("→ A", "→ B", "→ C", etc.). All players must be assigned before starting.
-
-**Default team count**: In multiplayer, default to the number of unique stations (devices). In local mode, default to 2.
-
-**GameSummary `onStartTeamMode` signature change**:
+```sql
+ALTER TABLE public.session_shots ADD COLUMN mode text NOT NULL DEFAULT 'individual';
 ```
-onStartTeamMode(selectionMode, teamCount, manualTeams?)
+
+### Same-zone restriction detail
+
+For each player, compute their last shot zone from the shots array:
+```ts
+const lastShot = shots.filter(s => s.playerId === activePlayerId).at(-1);
+const lockedZone = gameMode === "individual" && lastShot ? lastShot.zone : null;
 ```
-Where `manualTeams` becomes `Team[]` (array of N teams with playerIds) instead of `{teamA, teamB}`.
+If clicked zone === lockedZone, reject with a message. No DB changes needed — purely client-side.
 
