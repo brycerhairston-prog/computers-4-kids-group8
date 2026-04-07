@@ -1,18 +1,11 @@
 
 
-## Plan: Add Creator Credits Below Subtitle
+## Plan: Hide the "Edit with Lovable" Badge
 
-### Change
-Add a small credit line under "Real-time multiplayer analytics game" on the opening screen.
+Use the `set_badge_visibility` tool to hide the "Edit with Lovable" badge on published deployments. This requires a Pro plan or higher.
 
-### File: `src/components/Lobby.tsx`
-- After line 256 (`<p className="text-sm ...">Real-time multiplayer analytics game</p>`), add:
-```tsx
-<p className="text-[10px] text-muted-foreground/70 mt-1">
-  Created By: Bryce Hairston, Muhammad Zain Abbas, Kassius Ayres, Christopher Lastrape, Abishek Mugunthan
-  <br />UVA Engineering Undergraduates
-</p>
-```
+### Step
+- Call `set_badge_visibility` with `hide_badge: true`
 
-One file, one insertion.
+No code changes needed — this is a project setting toggle.
 
