@@ -281,6 +281,8 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const addMultiplayerShot = useCallback(async (shot: { playerId: string; zone: number; made: boolean; x: number; y: number; mode?: string }) => {
     if (!session) return;
     const currentMode = session.game_mode === "team" ? "team" : "individual";
+    // Use explicit mode if provided (e.g. "practice"), otherwise derive from session
+    const shotMode = shot.mode || currentMode;
     const { error } = await supabase
       .from("session_shots")
       .insert({
@@ -290,7 +292,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         made: shot.made,
         x: shot.x,
         y: shot.y,
-        mode: shot.mode || currentMode,
+        mode: shotMode,
       } as any);
     if (error) toast.error("Failed to record shot");
   }, [session]);
