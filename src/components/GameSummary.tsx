@@ -36,8 +36,10 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
     if (teamSelectionMode === "manual") {
       const unassigned = players.filter(p => !manualTeamA.includes(p.id) && !manualTeamB.includes(p.id));
       if (unassigned.length > 0 || manualTeamA.length === 0 || manualTeamB.length === 0) return;
+      onStartTeamMode?.(teamSelectionMode, { teamA: manualTeamA, teamB: manualTeamB });
+    } else {
+      onStartTeamMode?.(teamSelectionMode);
     }
-    onStartTeamMode?.(teamSelectionMode);
   };
 
   const toggleManualAssign = (playerId: string, team: "a" | "b") => {

@@ -5,7 +5,7 @@ import courtImage from "@/assets/court-layout.png";
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Undo2 } from "lucide-react";
+import { Undo2, ChevronDown, ChevronRight } from "lucide-react";
 
 const CourtBackground = () => (
   <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
@@ -19,9 +19,13 @@ const ShotTracker = () => {
   const mp = useMultiplayer();
   const courtRef = useRef<SVGSVGElement>(null);
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
 
   const activePlayerId = selectedPlayerId || (players.length > 0 ? players[0].id : null);
   const activePlayer = players.find(p => p.id === activePlayerId);
+
+  // Auto-expand the first team if none expanded
+  const effectiveExpandedTeam = expandedTeam ?? (teams.length > 0 ? teams[0].id : null);
 
   // Check if current player/team can still shoot
   const canShoot = (() => {
@@ -94,47 +98,75 @@ const ShotTracker = () => {
         </div>
       </div>
 
-      {!canShoot && !isGameOver && (
+      {!canShoot && !isGameOver && activePlayerId && (
         <p className="text-xs text-primary font-semibold text-center">
-          {activePlayer?.name} has reached their shot limit! Select another player.
+          {gameMode === "team"
+            ? `${getPlayerTeam(activePlayerId)?.name ?? "Team"} has reached their shot limit! Select another team.`
+            : `${activePlayer?.name} has reached their shot limit! Select another player.`}
         </p>
       )}
 
       {/* Player selector */}
-      <div className="flex gap-1 flex-wrap">
+      <div className="space-y-2">
         {gameMode === "team" ? (
-          teams.map(team => (
-            <div key={team.id} className="space-y-1">
-              <span className="text-[10px] text-muted-foreground font-bold">{team.name}</span>
-              <div className="flex gap-1 flex-wrap">
-                {players.filter(p => team.playerIds.includes(p.id)).map(p => {
-                  const done = getPlayerShotCount(p.id) >= INDIVIDUAL_SHOT_LIMIT || getTeamShotCount(team.id) >= TEAM_SHOT_LIMIT;
-                  return (
-                    <Button key={p.id} size="sm"
-                      variant={activePlayerId === p.id ? "default" : "outline"}
-                      onClick={() => selectPlayer(p.id)}
-                      className={`text-xs h-7 ${done ? "opacity-50" : ""}`}
-                      disabled={done}>
-                      {p.name}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-          ))
-        ) : (
-          players.map(p => {
-            const done = getPlayerShotCount(p.id) >= INDIVIDUAL_SHOT_LIMIT;
+          // Team mode: collapsible Team A / Team B sections
+          teams.map(team => {
+            const isExpanded = effectiveExpandedTeam === team.id;
+            const teamShotCount = getTeamShotCount(team.id);
+            const teamDone = teamShotCount >= TEAM_SHOT_LIMIT;
+            const teamPlayers = players.filter(p => team.playerIds.includes(p.id));
+
             return (
-              <Button key={p.id} size="sm"
-                variant={activePlayerId === p.id ? "default" : "outline"}
-                onClick={() => selectPlayer(p.id)}
-                className={`text-xs h-7 ${done ? "opacity-50" : ""}`}
-                disabled={done}>
-                {p.name} ({getPlayerShotCount(p.id)}/{INDIVIDUAL_SHOT_LIMIT})
-              </Button>
+              <div key={team.id} className={`rounded-lg border transition-colors ${
+                isExpanded ? "border-primary/50 bg-primary/5" : "border-border"
+              } ${teamDone ? "opacity-60" : ""}`}>
+                <button
+                  onClick={() => setExpandedTeam(isExpanded ? null : team.id)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+                    <span className="text-sm font-bold text-foreground">{team.name}</span>
+                    {teamDone && <span className="text-[10px] text-primary font-semibold">✓ Done</span>}
+                  </div>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {teamShotCount}/{TEAM_SHOT_LIMIT} shots
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div className="px-3 pb-2 flex gap-1 flex-wrap">
+                    {teamPlayers.map(p => {
+                      const playerShots = getPlayerShotCount(p.id);
+                      return (
+                        <Button key={p.id} size="sm"
+                          variant={activePlayerId === p.id ? "default" : "outline"}
+                          onClick={() => selectPlayer(p.id)}
+                          className="text-xs h-7"
+                          disabled={teamDone}>
+                          {p.name} ({playerShots})
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })
+        ) : (
+          <div className="flex gap-1 flex-wrap">
+            {players.map(p => {
+              const done = getPlayerShotCount(p.id) >= INDIVIDUAL_SHOT_LIMIT;
+              return (
+                <Button key={p.id} size="sm"
+                  variant={activePlayerId === p.id ? "default" : "outline"}
+                  onClick={() => selectPlayer(p.id)}
+                  className={`text-xs h-7 ${done ? "opacity-50" : ""}`}
+                  disabled={done}>
+                  {p.name} ({getPlayerShotCount(p.id)}/{INDIVIDUAL_SHOT_LIMIT})
+                </Button>
+              );
+            })}
+          </div>
         )}
       </div>
 
