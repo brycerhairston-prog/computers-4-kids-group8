@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Plus, Trash2, Users, User, Shuffle, Scale, Hand } from "lucide-react";
 import { motion } from "framer-motion";
+import c4kLogo from "@/assets/c4k-logo.png";
 
 const GameSetup = () => {
   const {
