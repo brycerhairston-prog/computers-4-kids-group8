@@ -1,61 +1,26 @@
 
-Goal: make team-mode zone blocking actually prevent pin placement on blocked zones while keeping the existing toast message.
 
-Problem
-- The click prevention in `ShotTracker.tsx` already exists: it checks blocked zones, shows a toast, and returns before `setPendingPos(...)`.
-- The likely failure is earlier in the flow: team setup creates `blockedZones` correctly in `GameSummary.tsx`, but `Index.tsx` rebuilds teams again for random/fair starts and drops the configured `blockedZones` and `shotAllocations`.
-- Result: the shot tracker often receives teams without blocked-zone data, so blocked clicks are not treated as blocked.
+## Plan: Replace Basketball Emoji with C4K Logo
 
-Implementation plan
+### What
+Replace all basketball emoji (🏀) icons used as decorative headers/logos with the uploaded C4K logo image. Keep the emoji in button text labels (e.g., "🏀 Start Game") since those are inline text, not logo placements.
 
-1. Preserve the configured team data when team mode starts
-- File: `src/pages/Index.tsx`
-- Update `handleStartTeamMode(...)` so the third argument is treated as the final configured teams for all selection modes, not just manual mode.
-- If configured teams are passed in, use them directly instead of regenerating new team objects.
-- This preserves:
-  - `blockedZones`
-  - `shotAllocations`
-  - the original team IDs used during setup
+### Steps
 
-2. Keep the shot tracker check tied to the canonical blocked-zone logic
-- File: `src/components/ShotTracker.tsx`
-- Keep the existing toast text unchanged.
-- Make the click restriction use the normalized blocked-zone source of truth when deciding whether to allow a pin.
-- Ensure the blocked-zone branch returns before `setPendingPos(...)`, so no pending marker appears on blocked zones.
+1. **Copy the uploaded image into the project**
+   - Copy `user-uploads://Screenshot_2026-04-07_at_3.34.08_AM.png` → `src/assets/c4k-logo.png`
 
-3. Keep multiplayer and local play aligned
-- Because team assignments are stored and then read back into `GameProvider`, preserving the final team objects in `Index.tsx` will make blocked zones work consistently:
-  - on the host
-  - on joined devices
-  - after team mode starts in multiplayer
+2. **Replace decorative emoji instances with `<img>` tags** across 4 files:
 
-Technical details
-- Current broken flow:
-```text
-GameSummary builds finalTeams(with blockedZones)
-  -> Index.handleStartTeamMode recomputes teams for random/fair
-  -> blockedZones/allocations are lost
-  -> ShotTracker sees no blocked zones
-  -> pin can still be placed
-```
+| File | Location | Current | Replacement |
+|------|----------|---------|-------------|
+| `Lobby.tsx` | Line 94 | `<span className="text-4xl">🏀</span>` | `<img src={c4kLogo} alt="C4K" className="w-10 h-10" />` |
+| `Lobby.tsx` | Line 253 | `<span className="text-5xl">🏀</span>` | `<img src={c4kLogo} alt="C4K" className="w-12 h-12" />` |
+| `GameSetup.tsx` | Line 69 | `<span className="text-4xl">🏀</span>` | `<img src={c4kLogo} alt="C4K" className="w-10 h-10" />` |
+| `GameSummary.tsx` | Line 524 | `<span className="text-2xl">🏀</span>` | `<img src={c4kLogo} alt="C4K" className="w-8 h-8" />` |
+| `Index.tsx` | Line 36 | `<span className="text-2xl">🏀</span>` | `<img src={c4kLogo} alt="C4K" className="w-8 h-8" />` |
 
-- Target flow:
-```text
-GameSummary builds finalTeams(with blockedZones)
-  -> Index passes finalTeams through unchanged
-  -> ShotTracker receives the correct blocked zones
-  -> blocked click shows existing toast and does not place a pin
-```
+Each file gets `import c4kLogo from "@/assets/c4k-logo.png"` at the top.
 
-Files to update
-- `src/pages/Index.tsx`
-  - preserve configured teams instead of regenerating them when provided
-- `src/components/ShotTracker.tsx`
-  - make the blocked-click guard use the canonical blocked-zone check and continue returning before pin placement
+3. **Keep emoji in button labels** — "🏀 Start Game", "🏀 Start Team Mode" stay as-is since those are inline button text, not logos.
 
-Expected result
-- In team mode, when a player taps a blocked zone:
-  - no pin is placed
-  - no pending shot appears
-  - the existing blocked-zone toast is shown
-- This should work for local games and multiplayer games.
