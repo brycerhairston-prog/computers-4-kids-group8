@@ -269,7 +269,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({
     const effectiveMode = params?.mode ?? gameMode;
     const effectiveTeams = params?.teams;
 
-    setShots([]);
+    // Don't clear shots when switching to team mode — preserve individual shots
+    if (effectiveMode !== "team") setShots([]);
     setGameMode(effectiveMode);
 
     if (effectiveMode === "team") {
