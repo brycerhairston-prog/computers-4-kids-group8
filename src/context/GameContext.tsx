@@ -45,6 +45,11 @@ export interface ZoneStats {
 export const INDIVIDUAL_SHOT_LIMIT = 20;
 export const TEAM_SHOT_LIMIT = 30;
 
+interface StartGameParams {
+  mode?: GameMode;
+  teams?: Team[];
+}
+
 interface GameState {
   players: Player[];
   teams: Team[];
@@ -66,7 +71,7 @@ interface GameState {
   setGameMode: (mode: GameMode) => void;
   setTeamSelectionMode: (mode: TeamSelectionMode) => void;
   setTeams: (teams: Team[]) => void;
-  startGame: () => void;
+  startGame: (params?: StartGameParams) => void;
   isGameOver: boolean;
   getPlayerShotCount: (playerId: string) => number;
   getTeamShotCount: (teamId: string) => number;
@@ -96,7 +101,18 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a;
 }
 
-export const GameProvider: React.FC<{ children: React.ReactNode; externalPlayers?: Player[]; externalShots?: Shot[]; externalPhase?: GamePhase }> = ({ children, externalPlayers, externalShots, externalPhase }) => {
+interface GameProviderProps {
+  children: React.ReactNode;
+  externalPlayers?: Player[];
+  externalShots?: Shot[];
+  externalPhase?: GamePhase;
+  externalTeams?: Team[];
+  externalGameMode?: GameMode;
+}
+
+export const GameProvider: React.FC<GameProviderProps> = ({
+  children, externalPlayers, externalShots, externalPhase, externalTeams, externalGameMode,
+}) => {
   const [players, setPlayers] = useState<Player[]>([{ id: genId(), name: "Player 1" }]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [shots, setShots] = useState<Shot[]>([]);
@@ -117,6 +133,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode; externalPlayers
   useEffect(() => {
     if (externalPhase) setGamePhase(externalPhase);
   }, [externalPhase]);
+
+  useEffect(() => {
+    if (externalTeams) setTeams(externalTeams);
+  }, [externalTeams]);
+
+  useEffect(() => {
+    if (externalGameMode) setGameMode(externalGameMode);
+  }, [externalGameMode]);
 
   const setExternalPlayers = useCallback((p: Player[]) => setPlayers(p), []);
   const setExternalShots = useCallback((s: Shot[]) => setShots(s), []);
@@ -207,41 +231,52 @@ export const GameProvider: React.FC<{ children: React.ReactNode; externalPlayers
     setShots([]);
     setTeams([]);
     setGamePhase("setup");
+    setGameMode("individual");
     setSelectedPlayerId(null);
   }, []);
 
-  const startGame = useCallback(() => {
+  const startGame = useCallback((params?: StartGameParams) => {
+    const effectiveMode = params?.mode ?? gameMode;
+    const effectiveTeams = params?.teams;
+
     setShots([]);
-    if (gameMode === "team" && teams.length === 0) {
-      // Auto-generate teams based on selection mode
-      if (teamSelectionMode === "random") {
-        const shuffled = shuffleArray(players);
-        const mid = Math.ceil(shuffled.length / 2);
-        setTeams([
-          { id: genId(), name: "Team A", playerIds: shuffled.slice(0, mid).map(p => p.id) },
-          { id: genId(), name: "Team B", playerIds: shuffled.slice(mid).map(p => p.id) },
-        ]);
-      } else if (teamSelectionMode === "fair") {
-        // Sort by historical performance (totalPoints) and alternate pick
-        const sorted = [...players].sort((a, b) => {
-          const aStats = getPlayerStats(a.id);
-          const bStats = getPlayerStats(b.id);
-          return bStats.totalPoints - aStats.totalPoints;
-        });
-        const teamA: string[] = [];
-        const teamB: string[] = [];
-        sorted.forEach((p, i) => {
-          if (i % 2 === 0) teamA.push(p.id);
-          else teamB.push(p.id);
-        });
-        setTeams([
-          { id: genId(), name: "Team A", playerIds: teamA },
-          { id: genId(), name: "Team B", playerIds: teamB },
-        ]);
+    setGameMode(effectiveMode);
+
+    if (effectiveMode === "team") {
+      if (effectiveTeams && effectiveTeams.length > 0) {
+        // Teams provided explicitly — use them directly
+        setTeams(effectiveTeams);
+      } else if (teams.length === 0) {
+        // Auto-generate teams based on selection mode
+        if (teamSelectionMode === "random") {
+          const shuffled = shuffleArray(players);
+          const mid = Math.ceil(shuffled.length / 2);
+          setTeams([
+            { id: genId(), name: "Team A", playerIds: shuffled.slice(0, mid).map(p => p.id) },
+            { id: genId(), name: "Team B", playerIds: shuffled.slice(mid).map(p => p.id) },
+          ]);
+        } else if (teamSelectionMode === "fair") {
+          const sorted = [...players].sort((a, b) => {
+            const aStats = getPlayerStats(a.id);
+            const bStats = getPlayerStats(b.id);
+            return bStats.totalPoints - aStats.totalPoints;
+          });
+          const teamA: string[] = [];
+          const teamB: string[] = [];
+          sorted.forEach((p, i) => {
+            if (i % 2 === 0) teamA.push(p.id);
+            else teamB.push(p.id);
+          });
+          setTeams([
+            { id: genId(), name: "Team A", playerIds: teamA },
+            { id: genId(), name: "Team B", playerIds: teamB },
+          ]);
+        }
       }
-      // "manual" mode: teams should already be set via setTeams before calling startGame
     }
+
     setGamePhase("playing");
+    setSelectedPlayerId(null);
   }, [gameMode, teams.length, teamSelectionMode, players, getPlayerStats]);
 
   const exportCSV = useCallback(() => {
