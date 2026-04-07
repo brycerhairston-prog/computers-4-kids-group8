@@ -40,6 +40,14 @@ const ShotTracker = () => {
     ? !mp.isMultiplayer || mp.localPlayerIds.includes(activePlayerId)
     : false;
 
+  // Same-zone restriction: track last shot zone for active player (individual mode only)
+  const lockedZone = useMemo(() => {
+    if (gameMode !== "individual" || !activePlayerId) return null;
+    const playerShots = activeShots.filter(s => s.playerId === activePlayerId);
+    const lastShot = playerShots.at(-1);
+    return lastShot ? lastShot.zone : null;
+  }, [gameMode, activePlayerId, activeShots]);
+
   // Check if current player/team can still shoot
   const canShoot = (() => {
     if (!activePlayerId || isGameOver || !isLocalPlayer) return false;
@@ -74,6 +82,11 @@ const ShotTracker = () => {
     const xPct = ((e.clientX - rect.left) / rect.width) * 100;
     const yPct = ((e.clientY - rect.top) / rect.height) * 100;
     const zone = getZoneFromPoint(xPct, yPct);
+    // Same-zone restriction
+    if (lockedZone !== null && zone === lockedZone) {
+      toast.error(`Can't shoot in ${ZONE_LABELS[zone]} twice in a row! Pick a different zone.`);
+      return;
+    }
     setPendingPos({ x: xPct, y: yPct, zone });
   };
 
