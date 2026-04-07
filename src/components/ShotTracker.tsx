@@ -147,12 +147,14 @@ const ShotTracker = () => {
                   <div className="px-3 pb-2 flex gap-1 flex-wrap">
                     {teamPlayers.map(p => {
                       const playerShots = getPlayerShotCount(p.id);
+                      const isLocal = !mp.isMultiplayer || mp.localPlayerIds.includes(p.id);
                       return (
                         <Button key={p.id} size="sm"
                           variant={activePlayerId === p.id ? "default" : "outline"}
                           onClick={() => selectPlayer(p.id)}
-                          className="text-xs h-7"
-                          disabled={teamDone}>
+                          className={`text-xs h-7 gap-1 ${!isLocal ? "opacity-70" : ""}`}
+                          disabled={teamDone && isLocal}>
+                          {!isLocal && <Lock className="w-2.5 h-2.5" />}
                           {p.name} ({playerShots})
                         </Button>
                       );
