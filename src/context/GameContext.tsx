@@ -55,6 +55,9 @@ interface GameState {
   players: Player[];
   teams: Team[];
   shots: Shot[];
+  individualShots: Shot[];
+  teamShots: Shot[];
+  allShots: Shot[];
   selectedPlayerId: string | null;
   gameMode: GameMode;
   gamePhase: GamePhase;
@@ -66,6 +69,7 @@ interface GameState {
   removeShot: (id: string) => void;
   getZoneStats: (zone: number, playerId?: string) => ZoneStats;
   getPlayerStats: (playerId: string) => { makes: number; attempts: number; totalPoints: number; zones: Record<number, ZoneStats> };
+  getPlayerStatsForMode: (playerId: string, mode: "individual" | "team" | "all") => { makes: number; attempts: number; totalPoints: number; zones: Record<number, ZoneStats> };
   getTeamStats: (teamId: string) => { makes: number; attempts: number; totalPoints: number; zones: Record<number, ZoneStats> };
   resetGame: () => void;
   exportCSV: () => string;
