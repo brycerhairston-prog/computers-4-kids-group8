@@ -343,6 +343,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       leaveGame,
       addMultiplayerShot,
       removeMultiplayerShot,
+      clearMultiplayerShots,
       startMultiplayerGame,
       resetMultiplayerGame,
       updateGameMode,

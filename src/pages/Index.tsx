@@ -131,6 +131,7 @@ const GameRouter = () => {
     // Clear shots and start team game
     if (mp.isMultiplayer && mp.session) {
       mp.updateGameMode("team");
+      await mp.clearMultiplayerShots();
     }
     game.startGame();
     setTeamModeTransition(false);
