@@ -1,39 +1,35 @@
 
 
-## Plan: Auto-Reconnect When Device Wakes Up
+## Plan: Fix Blocked Zone Check in Team Mode
 
-### Problem
-When a phone screen turns off, the real-time connection drops. When the screen turns back on, the app is frozen on stale state because the subscription is dead and there is no logic to detect this and resync.
+### Root Cause
 
-### Solution
-Two changes in `MultiplayerContext.tsx`:
+When team data round-trips through the database (stored as JSON in `team_assignments`), the `blockedZones` array values may come back as strings (e.g., `["4", "5"]`) instead of numbers (`[4, 5]`). The check `blockedZones.includes(zone)` then fails because `"4" !== 4`.
 
-**1. Persist session info to localStorage**
-When joining/creating a game, save `{ sessionId, localPlayerIds, isHost }` to localStorage. On mount, check if a saved session exists and automatically rejoin (re-fetch session, players, shots, re-subscribe). On leave/reset, clear localStorage.
+### Fix
 
-**2. Visibility change listener for reconnection**
-Add a `visibilitychange` event listener. When the page becomes visible again and we have an active session:
-- Re-fetch the full session, players, and shots from the database
-- Re-subscribe to the realtime channel
-- This ensures state is fully synced after any connection gap
+**`src/components/ShotTracker.tsx`** — Normalize `blockedZones` to numbers when computing them:
 
-### Files to Modify
+```ts
+const blockedZones = useMemo(() => {
+  if (gameMode !== "team" || !activePlayerId) return [];
+  const team = teams.find(t => t.playerIds.includes(activePlayerId));
+  return (team?.blockedZones || []).map(Number);
+}, [gameMode, activePlayerId, teams]);
+```
+
+Also normalize in the blocked zone overlay rendering to ensure the red X visuals match.
+
+Additionally, normalize in `isZoneBlockedForPlayer` in **`src/context/GameContext.tsx`**:
+
+```ts
+return team.blockedZones.map(Number).includes(zone);
+```
+
+### Files
 
 | File | Change |
 |------|--------|
-| `MultiplayerContext.tsx` | Add localStorage persistence of session ID; add `visibilitychange` handler that re-fetches all data and re-subscribes; add auto-rejoin on mount |
-
-### Key Implementation Details
-
-```ts
-// On visibility change (phone wakes up)
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && sessionId) {
-    refetchAllState(sessionId);
-    subscribeToSession(sessionId);
-  }
-});
-```
-
-The `refetchAllState` function will query `game_sessions`, `session_players`, and `session_shots` for the current session ID and update all state, ensuring the joining device catches up to wherever the host is (lobby, individual play, team play, summary).
+| `ShotTracker.tsx` | `.map(Number)` on blockedZones in the useMemo |
+| `GameContext.tsx` | `.map(Number)` in `isZoneBlockedForPlayer` |
 
