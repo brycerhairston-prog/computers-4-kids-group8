@@ -44,6 +44,7 @@ interface MultiplayerState {
   leaveGame: () => void;
   addMultiplayerShot: (shot: { playerId: string; zone: number; made: boolean; x: number; y: number }) => Promise<void>;
   removeMultiplayerShot: (shotId: string) => Promise<void>;
+  clearMultiplayerShots: () => Promise<void>;
   startMultiplayerGame: () => Promise<void>;
   resetMultiplayerGame: () => Promise<void>;
   updateGameMode: (mode: string) => Promise<void>;
