@@ -16,11 +16,18 @@ const ShotTracker = () => {
   const {
     shots, addShot, removeShot, players, selectedPlayerId, selectPlayer,
     gameMode, teams, getPlayerShotCount, getTeamShotCount, getPlayerTeam, isGameOver,
+    individualShots, teamShots,
   } = useGame();
   const mp = useMultiplayer();
   const courtRef = useRef<SVGSVGElement>(null);
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+
+  // Active shots for current mode (for display on court)
+  const activeShots = useMemo(() => {
+    if (gameMode === "team") return teamShots;
+    return individualShots;
+  }, [gameMode, individualShots, teamShots]);
 
   const activePlayerId = selectedPlayerId || (players.length > 0 ? players[0].id : null);
   const activePlayer = players.find(p => p.id === activePlayerId);
