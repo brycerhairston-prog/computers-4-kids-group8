@@ -2,7 +2,7 @@ import { useGame, ZONE_POINTS, ZONE_LABELS } from "@/context/GameContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Plus, Trash2, Download } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Tooltip,
