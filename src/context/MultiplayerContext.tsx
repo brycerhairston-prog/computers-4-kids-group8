@@ -230,6 +230,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setLocalPlayerIds(playerData.map(p => p.id));
       setIsHost(true);
 
+      saveSessionToStorage(sessionData.id, playerData.map(p => p.id), true);
       subscribeToSession(sessionData.id);
       toast.success(`Game created! Code: ${gameCode}`);
     } catch (err: any) {
