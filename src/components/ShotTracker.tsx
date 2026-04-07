@@ -57,7 +57,7 @@ const ShotTracker = () => {
   const blockedZones = useMemo(() => {
     if (gameMode !== "team" || !activePlayerId) return [];
     const team = teams.find(t => t.playerIds.includes(activePlayerId));
-    return team?.blockedZones || [];
+    return (team?.blockedZones || []).map(Number);
   }, [gameMode, activePlayerId, teams]);
 
   // Check if current player/team can still shoot
