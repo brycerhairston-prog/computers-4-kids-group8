@@ -27,9 +27,14 @@ const ShotTracker = () => {
   // Auto-expand the first team if none expanded
   const effectiveExpandedTeam = expandedTeam ?? (teams.length > 0 ? teams[0].id : null);
 
+  // Ownership check: in multiplayer, only allow editing players added on this device
+  const isLocalPlayer = activePlayerId
+    ? !mp.isMultiplayer || mp.localPlayerIds.includes(activePlayerId)
+    : false;
+
   // Check if current player/team can still shoot
   const canShoot = (() => {
-    if (!activePlayerId || isGameOver) return false;
+    if (!activePlayerId || isGameOver || !isLocalPlayer) return false;
     if (gameMode === "individual") {
       return getPlayerShotCount(activePlayerId) < INDIVIDUAL_SHOT_LIMIT;
     } else {
