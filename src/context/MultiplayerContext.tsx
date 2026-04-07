@@ -370,6 +370,63 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       .eq("id", session.id);
   }, [session]);
 
+  // Add a player to this station in the waiting room
+  const addPlayerToStation = useCallback(async (name: string) => {
+    if (!session) return;
+    const existingCount = sessionPlayers.length;
+    const existingNames = new Set(sessionPlayers.map(p => p.name.toLowerCase()));
+    let finalName = name.trim();
+    if (existingNames.has(finalName.toLowerCase())) {
+      finalName = `${finalName} (2)`;
+    }
+    const { data, error } = await supabase
+      .from("session_players")
+      .insert({
+        session_id: session.id,
+        name: finalName,
+        device_id: deviceId,
+        color: PLAYER_COLORS[existingCount % PLAYER_COLORS.length],
+      })
+      .select()
+      .single();
+    if (error || !data) { toast.error("Failed to add player"); return; }
+    setLocalPlayerIds(prev => [...prev, data.id]);
+    toast.success(`${finalName} added!`);
+  }, [session, sessionPlayers, deviceId]);
+
+  // Host removes any player; non-host can only remove own (enforced in UI)
+  const removePlayer = useCallback(async (playerId: string) => {
+    const { error } = await supabase
+      .from("session_players")
+      .delete()
+      .eq("id", playerId);
+    if (error) { toast.error("Failed to remove player"); return; }
+    setLocalPlayerIds(prev => prev.filter(id => id !== playerId));
+  }, []);
+
+  // Leave the session entirely (delete all local players, reset state)
+  const leaveSession = useCallback(async () => {
+    if (!session) return;
+    // Delete all players from this device
+    await supabase
+      .from("session_players")
+      .delete()
+      .eq("session_id", session.id)
+      .eq("device_id", deviceId);
+    leaveGame();
+  }, [session, deviceId, leaveGame]);
+
+  // Detect being kicked: if we have a session but all our local players are gone
+  useEffect(() => {
+    if (!session || session.status !== "waiting") return;
+    if (localPlayerIds.length === 0) return;
+    const stillHavePlayers = localPlayerIds.some(id => sessionPlayers.find(p => p.id === id));
+    if (!stillHavePlayers) {
+      toast.error("You've been removed from this session. Try again!");
+      leaveGame();
+    }
+  }, [session, sessionPlayers, localPlayerIds, leaveGame]);
+
   useEffect(() => {
     return () => {
       if (channelRef.current) {
@@ -400,6 +457,9 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       updateGameMode,
       finishIndividualMode,
       startTeamMode,
+      addPlayerToStation,
+      removePlayer,
+      leaveSession,
     }}>
       {children}
     </MultiplayerContext.Provider>
