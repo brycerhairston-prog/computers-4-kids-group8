@@ -145,46 +145,52 @@ const GameRouter = () => {
     }
   }, [mp.session?.status]);
 
-  const handleStartTeamMode = useCallback(async (selectionMode: TeamSelectionMode, manualTeams?: { teamA: string[]; teamB: string[] }) => {
+  const handleStartTeamMode = useCallback(async (selectionMode: TeamSelectionMode, teamCount: number, manualTeams?: Team[]) => {
     let computedTeams: Team[];
+    const TEAM_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     if (selectionMode === "manual" && manualTeams) {
-      computedTeams = [
-        { id: genId(), name: "Team A", playerIds: manualTeams.teamA },
-        { id: genId(), name: "Team B", playerIds: manualTeams.teamB },
-      ];
+      computedTeams = manualTeams;
     } else if (selectionMode === "fair") {
-      // Sort by individual performance and alternate
+      // Snake draft: sort by points desc, then alternate direction across teams
       const sorted = [...game.players].sort((a, b) => {
         const aStats = game.getPlayerStats(a.id);
         const bStats = game.getPlayerStats(b.id);
         return bStats.totalPoints - aStats.totalPoints;
       });
-      const teamA: string[] = [];
-      const teamB: string[] = [];
-      sorted.forEach((p, i) => {
-        if (i % 2 === 0) teamA.push(p.id);
-        else teamB.push(p.id);
-      });
-      computedTeams = [
-        { id: genId(), name: "Team A", playerIds: teamA },
-        { id: genId(), name: "Team B", playerIds: teamB },
-      ];
+      const teamBuckets: string[][] = Array.from({ length: teamCount }, () => []);
+      let direction = 1;
+      let idx = 0;
+      for (const p of sorted) {
+        teamBuckets[idx].push(p.id);
+        if ((direction === 1 && idx === teamCount - 1) || (direction === -1 && idx === 0)) {
+          direction *= -1;
+        } else {
+          idx += direction;
+        }
+      }
+      computedTeams = teamBuckets.map((ids, i) => ({
+        id: `team-${i}-${Date.now()}`,
+        name: `Team ${TEAM_LETTERS[i]}`,
+        playerIds: ids,
+      }));
     } else {
-      // Random
+      // Random: shuffle then round-robin
       const shuffled = shuffleArray(game.players);
-      const mid = Math.ceil(shuffled.length / 2);
-      computedTeams = [
-        { id: genId(), name: "Team A", playerIds: shuffled.slice(0, mid).map(p => p.id) },
-        { id: genId(), name: "Team B", playerIds: shuffled.slice(mid).map(p => p.id) },
-      ];
+      const teamBuckets: string[][] = Array.from({ length: teamCount }, () => []);
+      shuffled.forEach((p, i) => {
+        teamBuckets[i % teamCount].push(p.id);
+      });
+      computedTeams = teamBuckets.map((ids, i) => ({
+        id: `team-${i}-${Date.now()}`,
+        name: `Team ${TEAM_LETTERS[i]}`,
+        playerIds: ids,
+      }));
     }
 
     if (mp.isMultiplayer && mp.session) {
-      // This clears shots + sets mode + saves teams to DB — all devices will sync
       await mp.startTeamMode(computedTeams);
     } else {
-      // Local mode — pass teams directly to startGame
       game.startGame({ mode: "team", teams: computedTeams });
     }
   }, [game, mp]);
