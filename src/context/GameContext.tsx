@@ -210,7 +210,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({
     if (gameMode !== "team") return false;
     const team = teams.find(t => t.playerIds.includes(playerId));
     if (!team?.blockedZones) return false;
-    return team.blockedZones.includes(zone);
+    return team.blockedZones.map(Number).includes(zone);
   }, [gameMode, teams]);
 
   const isGameOver = useMemo(() => {
