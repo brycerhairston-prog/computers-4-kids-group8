@@ -118,7 +118,7 @@ const GameRouter = () => {
   const mp = useMultiplayer();
   const [teamModeTransition, setTeamModeTransition] = useState(false);
 
-  const handleStartTeamMode = useCallback((selectionMode: TeamSelectionMode) => {
+  const handleStartTeamMode = useCallback(async (selectionMode: TeamSelectionMode) => {
     // Clear shots for team mode, set game mode and start
     game.setGameMode("team");
     game.setTeamSelectionMode(selectionMode);
@@ -131,6 +131,7 @@ const GameRouter = () => {
     // Clear shots and start team game
     if (mp.isMultiplayer && mp.session) {
       mp.updateGameMode("team");
+      await mp.clearMultiplayerShots();
     }
     game.startGame();
     setTeamModeTransition(false);

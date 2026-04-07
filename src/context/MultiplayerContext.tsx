@@ -44,6 +44,7 @@ interface MultiplayerState {
   leaveGame: () => void;
   addMultiplayerShot: (shot: { playerId: string; zone: number; made: boolean; x: number; y: number }) => Promise<void>;
   removeMultiplayerShot: (shotId: string) => Promise<void>;
+  clearMultiplayerShots: () => Promise<void>;
   startMultiplayerGame: () => Promise<void>;
   resetMultiplayerGame: () => Promise<void>;
   updateGameMode: (mode: string) => Promise<void>;
@@ -280,6 +281,16 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (error) toast.error("Failed to undo shot");
   }, []);
 
+  const clearMultiplayerShots = useCallback(async () => {
+    if (!session) return;
+    const { error } = await supabase
+      .from("session_shots")
+      .delete()
+      .eq("session_id", session.id);
+    if (error) toast.error("Failed to clear shots");
+    else setSessionShots([]);
+  }, [session]);
+
   const startMultiplayerGame = useCallback(async () => {
     if (!session) return;
     await supabase
@@ -332,6 +343,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       leaveGame,
       addMultiplayerShot,
       removeMultiplayerShot,
+      clearMultiplayerShots,
       startMultiplayerGame,
       resetMultiplayerGame,
       updateGameMode,
