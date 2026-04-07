@@ -1,4 +1,4 @@
-import { GameProvider, useGame, type Player, type Shot, type GamePhase } from "@/context/GameContext";
+import { GameProvider, useGame, type Player, type Shot, type GamePhase, type TeamSelectionMode } from "@/context/GameContext";
 import { MultiplayerProvider, useMultiplayer } from "@/context/MultiplayerContext";
 import HeatMap from "@/components/HeatMap";
 import DataTable from "@/components/DataTable";
@@ -10,19 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 const PlayingDashboard = () => {
   const { resetGame, shots, gameMode, teams, players, isGameOver, gamePhase } = useGame();
   const mp = useMultiplayer();
 
-  // Auto-transition to summary when game over
   useEffect(() => {
     if (isGameOver && gamePhase === "playing") {
-      // Small delay for the last shot animation
-      const t = setTimeout(() => {
-        // We need to set phase to summary - but we handle this in the parent
-      }, 500);
+      const t = setTimeout(() => {}, 500);
       return () => clearTimeout(t);
     }
   }, [isGameOver, gamePhase]);
@@ -118,12 +114,31 @@ const PlayingDashboard = () => {
 };
 
 const GameRouter = () => {
-  const { gamePhase, isGameOver } = useGame();
-  const { isMultiplayer, session } = useMultiplayer();
+  const game = useGame();
+  const mp = useMultiplayer();
+  const [teamModeTransition, setTeamModeTransition] = useState(false);
 
-  if (!isMultiplayer) return <Lobby />;
-  if (session?.status === "waiting") return <Lobby />;
-  if (isGameOver) return <GameSummary />;
+  const handleStartTeamMode = useCallback((selectionMode: TeamSelectionMode) => {
+    // Clear shots for team mode, set game mode and start
+    game.setGameMode("team");
+    game.setTeamSelectionMode(selectionMode);
+
+    if (selectionMode === "manual") {
+      // For manual, we need the manual teams - handled in GameSummary which passes them
+      // Actually manual teams are set inside GameSummary already via the context
+    }
+
+    // Clear shots and start team game
+    if (mp.isMultiplayer && mp.session) {
+      mp.updateGameMode("team");
+    }
+    game.startGame();
+    setTeamModeTransition(false);
+  }, [game, mp]);
+
+  if (!mp.isMultiplayer) return <Lobby />;
+  if (mp.session?.status === "waiting") return <Lobby />;
+  if (game.isGameOver) return <GameSummary onStartTeamMode={game.gameMode === "individual" ? handleStartTeamMode : undefined} />;
   return <PlayingDashboard />;
 };
 

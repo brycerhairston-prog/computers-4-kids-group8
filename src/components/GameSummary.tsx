@@ -1,13 +1,25 @@
 import { useGame, ZONE_LABELS, ZONE_POINTS } from "@/context/GameContext";
+import { useMultiplayer } from "@/context/MultiplayerContext";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { RotateCcw, Trophy, Download } from "lucide-react";
+import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { useState } from "react";
+import type { TeamSelectionMode } from "@/context/GameContext";
 
 const COLORS = ["hsl(142, 71%, 45%)", "hsl(0, 84%, 60%)", "hsl(45, 93%, 47%)", "hsl(217, 91%, 60%)", "hsl(280, 68%, 60%)", "hsl(190, 90%, 50%)"];
 
-const GameSummary = () => {
+interface GameSummaryProps {
+  onStartTeamMode?: (selectionMode: TeamSelectionMode) => void;
+}
+
+const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
   const { players, teams, shots, gameMode, getPlayerStats, getTeamStats, resetGame, exportCSV } = useGame();
+  const mp = useMultiplayer();
+  const [showTeamSetup, setShowTeamSetup] = useState(false);
+  const [teamSelectionMode, setTeamSelectionMode] = useState<TeamSelectionMode>("random");
+  const [manualTeamA, setManualTeamA] = useState<string[]>([]);
+  const [manualTeamB, setManualTeamB] = useState<string[]>([]);
 
   const handleExport = () => {
     const csv = exportCSV();
@@ -19,6 +31,31 @@ const GameSummary = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  const handleStartTeamMode = () => {
+    if (teamSelectionMode === "manual") {
+      const unassigned = players.filter(p => !manualTeamA.includes(p.id) && !manualTeamB.includes(p.id));
+      if (unassigned.length > 0 || manualTeamA.length === 0 || manualTeamB.length === 0) return;
+    }
+    onStartTeamMode?.(teamSelectionMode);
+  };
+
+  const toggleManualAssign = (playerId: string, team: "a" | "b") => {
+    if (team === "a") {
+      setManualTeamB(prev => prev.filter(id => id !== playerId));
+      setManualTeamA(prev =>
+        prev.includes(playerId) ? prev.filter(id => id !== playerId) : [...prev, playerId]
+      );
+    } else {
+      setManualTeamA(prev => prev.filter(id => id !== playerId));
+      setManualTeamB(prev =>
+        prev.includes(playerId) ? prev.filter(id => id !== playerId) : [...prev, playerId]
+      );
+    }
+  };
+
+  const unassignedPlayers = players.filter(p => !manualTeamA.includes(p.id) && !manualTeamB.includes(p.id));
+  const manualReady = manualTeamA.length > 0 && manualTeamB.length > 0 && unassignedPlayers.length === 0;
 
   const playerSummaries = players.map(p => {
     const stats = getPlayerStats(p.id);
@@ -38,18 +75,24 @@ const GameSummary = () => {
     return { ...t, stats, bestZone };
   });
 
-  // Find MVP
   const mvp = playerSummaries.reduce((best, p) =>
     p.stats.totalPoints > (best?.stats.totalPoints ?? 0) ? p : best,
     null as (typeof playerSummaries[0] | null)
   );
 
-  // Bar chart data for all players
   const barData = playerSummaries.map(p => ({
     name: p.name,
     points: p.stats.totalPoints,
     fgPct: p.stats.attempts > 0 ? Math.round((p.stats.makes / p.stats.attempts) * 100) : 0,
   }));
+
+  const handleReset = () => {
+    if (mp.isMultiplayer) {
+      mp.resetMultiplayerGame();
+    } else {
+      resetGame();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,7 +106,7 @@ const GameSummary = () => {
             <Button size="sm" variant="outline" onClick={handleExport} className="gap-1 text-xs">
               <Download className="w-3 h-3" /> CSV
             </Button>
-            <Button size="sm" onClick={resetGame} className="gap-1 text-xs">
+            <Button size="sm" onClick={handleReset} className="gap-1 text-xs">
               <RotateCcw className="w-3 h-3" /> New Game
             </Button>
           </div>
@@ -82,6 +125,113 @@ const GameSummary = () => {
               {mvp.stats.attempts > 0 ? Math.round((mvp.stats.makes / mvp.stats.attempts) * 100) : 0}% FG
               {mvp.bestZone && ` · Best Zone: ${ZONE_LABELS[mvp.bestZone.zone]} (${mvp.bestZone.fgPct.toFixed(0)}%)`}
             </p>
+          </motion.div>
+        )}
+
+        {/* Team Mode CTA - only show after individual mode */}
+        {gameMode === "individual" && onStartTeamMode && players.length >= 2 && !showTeamSetup && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
+            className="glass-card rounded-xl p-5 text-center space-y-3 border-2 border-primary/30">
+            <Users className="w-8 h-8 text-primary mx-auto" />
+            <h3 className="text-lg font-display font-bold text-foreground">Ready for Team Mode?</h3>
+            <p className="text-sm text-muted-foreground">
+              Use these same players to play a team game (30 shots per team)
+            </p>
+            <Button className="font-bold text-lg h-12 px-8" onClick={() => setShowTeamSetup(true)}>
+              👥 Play Team Mode
+            </Button>
+          </motion.div>
+        )}
+
+        {/* Team Selection UI */}
+        {showTeamSetup && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+            className="glass-card rounded-xl p-5 space-y-4">
+            <h3 className="text-lg font-display font-bold text-foreground text-center">Team Selection</h3>
+
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { mode: "random" as TeamSelectionMode, icon: Shuffle, label: "Random", desc: "Shuffle players" },
+                { mode: "manual" as TeamSelectionMode, icon: Hand, label: "Manual", desc: "Pick teams yourself" },
+                { mode: "fair" as TeamSelectionMode, icon: Scale, label: "Fair", desc: "Based on stats" },
+              ]).map(({ mode, icon: Icon, label, desc }) => (
+                <button
+                  key={mode}
+                  onClick={() => setTeamSelectionMode(mode)}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-all text-xs ${
+                    teamSelectionMode === mode
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border hover:border-primary/50 text-muted-foreground"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="font-semibold">{label}</span>
+                  <span className="text-[9px] opacity-70">{desc}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Manual team assignment */}
+            {teamSelectionMode === "manual" && players.length >= 2 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-primary">Team A</h4>
+                    {manualTeamA.map(id => {
+                      const p = players.find(pl => pl.id === id);
+                      return p ? (
+                        <div key={id} className="text-xs bg-primary/10 rounded px-2 py-1 flex justify-between">
+                          {p.name}
+                          <button onClick={() => toggleManualAssign(id, "a")} className="text-muted-foreground hover:text-destructive">×</button>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-accent">Team B</h4>
+                    {manualTeamB.map(id => {
+                      const p = players.find(pl => pl.id === id);
+                      return p ? (
+                        <div key={id} className="text-xs bg-accent/10 rounded px-2 py-1 flex justify-between">
+                          {p.name}
+                          <button onClick={() => toggleManualAssign(id, "b")} className="text-muted-foreground hover:text-destructive">×</button>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+                {unassignedPlayers.length > 0 && (
+                  <div className="space-y-1">
+                    <h4 className="text-xs text-muted-foreground">Unassigned:</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {unassignedPlayers.map(p => (
+                        <div key={p.id} className="flex gap-1">
+                          <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" onClick={() => toggleManualAssign(p.id, "a")}>
+                            {p.name} → A
+                          </Button>
+                          <Button size="sm" variant="outline" className="text-[10px] h-6 px-2" onClick={() => toggleManualAssign(p.id, "b")}>
+                            {p.name} → B
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setShowTeamSetup(false)}>
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 font-bold"
+                disabled={teamSelectionMode === "manual" && !manualReady}
+                onClick={handleStartTeamMode}
+              >
+                🏀 Start Team Mode
+              </Button>
+            </div>
           </motion.div>
         )}
 
