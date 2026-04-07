@@ -314,6 +314,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .eq("session_id", sessionData.id);
       setSessionShots(shots || []);
 
+      saveSessionToStorage(sessionData.id, playerData.map(p => p.id), sessionData.host_device_id === deviceId);
       subscribeToSession(sessionData.id);
       toast.success(`Joined game ${normalizedCode} with ${playerNames.length} player${playerNames.length > 1 ? "s" : ""}!`);
     } catch (err: any) {
