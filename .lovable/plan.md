@@ -1,32 +1,39 @@
 
 
-## Plan: Zone Numbers in Labels + Red X on Blocked Zones in Court
+## Plan: Auto-Reconnect When Device Wakes Up
 
-### Changes
+### Problem
+When a phone screen turns off, the real-time connection drops. When the screen turns back on, the app is frozen on stale state because the subscription is dead and there is no logic to detect this and resync.
 
-**1. `src/context/GameContext.tsx`** — Update `ZONE_LABELS` to include zone numbers:
-```ts
-1: "Zone 1 - Paint"
-2: "Zone 2 - Left Mid-Range"
-3: "Zone 3 - Right Mid-Range"
-4: "Zone 4 - Left Corner Three"
-5: "Zone 5 - Center Three"
-6: "Zone 6 - Right Corner Three"
-```
-This automatically propagates to all toast messages, the zone blocking step, the shot placement text, and the blocked zones info line.
+### Solution
+Two changes in `MultiplayerContext.tsx`:
 
-**2. `src/components/ShotTracker.tsx`** — Replace the 🚫 emoji on blocked zone overlays with a red **X**:
-- Change the SVG `<text>` element from `🚫` to a bold red `✕` (or draw two crossing lines) at each blocked zone's label position
-- Keep the red-tinted path overlay as-is
+**1. Persist session info to localStorage**
+When joining/creating a game, save `{ sessionId, localPlayerIds, isHost }` to localStorage. On mount, check if a saved session exists and automatically rejoin (re-fetch session, players, shots, re-subscribe). On leave/reset, clear localStorage.
 
-**3. `src/components/ShotTracker.tsx`** — Add a small indicator under each team's collapsible section showing which zones are blocked for that team:
-- After the player buttons in each expanded team section, add a row like: `🚫 Blocked: Zone 2, Zone 5`
-- Use `team.blockedZones` to display the blocked zone numbers/names
+**2. Visibility change listener for reconnection**
+Add a `visibilitychange` event listener. When the page becomes visible again and we have an active session:
+- Re-fetch the full session, players, and shots from the database
+- Re-subscribe to the realtime channel
+- This ensures state is fully synced after any connection gap
 
-### Files
+### Files to Modify
 
 | File | Change |
 |------|--------|
-| `GameContext.tsx` | Add zone numbers to `ZONE_LABELS` |
-| `ShotTracker.tsx` | Red X on court overlays; blocked zone indicator per team section |
+| `MultiplayerContext.tsx` | Add localStorage persistence of session ID; add `visibilitychange` handler that re-fetches all data and re-subscribes; add auto-rejoin on mount |
+
+### Key Implementation Details
+
+```ts
+// On visibility change (phone wakes up)
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && sessionId) {
+    refetchAllState(sessionId);
+    subscribeToSession(sessionId);
+  }
+});
+```
+
+The `refetchAllState` function will query `game_sessions`, `session_players`, and `session_shots` for the current session ID and update all state, ensuring the joining device catches up to wherever the host is (lobby, individual play, team play, summary).
 
