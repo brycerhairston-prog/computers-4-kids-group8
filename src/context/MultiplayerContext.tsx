@@ -273,6 +273,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
           .eq("session_id", sessionData.id);
         setSessionShots(shots || []);
 
+        saveSessionToStorage(sessionData.id, existingFromDevice.map(p => p.id), sessionData.host_device_id === deviceId);
         subscribeToSession(sessionData.id);
         toast.success(`Rejoined game ${normalizedCode}!`);
         return;
