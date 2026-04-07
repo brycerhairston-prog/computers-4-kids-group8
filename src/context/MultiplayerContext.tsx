@@ -281,6 +281,16 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (error) toast.error("Failed to undo shot");
   }, []);
 
+  const clearMultiplayerShots = useCallback(async () => {
+    if (!session) return;
+    const { error } = await supabase
+      .from("session_shots")
+      .delete()
+      .eq("session_id", session.id);
+    if (error) toast.error("Failed to clear shots");
+    else setSessionShots([]);
+  }, [session]);
+
   const startMultiplayerGame = useCallback(async () => {
     if (!session) return;
     await supabase
