@@ -291,13 +291,16 @@ const ShotTracker = () => {
           <CourtBackground />
 
           {/* Blocked zone overlays */}
-          {blockedZones.map(zone => (
-            <g key={`blocked-${zone}`}>
-              <path d={ZONE_PATHS[zone]} fill="hsl(0 84% 60% / 0.2)" stroke="hsl(0 84% 60% / 0.5)" strokeWidth="2" strokeDasharray="8 4" />
-              <text x={ZONE_LABEL_POS[zone].x} y={ZONE_LABEL_POS[zone].y} textAnchor="middle" dominantBaseline="middle"
-                fill="hsl(0 84% 60%)" fontSize="14" fontWeight="bold">🚫</text>
-            </g>
-          ))}
+          {blockedZones.map(zone => {
+            const pos = ZONE_LABEL_POS[zone];
+            return (
+              <g key={`blocked-${zone}`}>
+                <path d={ZONE_PATHS[zone]} fill="hsl(0 84% 60% / 0.2)" stroke="hsl(0 84% 60% / 0.5)" strokeWidth="2" strokeDasharray="8 4" />
+                <line x1={pos.x - 12} y1={pos.y - 12} x2={pos.x + 12} y2={pos.y + 12} stroke="hsl(0 84% 60%)" strokeWidth="4" strokeLinecap="round" />
+                <line x1={pos.x + 12} y1={pos.y - 12} x2={pos.x - 12} y2={pos.y + 12} stroke="hsl(0 84% 60%)" strokeWidth="4" strokeLinecap="round" />
+              </g>
+            );
+          })}
 
           <AnimatePresence>
             {courtShots.map(shot => (
