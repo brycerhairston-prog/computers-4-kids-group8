@@ -35,17 +35,18 @@ interface MultiplayerState {
   session: GameSession | null;
   sessionPlayers: SessionPlayer[];
   sessionShots: SessionShot[];
-  localPlayerId: string | null;
+  localPlayerIds: string[];
   isHost: boolean;
   isConnected: boolean;
   isLoading: boolean;
-  createGame: (playerName: string) => Promise<void>;
-  joinGame: (code: string, playerName: string) => Promise<void>;
+  createGame: (playerNames: string[]) => Promise<void>;
+  joinGame: (code: string, playerNames: string[]) => Promise<void>;
   leaveGame: () => void;
   addMultiplayerShot: (shot: { playerId: string; zone: number; made: boolean; x: number; y: number }) => Promise<void>;
   removeMultiplayerShot: (shotId: string) => Promise<void>;
   startMultiplayerGame: () => Promise<void>;
   resetMultiplayerGame: () => Promise<void>;
+  updateGameMode: (mode: string) => Promise<void>;
 }
 
 const MultiplayerContext = createContext<MultiplayerState | null>(null);
@@ -60,7 +61,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [session, setSession] = useState<GameSession | null>(null);
   const [sessionPlayers, setSessionPlayers] = useState<SessionPlayer[]>([]);
   const [sessionShots, setSessionShots] = useState<SessionShot[]>([]);
-  const [localPlayerId, setLocalPlayerId] = useState<string | null>(null);
+  const [localPlayerIds, setLocalPlayerIds] = useState<string[]>([]);
   const [isHost, setIsHost] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -119,7 +120,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     channelRef.current = channel;
   }, []);
 
-  const createGame = useCallback(async (playerName: string) => {
+  const createGame = useCallback(async (playerNames: string[]) => {
     setIsLoading(true);
     try {
       const gameCode = generateGameCode();
@@ -131,19 +132,24 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
       if (sessionError || !sessionData) throw sessionError || new Error("Failed to create session");
 
-      const color = PLAYER_COLORS[0];
+      const playersToInsert = playerNames.map((name, i) => ({
+        session_id: sessionData.id,
+        name: name.trim(),
+        device_id: deviceId,
+        color: PLAYER_COLORS[i % PLAYER_COLORS.length],
+      }));
+
       const { data: playerData, error: playerError } = await supabase
         .from("session_players")
-        .insert({ session_id: sessionData.id, name: playerName.trim(), device_id: deviceId, color })
-        .select()
-        .single();
+        .insert(playersToInsert)
+        .select();
 
-      if (playerError || !playerData) throw playerError || new Error("Failed to add player");
+      if (playerError || !playerData) throw playerError || new Error("Failed to add players");
 
       setSession(sessionData);
-      setSessionPlayers([playerData]);
+      setSessionPlayers(playerData);
       setSessionShots([]);
-      setLocalPlayerId(playerData.id);
+      setLocalPlayerIds(playerData.map(p => p.id));
       setIsHost(true);
 
       subscribeToSession(sessionData.id);
@@ -155,7 +161,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, [deviceId, subscribeToSession]);
 
-  const joinGame = useCallback(async (code: string, playerName: string) => {
+  const joinGame = useCallback(async (code: string, playerNames: string[]) => {
     setIsLoading(true);
     try {
       const normalizedCode = code.trim().toUpperCase();
@@ -170,18 +176,17 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return;
       }
 
-      // Check if this device already has a player in this session
       const { data: existingPlayers } = await supabase
         .from("session_players")
         .select()
         .eq("session_id", sessionData.id);
 
-      const existing = existingPlayers?.find(p => p.device_id === deviceId);
-      if (existing) {
+      const existingFromDevice = existingPlayers?.filter(p => p.device_id === deviceId) || [];
+      if (existingFromDevice.length > 0) {
         // Rejoin
         setSession(sessionData);
         setSessionPlayers(existingPlayers || []);
-        setLocalPlayerId(existing.id);
+        setLocalPlayerIds(existingFromDevice.map(p => p.id));
         setIsHost(sessionData.host_device_id === deviceId);
 
         const { data: shots } = await supabase
@@ -195,22 +200,33 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return;
       }
 
-      // Check for duplicate names
-      const nameTaken = existingPlayers?.some(p => p.name.toLowerCase() === playerName.trim().toLowerCase());
-      const finalName = nameTaken ? `${playerName.trim()} (2)` : playerName.trim();
+      const existingCount = existingPlayers?.length || 0;
+      const existingNames = new Set(existingPlayers?.map(p => p.name.toLowerCase()) || []);
 
-      const color = PLAYER_COLORS[(existingPlayers?.length || 0) % PLAYER_COLORS.length];
+      const playersToInsert = playerNames.map((name, i) => {
+        let finalName = name.trim();
+        if (existingNames.has(finalName.toLowerCase())) {
+          finalName = `${finalName} (2)`;
+        }
+        existingNames.add(finalName.toLowerCase());
+        return {
+          session_id: sessionData.id,
+          name: finalName,
+          device_id: deviceId,
+          color: PLAYER_COLORS[(existingCount + i) % PLAYER_COLORS.length],
+        };
+      });
+
       const { data: playerData, error: playerError } = await supabase
         .from("session_players")
-        .insert({ session_id: sessionData.id, name: finalName, device_id: deviceId, color })
-        .select()
-        .single();
+        .insert(playersToInsert)
+        .select();
 
       if (playerError || !playerData) throw playerError || new Error("Failed to join");
 
       setSession(sessionData);
-      setSessionPlayers([...(existingPlayers || []), playerData]);
-      setLocalPlayerId(playerData.id);
+      setSessionPlayers([...(existingPlayers || []), ...playerData]);
+      setLocalPlayerIds(playerData.map(p => p.id));
       setIsHost(sessionData.host_device_id === deviceId);
 
       const { data: shots } = await supabase
@@ -220,7 +236,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setSessionShots(shots || []);
 
       subscribeToSession(sessionData.id);
-      toast.success(`Joined game ${normalizedCode}!`);
+      toast.success(`Joined game ${normalizedCode} with ${playerNames.length} player${playerNames.length > 1 ? "s" : ""}!`);
     } catch (err: any) {
       toast.error(err.message || "Failed to join game");
     } finally {
@@ -236,7 +252,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setSession(null);
     setSessionPlayers([]);
     setSessionShots([]);
-    setLocalPlayerId(null);
+    setLocalPlayerIds([]);
     setIsHost(false);
     setIsConnected(false);
   }, []);
@@ -285,7 +301,14 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setSessionShots([]);
   }, [session]);
 
-  // Cleanup on unmount
+  const updateGameMode = useCallback(async (mode: string) => {
+    if (!session) return;
+    await supabase
+      .from("game_sessions")
+      .update({ game_mode: mode })
+      .eq("id", session.id);
+  }, [session]);
+
   useEffect(() => {
     return () => {
       if (channelRef.current) {
@@ -300,7 +323,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       session,
       sessionPlayers,
       sessionShots,
-      localPlayerId,
+      localPlayerIds,
       isHost,
       isConnected,
       isLoading,
@@ -311,6 +334,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       removeMultiplayerShot,
       startMultiplayerGame,
       resetMultiplayerGame,
+      updateGameMode,
     }}>
       {children}
     </MultiplayerContext.Provider>
