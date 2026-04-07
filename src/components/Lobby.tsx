@@ -3,19 +3,21 @@ import { useMultiplayer } from "@/context/MultiplayerContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Users, Plus, LogIn, ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { Copy, Users, Plus, LogIn, ArrowLeft, Loader2, Trash2, UserMinus, DoorOpen } from "lucide-react";
 import { toast } from "sonner";
 
 type LobbyView = "welcome" | "create" | "join" | "waiting";
 
 const Lobby = () => {
   const {
-    session, sessionPlayers, isHost, isConnected, isLoading,
-    createGame, joinGame, startMultiplayerGame,
+    session, sessionPlayers, isHost, isConnected, isLoading, localPlayerIds,
+    createGame, joinGame, startMultiplayerGame, addPlayerToStation, removePlayer, leaveSession,
   } = useMultiplayer();
   const [view, setView] = useState<LobbyView>("welcome");
   const [playerNames, setPlayerNames] = useState<string[]>([""]);
   const [gameCode, setGameCode] = useState("");
+  const [newPlayerName, setNewPlayerName] = useState("");
+  const [addingPlayer, setAddingPlayer] = useState(false);
 
   const addNameField = () => {
     if (playerNames.length >= 8) { toast.error("Max 8 players per device"); return; }
@@ -53,10 +55,34 @@ const Lobby = () => {
     }
   };
 
+  const handleAddPlayerToStation = async () => {
+    const name = newPlayerName.trim();
+    if (!name) { toast.error("Enter a player name"); return; }
+    setAddingPlayer(true);
+    await addPlayerToStation(name);
+    setNewPlayerName("");
+    setAddingPlayer(false);
+  };
+
+  const handleRemovePlayer = async (playerId: string, playerName: string) => {
+    await removePlayer(playerId);
+    toast.success(`${playerName} removed from game`);
+  };
+
+  const handleLeaveSession = async () => {
+    await leaveSession();
+    setView("welcome");
+    setPlayerNames([""]);
+    setGameCode("");
+  };
+
   if (session?.status === "playing") return null;
 
   // Waiting room
   if (view === "waiting" && session) {
+    const localPlayers = sessionPlayers.filter(p => localPlayerIds.includes(p.id));
+    const otherPlayers = sessionPlayers.filter(p => !localPlayerIds.includes(p.id));
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <motion.div
@@ -87,19 +113,65 @@ const Lobby = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
+          {/* Player list */}
+          <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-display font-bold text-foreground">
               <Users className="w-4 h-4" />
               Players ({sessionPlayers.length})
             </div>
-            <div className="space-y-1 max-h-48 overflow-y-auto">
-              {sessionPlayers.map(p => (
-                <div key={p.id} className="flex items-center gap-2 bg-secondary/30 rounded-md px-3 py-2">
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
-                  <span className="text-sm">{p.name}</span>
-                </div>
-              ))}
+
+            {/* Your station players */}
+            {localPlayers.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Your Station</p>
+                {localPlayers.map(p => (
+                  <div key={p.id} className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-md px-3 py-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
+                    <span className="text-sm flex-1">{p.name}</span>
+                    {isHost && localPlayers.length > 1 && (
+                      <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleRemovePlayer(p.id, p.name)}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Other station players */}
+            {otherPlayers.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Other Stations</p>
+                {otherPlayers.map(p => (
+                  <div key={p.id} className="flex items-center gap-2 bg-secondary/30 rounded-md px-3 py-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
+                    <span className="text-sm flex-1">{p.name}</span>
+                    {isHost && (
+                      <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleRemovePlayer(p.id, p.name)}>
+                        <UserMinus className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add player to station */}
+            <div className="flex gap-2">
+              <Input
+                value={newPlayerName}
+                onChange={e => setNewPlayerName(e.target.value)}
+                placeholder="Add player to your station..."
+                className="h-9 text-sm"
+                maxLength={20}
+                onKeyDown={e => e.key === "Enter" && handleAddPlayerToStation()}
+              />
+              <Button size="sm" className="h-9 gap-1 shrink-0" onClick={handleAddPlayerToStation} disabled={addingPlayer || !newPlayerName.trim()}>
+                {addingPlayer ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                Add
+              </Button>
             </div>
+
             <p className="text-xs text-muted-foreground text-center">
               Waiting for players to join...
             </p>
@@ -122,6 +194,15 @@ const Lobby = () => {
           {isHost && sessionPlayers.length < 2 && (
             <p className="text-xs text-center text-muted-foreground">Need at least 2 players to start</p>
           )}
+
+          {/* Leave button */}
+          <Button
+            variant="outline"
+            className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+            onClick={handleLeaveSession}
+          >
+            <DoorOpen className="w-4 h-4" /> Leave Game
+          </Button>
         </motion.div>
       </div>
     );
