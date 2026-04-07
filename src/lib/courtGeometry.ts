@@ -6,9 +6,9 @@ type Point = { x: number; y: number };
 
 const BIG_ARC = {
   cx: 200,
-  cy: 128,
-  rx: 180,
-  ry: 165,
+  cy: 147.5,
+  rx: 186.5,
+  ry: 150.5,
 };
 
 const PAINT = {
@@ -105,7 +105,7 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: PAINT.right, y: 0 },
     { x: RIGHT_ARC_EXTREME.x, y: 0 },
     RIGHT_ARC_EXTREME,
-    ...bottomToRightArc.slice(0, -1).reverse(),
+    ...bottomToRightArc.slice(1),
     ARC_BOTTOM,
     { x: ARC_BOTTOM.x, y: PAINT.bottom },
     { x: PAINT.right, y: PAINT.bottom },
@@ -140,12 +140,12 @@ export const ZONE_PATHS: Record<number, string> = Object.fromEntries(
 
 // Label positions for zone stats
 export const ZONE_LABEL_POS: Record<number, { x: number; y: number }> = {
-  1: { x: 200, y: 110 },
-  2: { x: 70, y: 100 },
-  3: { x: 330, y: 100 },
-  4: { x: 25, y: 300 },
-  5: { x: 200, y: 360 },
-  6: { x: 375, y: 300 },
+  1: { x: 200, y: 120 },
+  2: { x: 75, y: 105 },
+  3: { x: 325, y: 105 },
+  4: { x: 25, y: 310 },
+  5: { x: 200, y: 365 },
+  6: { x: 375, y: 310 },
 };
 
 export const COURT_VIEWBOX = "0 0 400 500";

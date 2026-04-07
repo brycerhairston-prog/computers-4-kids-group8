@@ -3,9 +3,8 @@ import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
 import { motion } from "framer-motion";
 import courtImage from "@/assets/court-layout.png";
 
-const getHeatColor = (fgPct: number, attempts: number): string => {
-  if (attempts === 0) return "rgba(255, 255, 255, 0)"; // no data = transparent
-  if (fgPct === 0) return "rgba(59, 130, 246, 0.6)"; // all misses = blue
+const getHeatColor = (fgPct: number): string => {
+  if (fgPct === 0) return "rgba(59, 130, 246, 0.6)"; // blue
   if (fgPct <= 20) return "rgba(99, 102, 241, 0.7)"; // indigo
   if (fgPct <= 40) return "rgba(168, 85, 247, 0.7)"; // purple
   if (fgPct <= 60) return "rgba(234, 88, 12, 0.7)";  // orange
@@ -52,7 +51,7 @@ const HeatMap = () => {
         {/* Layer 2: Heat map zones (clipped to exact boundaries) */}
         {[1, 2, 3, 4, 5, 6].map(zone => {
           const stats = getZoneStats(zone, selectedPlayerId || undefined);
-          const color = getHeatColor(stats.fgPct, stats.attempts);
+          const color = getHeatColor(stats.fgPct);
           return (
             <motion.rect
               key={`heat-${zone}`}
