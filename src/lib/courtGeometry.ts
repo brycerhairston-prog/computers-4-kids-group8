@@ -105,7 +105,7 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: PAINT.right, y: 0 },
     { x: RIGHT_ARC_EXTREME.x, y: 0 },
     RIGHT_ARC_EXTREME,
-    ...bottomToRightArc.slice(1),
+    ...bottomToRightArc.slice(0, -1).reverse(),
     ARC_BOTTOM,
     { x: ARC_BOTTOM.x, y: PAINT.bottom },
     { x: PAINT.right, y: PAINT.bottom },
