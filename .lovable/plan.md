@@ -1,34 +1,15 @@
 
 
-## Plan: Wrap Both Zone Pie Charts AND Heat Maps in Collapsible Accordions Per Player
+## Plan: Enlarge Heat Map Hover Pie Charts
 
-### Problem
-Both the zone pie charts and the per-player heat maps display all at once, making the summary page overwhelming.
+### Change — `src/components/GameSummary.tsx` (~lines 264–281)
 
-### Solution
-Use the existing `Accordion` component to make each player's section collapsible in **both** `PlayerZonePieCharts` and `PlayerHeatMaps`. All sections start collapsed by default.
+Increase the `foreignObject` and inner `div` dimensions from `90×90` to `130×130`, and adjust the position offset so the pie chart stays centered above/near the zone label:
 
-### Changes — `src/components/GameSummary.tsx`
-
-**1. Import Accordion components** at the top:
-```tsx
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-```
-
-**2. Refactor `PlayerZonePieCharts` (~lines 141–201)**
-- Replace outer container with `<Accordion type="multiple">`
-- Each player's bordered card becomes an `AccordionItem`
-- Player name + overall FG% header → `AccordionTrigger`
-- The grid of 6 zone pie charts → `AccordionContent`
-
-**3. Refactor `PlayerHeatMaps` (~lines 203–290)**
-- Same pattern: wrap in `<Accordion type="multiple">`
-- Each player's mini court card becomes an `AccordionItem`
-- Player name header → `AccordionTrigger`
-- The SVG court heat map → `AccordionContent`
-
-Both default to all-collapsed so the page stays clean.
+- `foreignObject`: change `x={pos.x - 45}` → `x={pos.x - 65}`, `width="90" height="90"` → `width="130" height="130"`
+- Inner `div`: change `width: 90, height: 90` → `width: 130, height: 130`
+- `Pie outerRadius`: increase from default (~35) to `50` for a larger, more readable chart
 
 ### Files Modified
-- `src/components/GameSummary.tsx`
+- `src/components/GameSummary.tsx` — resize foreignObject, div, and pie radius in `PlayerHeatMaps` hover overlay
 
