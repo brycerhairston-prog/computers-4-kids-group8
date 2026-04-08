@@ -161,13 +161,15 @@ const ShotTracker = () => {
   }, [practiceShots, activeShots]);
 
   return (
-    <div className="glass-card rounded-lg p-4 space-y-3">
+    <div className="glass-card rounded-lg p-4 space-y-3 border-t-2 border-primary/30">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-lg font-display font-bold text-foreground">📍 Shot Tracker</h2>
+        <h2 className="text-lg font-display font-bold text-foreground">
+          <span className="border-b-2 border-primary pb-0.5">📍 Shot Tracker</span>
+        </h2>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground tabular-nums">{shotCountDisplay}</span>
           {inPractice && (
-            <span className="text-xs font-semibold text-accent-foreground bg-accent rounded px-1.5 py-0.5">Practice</span>
+            <span className="text-xs font-semibold text-accent-foreground bg-accent rounded-full px-2 py-0.5 border border-accent-foreground/20 animate-pulse">🏋️ Practice</span>
           )}
           {!isLocalPlayer && mp.isMultiplayer && activePlayerId && (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -198,15 +200,15 @@ const ShotTracker = () => {
       )}
 
       {lockedZone !== null && canShoot && (
-        <p className="text-xs text-muted-foreground text-center">
+        <div className="text-xs text-center bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2">
           🔒 Can't shoot in <span className="font-semibold text-foreground">{ZONE_LABELS[lockedZone]}</span> — pick a different zone
-        </p>
+        </div>
       )}
 
       {blockedZones.length > 0 && gameMode === "team" && (
-        <p className="text-xs text-muted-foreground text-center">
+        <div className="text-xs text-center bg-destructive/10 border border-destructive/30 rounded-lg px-3 py-2">
           🚫 Blocked zones: {blockedZones.map(z => ZONE_LABELS[z]).join(", ")}
-        </p>
+        </div>
       )}
 
       {/* Player selector */}
@@ -267,22 +269,33 @@ const ShotTracker = () => {
             );
           })
         ) : (
-          <div className="flex gap-1 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap">
             {players.map(p => {
               const pInPractice = isPlayerInPractice(p.id);
               const done = !pInPractice && getPlayerShotCount(p.id) >= INDIVIDUAL_SHOT_LIMIT;
               const isLocal = !mp.isMultiplayer || mp.localPlayerIds.includes(p.id);
               const pCount = pInPractice ? getPlayerPracticeShotCount(p.id) : getPlayerShotCount(p.id);
               const pLimit = pInPractice ? PRACTICE_SHOT_LIMIT : INDIVIDUAL_SHOT_LIMIT;
+              const pctDone = (pCount / pLimit) * 100;
+              const progressColor = pctDone >= 80 ? "bg-red-500" : pctDone >= 50 ? "bg-orange-500" : "bg-green-500";
               return (
                 <Button key={p.id} size="sm"
                   variant={activePlayerId === p.id ? "default" : "outline"}
                   onClick={() => selectPlayer(p.id)}
-                  className={`text-xs h-7 gap-1 ${done && isLocal ? "opacity-50" : ""} ${!isLocal ? "opacity-70" : ""}`}
+                  className={`text-xs h-auto py-1 px-2 gap-1.5 flex-col items-start relative overflow-hidden ${done && isLocal ? "opacity-50" : ""} ${!isLocal ? "opacity-70" : ""}`}
                   disabled={done && isLocal}>
-                  {!isLocal && <Lock className="w-2.5 h-2.5" />}
-                  {pInPractice && "🏋️ "}
-                  {p.name} ({pCount}/{pLimit})
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/30" style={{ background: p.color || "hsl(var(--primary))" }} />
+                    {!isLocal && <Lock className="w-2.5 h-2.5" />}
+                    {pInPractice && "🏋️ "}
+                    {p.name}
+                  </span>
+                  <span className="flex items-center gap-1 w-full">
+                    <span className="text-[10px] tabular-nums opacity-80">{pCount}/{pLimit}</span>
+                    <span className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
+                      <span className={`block h-full ${progressColor} rounded-full transition-all`} style={{ width: `${Math.min(pctDone, 100)}%` }} />
+                    </span>
+                  </span>
                 </Button>
               );
             })}
@@ -347,10 +360,10 @@ const ShotTracker = () => {
           {pendingPos && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
               className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-              <Button onClick={() => confirmShot(true)} className="bg-shot-made hover:bg-shot-made/80 text-primary-foreground font-bold shadow-lg">
+              <Button onClick={() => confirmShot(true)} className="bg-shot-made hover:bg-shot-made/80 text-primary-foreground font-bold shadow-lg shadow-green-500/30 ring-2 ring-green-400/20">
                 ✓ Made
               </Button>
-              <Button onClick={() => confirmShot(false)} className="bg-shot-missed hover:bg-shot-missed/80 text-primary-foreground font-bold shadow-lg">
+              <Button onClick={() => confirmShot(false)} className="bg-shot-missed hover:bg-shot-missed/80 text-primary-foreground font-bold shadow-lg shadow-red-500/30 ring-2 ring-red-400/20">
                 ✗ Missed
               </Button>
               <Button variant="outline" onClick={() => setPendingPos(null)} className="text-xs">Cancel</Button>

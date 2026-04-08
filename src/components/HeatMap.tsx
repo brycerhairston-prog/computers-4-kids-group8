@@ -32,8 +32,10 @@ const HeatMap = () => {
   const { isMultiplayer, sessionPlayers } = useMultiplayer();
 
   return (
-    <div className="glass-card rounded-lg p-4 space-y-3">
-      <h2 className="text-lg font-display font-bold text-foreground">🔥 Shooting Heat Map</h2>
+    <div className="glass-card rounded-lg p-4 space-y-3 border-t-2 border-primary/30">
+      <h2 className="text-lg font-display font-bold text-foreground">
+        <span className="border-b-2 border-primary pb-0.5">🔥 Shooting Heat Map</span>
+      </h2>
       <p className="text-xs text-muted-foreground">
         Colors show Field Goal % (FG%) — the percentage of shots made. Hotter = more accurate zone.
       </p>
@@ -102,8 +104,8 @@ const HeatMap = () => {
       {/* Legend */}
       <div className="flex flex-wrap gap-2 justify-center">
         {legendItems.map(item => (
-          <div key={item.label} className="flex items-center gap-1 text-xs text-muted-foreground">
-            <span className={`w-3 h-3 rounded-sm ${item.color}`} />
+          <div key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className={`w-4 h-4 rounded-md ${item.color} shadow-sm`} />
             {item.label}
           </div>
         ))}

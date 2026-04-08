@@ -31,7 +31,7 @@ const PlayingDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b-2 border-primary/30 bg-card/80 backdrop-blur-sm sticky top-0 z-10 shadow-[0_2px_12px_-4px_hsl(var(--primary)/0.2)]">
         <div className="container flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
             <img src={c4kLogo} alt="C4K" className="w-8 h-8" />
@@ -39,10 +39,11 @@ const PlayingDashboard = () => {
               <h1 className="text-lg font-display font-bold text-foreground leading-tight">
                 Tabletop Basketball Analytics
               </h1>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <span className={`w-2 h-2 rounded-full inline-block ${gameMode === "team" ? "bg-blue-500" : "bg-orange-500"}`} />
                   {mp.isMultiplayer && mp.session ? `Game: ${mp.session.game_code} · ` : ""}
                   {mp.isMultiplayer ? `${mp.sessionPlayers.length} players` : (gameMode === "individual" ? "Individual Mode" : `Team Mode · ${teams.map(t => t.name).join(" vs ")}`)}
-                  {" · "}{shots.length} shots
+                  <span className="inline-flex items-center gap-1 ml-1 bg-primary/10 text-primary font-bold rounded-full px-2 py-0.5">🏀 {shots.length}</span>
                   {mp.isMultiplayer && (
                     <span className="ml-1 inline-flex items-center gap-0.5">
                       <span className={`w-1.5 h-1.5 rounded-full inline-block ${mp.isConnected ? "bg-green-500" : "bg-yellow-500"}`} />
@@ -53,7 +54,7 @@ const PlayingDashboard = () => {
           </div>
           <div className="flex items-center gap-2">
             {isGameOver && (
-              <span className="text-xs font-bold text-primary animate-pulse">Game Over!</span>
+              <span className="text-xs font-bold bg-primary text-primary-foreground rounded-full px-3 py-1 animate-pulse shadow-lg">🏆 Game Over!</span>
             )}
               {mp.isMultiplayer ? (
                 <>
