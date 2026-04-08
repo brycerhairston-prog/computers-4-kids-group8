@@ -261,16 +261,16 @@ const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string;
                           {zs.fgPct.toFixed(0)}%
                         </text>
                         {isHovered && zs.attempts > 0 && (
-                          <foreignObject x={pos.x - 45} y={pos.y + 14} width="90" height="90">
-                            <div style={{ width: 90, height: 90 }}>
-                              <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                  <Pie
-                                    data={[
-                                      { name: "Makes", value: zs.makes },
-                                      { name: "Misses", value: zs.attempts - zs.makes },
-                                    ]}
-                                    dataKey="value" cx="50%" cy="50%" outerRadius={35} innerRadius={0} strokeWidth={1}>
+                           <foreignObject x={pos.x - 65} y={pos.y + 14} width="130" height="130">
+                             <div style={{ width: 130, height: 130 }}>
+                               <ResponsiveContainer width="100%" height="100%">
+                                 <PieChart>
+                                   <Pie
+                                     data={[
+                                       { name: "Makes", value: zs.makes },
+                                       { name: "Misses", value: zs.attempts - zs.makes },
+                                     ]}
+                                     dataKey="value" cx="50%" cy="50%" outerRadius={50} innerRadius={0} strokeWidth={1}>
                                     <Cell fill="hsl(142, 71%, 45%)" />
                                     <Cell fill="hsl(0, 84%, 60%)" />
                                   </Pie>
