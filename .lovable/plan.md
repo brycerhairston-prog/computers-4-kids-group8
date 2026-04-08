@@ -1,31 +1,34 @@
 
 
-## Plan: Fix Dark Text on Summary Page Tooltips & Labels
+## Plan: Wrap Both Zone Pie Charts AND Heat Maps in Collapsible Accordions Per Player
 
 ### Problem
-When hovering over pie charts on the summary page, the tooltip text (e.g., "Makes", "Misses", numbers) appears in a dark color that's hard to read against the dark tooltip background. Recharts applies its own default dark text color to tooltip items/labels, which overrides the `contentStyle.color`.
+Both the zone pie charts and the per-player heat maps display all at once, making the summary page overwhelming.
+
+### Solution
+Use the existing `Accordion` component to make each player's section collapsible in **both** `PlayerZonePieCharts` and `PlayerHeatMaps`. All sections start collapsed by default.
 
 ### Changes — `src/components/GameSummary.tsx`
 
-**1. Add `itemStyle` and `labelStyle` to all `<Tooltip>` components**
-
-Every `<Tooltip>` in the file (3 instances at lines ~179, ~265, ~321) needs two additional props to force white text on all tooltip elements:
-
+**1. Import Accordion components** at the top:
 ```tsx
-<Tooltip
-  contentStyle={TOOLTIP_STYLE}
-  itemStyle={{ color: "white" }}
-  labelStyle={{ color: "white" }}
-  ...
-/>
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 ```
 
-This ensures the series names ("Makes", "Misses"), values, and any labels inside the tooltip render in white.
+**2. Refactor `PlayerZonePieCharts` (~lines 141–201)**
+- Replace outer container with `<Accordion type="multiple">`
+- Each player's bordered card becomes an `AccordionItem`
+- Player name + overall FG% header → `AccordionTrigger`
+- The grid of 6 zone pie charts → `AccordionContent`
 
-**2. Heat map zone labels on the summary courts (lines ~245–249)**
+**3. Refactor `PlayerHeatMaps` (~lines 203–290)**
+- Same pattern: wrap in `<Accordion type="multiple">`
+- Each player's mini court card becomes an `AccordionItem`
+- Player name header → `AccordionTrigger`
+- The SVG court heat map → `AccordionContent`
 
-The stat labels on the mini heat map courts use `fill="black"` on a white semi-transparent background — these are fine for readability since they sit on a white rect. No change needed here.
+Both default to all-collapsed so the page stays clean.
 
 ### Files Modified
-- `src/components/GameSummary.tsx` — add `itemStyle` and `labelStyle` props to all 3 `<Tooltip>` instances
+- `src/components/GameSummary.tsx`
 
