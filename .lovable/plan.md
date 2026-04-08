@@ -1,39 +1,32 @@
 
 
-## Plan: Add Zone Numbers to Court
+## Plan: Make Zone Numbers Visible on Shot Tracker Court
 
-Add visible zone number labels (Z1–Z6) on both the Shot Tracker court and the Heat Map court so users can easily correlate zones with the stats table.
+The zone numbers (1–6) are currently white at 45% opacity, making them invisible against the light court image.
 
-### File: `src/components/ShotTracker.tsx`
-After the blocked zone overlays (around line 311), before the `<AnimatePresence>` block, add zone number labels:
+### Fix: `src/components/ShotTracker.tsx` (lines 313–323)
+
+Update the `<text>` elements to use a dark stroke outline for contrast against the court background:
+
 ```tsx
 {[1, 2, 3, 4, 5, 6].map(zone => {
   const pos = ZONE_LABEL_POS[zone];
   return (
     <text key={`zone-num-${zone}`} x={pos.x} y={pos.y}
       textAnchor="middle" dominantBaseline="central"
-      fill="white" fontSize="18" fontWeight="800"
-      opacity="0.45" style={{ pointerEvents: "none" }}>
+      fill="white" fontSize="24" fontWeight="900"
+      opacity="0.8" stroke="black" strokeWidth="3" paintOrder="stroke"
+      style={{ pointerEvents: "none" }}>
       {zone}
     </text>
   );
 })}
 ```
 
-### File: `src/components/HeatMap.tsx`
-Add zone numbers behind the stat labels but in front of the heat overlay. Inside the SVG, after the heat map zones loop (~line 64) and before the stat labels loop (~line 71), add:
-```tsx
-{[1, 2, 3, 4, 5, 6].map(zone => {
-  const pos = ZONE_LABEL_POS[zone];
-  return (
-    <text key={`zone-num-${zone}`} x={pos.x} y={pos.y + 22}
-      textAnchor="middle" fill="black" fontSize="11"
-      fontWeight="700" opacity="0.5" style={{ pointerEvents: "none" }}>
-      Z{zone}
-    </text>
-  );
-})}
-```
+Changes:
+- **fontSize**: 18 → 24 (larger)
+- **opacity**: 0.45 → 0.8 (much more visible)
+- **stroke/strokeWidth/paintOrder**: adds a black outline behind the white text for contrast against any background color
 
-The numbers will appear as semi-transparent labels on the court, non-interactive, so they don't interfere with clicking. Two files, two insertions.
+One file, one edit.
 
