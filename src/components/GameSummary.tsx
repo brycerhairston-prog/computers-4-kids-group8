@@ -795,6 +795,8 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
             <TabsContent value="team" className="space-y-6 mt-4">
               <MvpBanner players={players} shotSource={teamShots} />
               <TeamPerformanceSection teams={teams} players={players} shotSource={teamShots} />
+              <PlayerZonePieCharts players={players} shotSource={teamShots} />
+              <PlayerHeatMaps players={players} shotSource={teamShots} teams={teams} />
               <div className="glass-card rounded-xl p-4 space-y-3">
                 <h3 className="text-sm font-display font-bold text-foreground">📋 Team Round Player Stats</h3>
                 <PlayerStatsTable players={players} shotSource={teamShots} />
