@@ -177,6 +177,7 @@ const PlayerZonePieCharts = ({ players, shotSource }: { players: { id: string; n
                                 <Cell fill="hsl(0, 84%, 60%)" />
                               </Pie>
                               <Tooltip contentStyle={TOOLTIP_STYLE}
+                                itemStyle={{ color: "white" }} labelStyle={{ color: "white" }}
                                 formatter={(value: number, name: string) => [value, name]} />
                             </PieChart>
                           </ResponsiveContainer>
@@ -262,7 +263,7 @@ const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string;
                                     <Cell fill="hsl(142, 71%, 45%)" />
                                     <Cell fill="hsl(0, 84%, 60%)" />
                                   </Pie>
-                                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                                  <Tooltip contentStyle={TOOLTIP_STYLE} itemStyle={{ color: "white" }} labelStyle={{ color: "white" }} />
                                 </PieChart>
                               </ResponsiveContainer>
                             </div>
@@ -319,7 +320,7 @@ const TeamPerformanceSection = ({ teams, players, shotSource }: { teams: Team[];
                         {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
                       <Tooltip formatter={(value: number, name: string, props: any) => [`${props.payload.makes}/${value} (${props.payload.fgPct.toFixed(0)}%)`, name]}
-                        contentStyle={TOOLTIP_STYLE} />
+                        contentStyle={TOOLTIP_STYLE} itemStyle={{ color: "white" }} labelStyle={{ color: "white" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
