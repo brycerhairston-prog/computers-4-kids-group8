@@ -1,30 +1,42 @@
 
 
-## Plan: Add Data Science Tips Card to Summary Screen
+## Plan: Liven Up the Main Game UI
 
-### Change — `src/components/GameSummary.tsx`
+### Problem
+The playing screen (Shot Tracker, Player Stats table, Heat Map, header) looks plain compared to the colorful summary screen. It needs more color, personality, and visual polish to match.
 
-Add the same "🧠 Data Science Tips" card that appears on the main game screen to the summary screen. Place it at the bottom of each tab's content (and the non-tabbed view), right after the last section.
+### Changes
 
-The card content (copied from `src/pages/Index.tsx` lines 101–114):
+**1. `src/pages/Index.tsx` — Header upgrade**
+- Add a subtle gradient border-bottom glow (primary color)
+- Add a live shot counter badge with color (e.g., orange badge showing shot count)
+- Style the "Game Over!" text with a colored badge instead of plain text
+- Add a colored dot next to the game mode label (orange for individual, team color for team)
 
-```tsx
-<div className="glass-card rounded-xl p-4 space-y-2">
-  <h3 className="text-sm font-display font-bold text-primary">🧠 Data Science Tips</h3>
-  <ul className="text-xs text-muted-foreground space-y-1.5">
-    <li><strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.</li>
-    <li><strong className="text-foreground">Hot Zones</strong> show where a player shoots best.</li>
-    <li><strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.</li>
-  </ul>
-</div>
-```
+**2. `src/components/ShotTracker.tsx` — More color and life**
+- Player selector buttons: add a colored dot/circle showing the player's color next to their name
+- Shot count display: add a mini progress bar under the shot count text showing progress toward the limit, colored green→orange→red as it fills
+- Made/Missed confirm buttons: add subtle glow/shadow effects matching their colors
+- "Practice" badge: make it more vibrant with a pulsing border
+- Locked zone message: add a colored background card instead of plain text
+- Section title: add a colored underline accent
 
-This will be added in four locations:
-1. End of `TabsContent value="individual"` (after Detailed Stats, ~line 899)
-2. End of `TabsContent value="team"` (~line 910)
-3. End of `TabsContent value="overall"` (~line 921)
-4. End of the non-tabbed fallback view (~line 936)
+**3. `src/components/DataTable.tsx` — Styled table rows**
+- Add a colored avatar circle (player's color with initial) in the player name column, similar to the summary screen treatment
+- Zone columns with attempts: color-code the text — green for good FG%, red for poor, using the same heat colors
+- Points column: larger, bolder with a subtle glow
+- Makes column: add a small green accent
+- Selected row: stronger highlight with a left border in the player's color
+- Section title: add a colored underline accent
+
+**4. `src/components/HeatMap.tsx` — Minor polish**
+- Add a colored border accent to the card
+- Zone key at bottom: add small colored dots matching the zone heat colors
+- Legend: make the color swatches slightly larger and add rounded corners
 
 ### Files Modified
-- `src/components/GameSummary.tsx` — add tips card in 4 places
+- `src/pages/Index.tsx` — header styling upgrades
+- `src/components/ShotTracker.tsx` — player buttons, progress bar, button glow, message styling
+- `src/components/DataTable.tsx` — player avatars, color-coded stats, row highlights
+- `src/components/HeatMap.tsx` — card accent, legend polish
 
