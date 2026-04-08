@@ -151,7 +151,7 @@ const PlayerZonePieCharts = ({ players, shotSource }: { players: { id: string; n
                 <div className="w-1 h-5 rounded-full bg-primary" />
                 <h4 className="text-sm font-bold text-foreground">{p.name}</h4>
                 <span className="text-[10px] text-muted-foreground ml-auto">
-                  Overall: {stats.makes}/{stats.attempts} ({stats.fgPct.toFixed(0)}%)
+                  Overall: {stats.makes}/{stats.attempts} ({stats.attempts > 0 ? Math.round((stats.makes / stats.attempts) * 100) : 0}%)
                 </span>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
