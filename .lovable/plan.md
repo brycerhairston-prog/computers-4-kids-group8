@@ -1,36 +1,31 @@
 
 
-## Plan: Clean Up Zone Performance Pie Charts Layout
+## Plan: Fix Dark Text on Summary Page Tooltips & Labels
 
 ### Problem
-The `PlayerZonePieCharts` component currently dumps all players and their 6 pie charts into one flat section with no visual separation, making it look cluttered.
+When hovering over pie charts on the summary page, the tooltip text (e.g., "Makes", "Misses", numbers) appears in a dark color that's hard to read against the dark tooltip background. Recharts applies its own default dark text color to tooltip items/labels, which overrides the `contentStyle.color`.
 
 ### Changes — `src/components/GameSummary.tsx`
 
-**Restyle `PlayerZonePieCharts` (lines ~140–191):**
+**1. Add `itemStyle` and `labelStyle` to all `<Tooltip>` components**
 
-1. **Per-player card with border**: Wrap each player's row in a bordered card with padding, rounded corners, and subtle background:
-   ```tsx
-   <div className="border border-border rounded-lg p-4 bg-secondary/30 space-y-3">
-   ```
+Every `<Tooltip>` in the file (3 instances at lines ~179, ~265, ~321) needs two additional props to force white text on all tooltip elements:
 
-2. **Player name as a styled header**: Make the player name more prominent with a left-accent bar or badge style, e.g.:
-   ```tsx
-   <div className="flex items-center gap-2">
-     <div className="w-1 h-5 bg-primary rounded-full" />
-     <h4 className="text-sm font-bold text-foreground">{p.name}</h4>
-   </div>
-   ```
+```tsx
+<Tooltip
+  contentStyle={TOOLTIP_STYLE}
+  itemStyle={{ color: "white" }}
+  labelStyle={{ color: "white" }}
+  ...
+/>
+```
 
-3. **Zone pie chart cells with borders**: Wrap each zone's pie chart + label in a small bordered cell with centered content:
-   ```tsx
-   <div className="flex flex-col items-center border border-border/50 rounded-md p-2 bg-card/50">
-   ```
+This ensures the series names ("Makes", "Misses"), values, and any labels inside the tooltip render in white.
 
-4. **Add spacing between players**: Use `gap-4` on the parent container instead of `space-y-4` for consistent spacing.
+**2. Heat map zone labels on the summary courts (lines ~245–249)**
 
-5. **Zone label styling**: Make the zone label header (e.g. "Z1 (1pt)") slightly more prominent with a subtle background pill.
+The stat labels on the mini heat map courts use `fill="black"` on a white semi-transparent background — these are fine for readability since they sit on a white rect. No change needed here.
 
 ### Files Modified
-- `src/components/GameSummary.tsx` — restyle `PlayerZonePieCharts` component only
+- `src/components/GameSummary.tsx` — add `itemStyle` and `labelStyle` props to all 3 `<Tooltip>` instances
 
