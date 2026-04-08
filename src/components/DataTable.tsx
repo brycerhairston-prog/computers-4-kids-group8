@@ -33,9 +33,11 @@ const DataTable = () => {
   };
 
   return (
-    <div className="glass-card rounded-lg p-4 space-y-3">
+    <div className="glass-card rounded-lg p-4 space-y-3 border-t-2 border-primary/30">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-display font-bold text-foreground">📊 Player Stats</h2>
+        <h2 className="text-lg font-display font-bold text-foreground">
+          <span className="border-b-2 border-primary pb-0.5">📊 Player Stats</span>
+        </h2>
         <Button size="sm" variant="outline" onClick={handleExport} className="gap-1 text-xs">
           <Download className="w-3 h-3" /> CSV
         </Button>
@@ -80,20 +82,29 @@ const DataTable = () => {
                     exit={{ opacity: 0, x: -20 }}
                     onClick={() => selectPlayer(isSelected ? null : player.id)}
                     className={`border-b border-border/50 cursor-pointer transition-colors ${
-                      isSelected ? "bg-primary/10" : "hover:bg-secondary/50"
+                      isSelected ? "bg-primary/10 border-l-2 border-l-primary" : "hover:bg-secondary/50"
                     }`}
                   >
-                    <td className="py-2 px-1 font-medium truncate max-w-[100px]">{player.name}</td>
+                    <td className="py-2 px-1 font-medium truncate max-w-[120px]">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ background: player.color || "hsl(var(--primary))" }}>
+                          {player.name.charAt(0).toUpperCase()}
+                        </span>
+                        {player.name}
+                      </span>
+                    </td>
                     {[1, 2, 3, 4, 5, 6].map(z => {
                       const zs = stats.zones[z];
+                      const fgPct = zs.attempts > 0 ? (zs.makes / zs.attempts) * 100 : -1;
+                      const fgColor = fgPct < 0 ? "" : fgPct >= 60 ? "text-green-500 font-semibold" : fgPct >= 30 ? "text-orange-500" : "text-red-400";
                       return (
-                        <td key={z} className="text-center py-2 px-1 tabular-nums">
+                        <td key={z} className={`text-center py-2 px-1 tabular-nums ${fgColor}`}>
                           {zs.attempts > 0 ? `${zs.makes}/${zs.attempts}` : "—"}
                         </td>
                       );
                     })}
-                    <td className="text-center py-2 px-1 font-semibold text-accent tabular-nums">{stats.makes}</td>
-                    <td className="text-center py-2 px-1 font-bold text-primary tabular-nums">{stats.totalPoints}</td>
+                    <td className="text-center py-2 px-1 font-semibold text-green-500 tabular-nums">{stats.makes}</td>
+                    <td className="text-center py-2 px-1 font-bold text-primary tabular-nums text-base">{stats.totalPoints}</td>
                   </motion.tr>
                 );
               })}
