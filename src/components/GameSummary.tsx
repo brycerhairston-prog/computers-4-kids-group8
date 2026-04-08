@@ -208,7 +208,7 @@ const PlayerZonePieCharts = ({ players, shotSource }: { players: { id: string; n
 };
 
 const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string; name: string }[]; shotSource: Shot[]; teams?: Team[] }) => {
-  const [hoveredZone, setHoveredZone] = useState<{ playerId: string; zone: number } | null>(null);
+  const [selectedZone, setSelectedZone] = useState<{ playerId: string; zone: number } | null>(null);
 
   return (
     <div className="glass-card rounded-xl p-4 space-y-4">
