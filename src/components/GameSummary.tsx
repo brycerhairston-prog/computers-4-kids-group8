@@ -208,7 +208,7 @@ const PlayerZonePieCharts = ({ players, shotSource }: { players: { id: string; n
 };
 
 const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string; name: string }[]; shotSource: Shot[]; teams?: Team[] }) => {
-  const [hoveredZone, setHoveredZone] = useState<{ playerId: string; zone: number } | null>(null);
+  const [selectedZone, setSelectedZone] = useState<{ playerId: string; zone: number } | null>(null);
 
   return (
     <div className="glass-card rounded-xl p-4 space-y-4">
@@ -247,11 +247,12 @@ const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string;
                   {[1, 2, 3, 4, 5, 6].map(zone => {
                     const pos = ZONE_LABEL_POS[zone];
                     const zs = stats.zones[zone];
-                    const isHovered = hoveredZone?.playerId === p.id && hoveredZone?.zone === zone;
+                    const isHovered = selectedZone?.playerId === p.id && selectedZone?.zone === zone;
                     return (
                       <g key={`label-${zone}`}
-                        onMouseEnter={() => setHoveredZone({ playerId: p.id, zone })}
-                        onMouseLeave={() => setHoveredZone(null)}
+                        onClick={() => setSelectedZone(prev => 
+                          prev?.playerId === p.id && prev?.zone === zone ? null : { playerId: p.id, zone }
+                        )}
                         style={{ cursor: "pointer" }}>
                         <rect x={pos.x - 28} y={pos.y - 24} width="56" height="36" rx="4" fill="white" fillOpacity="0.8" />
                         <text x={pos.x} y={pos.y - 8} textAnchor="middle" fill="black" fontSize="11" fontWeight="700">
