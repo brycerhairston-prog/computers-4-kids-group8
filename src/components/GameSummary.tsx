@@ -897,6 +897,14 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
                 <h3 className="text-sm font-display font-bold text-foreground">📋 Individual Round Stats</h3>
                 <PlayerStatsTable players={players} shotSource={individualShots} />
               </div>
+              <div className="glass-card rounded-xl p-4 space-y-2">
+                <h3 className="text-sm font-display font-bold text-primary">🧠 Data Science Tips</h3>
+                <ul className="text-xs text-muted-foreground space-y-1.5">
+                  <li><strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.</li>
+                  <li><strong className="text-foreground">Hot Zones</strong> show where a player shoots best.</li>
+                  <li><strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.</li>
+                </ul>
+              </div>
             </TabsContent>
 
             <TabsContent value="team" className="space-y-6 mt-4">
@@ -907,6 +915,14 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
               <div className="glass-card rounded-xl p-4 space-y-3">
                 <h3 className="text-sm font-display font-bold text-foreground">📋 Team Round Player Stats</h3>
                 <PlayerStatsTable players={players} shotSource={teamShots} />
+              </div>
+              <div className="glass-card rounded-xl p-4 space-y-2">
+                <h3 className="text-sm font-display font-bold text-primary">🧠 Data Science Tips</h3>
+                <ul className="text-xs text-muted-foreground space-y-1.5">
+                  <li><strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.</li>
+                  <li><strong className="text-foreground">Hot Zones</strong> show where a player shoots best.</li>
+                  <li><strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.</li>
+                </ul>
               </div>
             </TabsContent>
 
@@ -919,6 +935,14 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
                 <PlayerStatsTable players={players} shotSource={allShots} />
               </div>
               <TeamPerformanceSection teams={teams} players={players} shotSource={teamShots} />
+              <div className="glass-card rounded-xl p-4 space-y-2">
+                <h3 className="text-sm font-display font-bold text-primary">🧠 Data Science Tips</h3>
+                <ul className="text-xs text-muted-foreground space-y-1.5">
+                  <li><strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.</li>
+                  <li><strong className="text-foreground">Hot Zones</strong> show where a player shoots best.</li>
+                  <li><strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.</li>
+                </ul>
+              </div>
             </TabsContent>
           </Tabs>
         ) : (
@@ -934,6 +958,14 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
             {gameMode === "team" && (
               <TeamPerformanceSection teams={teams} players={players} shotSource={teamShots} />
             )}
+            <div className="glass-card rounded-xl p-4 space-y-2">
+              <h3 className="text-sm font-display font-bold text-primary">🧠 Data Science Tips</h3>
+              <ul className="text-xs text-muted-foreground space-y-1.5">
+                <li><strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.</li>
+                <li><strong className="text-foreground">Hot Zones</strong> show where a player shoots best.</li>
+                <li><strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.</li>
+              </ul>
+            </div>
           </>
         )}
       </main>
