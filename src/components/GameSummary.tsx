@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import c4kLogo from "@/assets/c4k-logo.png";
 import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale, Minus, Plus, Ban } from "lucide-react";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useMemo, useState, useCallback } from "react";
 import type { TeamSelectionMode, Team, Shot, ZoneStats } from "@/context/GameContext";
@@ -194,10 +195,11 @@ const PlayerZonePieCharts = ({ players, shotSource }: { players: { id: string; n
                   );
                 })}
               </div>
-            </div>
+              </AccordionContent>
+            </AccordionItem>
           );
         })}
-      </div>
+      </Accordion>
     </div>
   );
 };
@@ -208,13 +210,19 @@ const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string;
   return (
     <div className="glass-card rounded-xl p-4 space-y-4">
       <h3 className="text-sm font-display font-bold text-foreground">🔥 Player Heat Maps</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Accordion type="multiple">
         {players.map(p => {
           const stats = computePlayerStats(p.id, shotSource);
           if (stats.attempts === 0) return null;
           return (
-            <div key={p.id} className="space-y-1">
-              <h4 className="text-xs font-bold text-foreground text-center">{p.name}</h4>
+            <AccordionItem key={p.id} value={p.id} className="border border-border rounded-lg bg-secondary/30">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 rounded-full bg-primary" />
+                  <span className="text-xs font-bold text-foreground">{p.name}</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
               <div className="relative">
                 <svg viewBox={COURT_VIEWBOX} className="w-full rounded-md overflow-hidden" preserveAspectRatio="xMidYMid meet" style={{ background: "white" }}>
                   <defs>
