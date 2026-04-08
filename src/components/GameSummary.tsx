@@ -784,7 +784,8 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
 
             <TabsContent value="individual" className="space-y-6 mt-4">
               <MvpBanner players={players} shotSource={individualShots} />
-              <PlayerBarChart players={players} shotSource={individualShots} />
+              <PlayerZonePieCharts players={players} shotSource={individualShots} />
+              <PlayerHeatMaps players={players} shotSource={individualShots} />
               <div className="glass-card rounded-xl p-4 space-y-3">
                 <h3 className="text-sm font-display font-bold text-foreground">📋 Individual Round Stats</h3>
                 <PlayerStatsTable players={players} shotSource={individualShots} />
@@ -802,7 +803,8 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
 
             <TabsContent value="overall" className="space-y-6 mt-4">
               <MvpBanner players={players} shotSource={allShots} />
-              <PlayerBarChart players={players} shotSource={allShots} />
+              <PlayerZonePieCharts players={players} shotSource={allShots} />
+              <PlayerHeatMaps players={players} shotSource={allShots} />
               <div className="glass-card rounded-xl p-4 space-y-3">
                 <h3 className="text-sm font-display font-bold text-foreground">📋 Combined Stats (Both Rounds)</h3>
                 <PlayerStatsTable players={players} shotSource={allShots} />
@@ -813,7 +815,8 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
         ) : (
           <>
             <MvpBanner players={players} shotSource={gameMode === "team" ? teamShots : individualShots} />
-            <PlayerBarChart players={players} shotSource={gameMode === "team" ? teamShots : individualShots} />
+            <PlayerZonePieCharts players={players} shotSource={gameMode === "team" ? teamShots : individualShots} />
+            <PlayerHeatMaps players={players} shotSource={gameMode === "team" ? teamShots : individualShots} teams={gameMode === "team" ? teams : undefined} />
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
               className="glass-card rounded-xl p-4 space-y-3">
               <h3 className="text-sm font-display font-bold text-foreground">📋 Detailed Stats</h3>
