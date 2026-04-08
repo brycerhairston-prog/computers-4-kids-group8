@@ -1,21 +1,17 @@
 
 
-## Plan: Add Zone Number to Best Zone Labels
+## Plan: Add "Click a zone" Hint to Heat Maps
 
-### Changes — `src/components/GameSummary.tsx`
+### Change — `src/components/GameSummary.tsx` (line 287)
 
-**Line 98**: Change the `bestZoneLabel` to include the zone number. Currently it strips "Zone N - " from the label. Instead, format it as the zone name followed by "(Zone N)".
+Add a small instructional hint below the "🔥 Player Heat Maps" heading:
 
-```
-// Before
-ZONE_LABELS[p.bestZone.zone]?.replace(/Zone \d+ - /, "") ?? ""
-
-// After  
-`${ZONE_LABELS[p.bestZone.zone]?.replace(/Zone \d+ - /, "") ?? ""} (Zone ${p.bestZone.zone})`
+```tsx
+<p className="text-xs text-muted-foreground">👆 Click on a zone to view shot breakdown pie charts</p>
 ```
 
-This applies to the best zone badge in `PlayerStatsTable` (line 98). The same change will be applied to the MVP banner (line 195) and team summary (line 406) for consistency.
+This goes right after line 287 (`<h3>` tag), inside the existing `space-y-4` container.
 
 ### Files Modified
-- `src/components/GameSummary.tsx` — append "(Zone N)" to best zone labels in three locations
+- `src/components/GameSummary.tsx` — add hint text below the heat maps heading
 
