@@ -315,8 +315,9 @@ const ShotTracker = () => {
             return (
               <text key={`zone-num-${zone}`} x={pos.x} y={pos.y}
                 textAnchor="middle" dominantBaseline="central"
-                fill="white" fontSize="18" fontWeight="800"
-                opacity="0.45" style={{ pointerEvents: "none" }}>
+                fill="white" fontSize="24" fontWeight="900"
+                opacity="0.8" stroke="black" strokeWidth="3" paintOrder="stroke"
+                style={{ pointerEvents: "none" }}>
                 {zone}
               </text>
             );
