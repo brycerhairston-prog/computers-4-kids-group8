@@ -69,6 +69,18 @@ const HeatMap = () => {
         })}
 
 
+        {/* Zone number labels */}
+        {[1, 2, 3, 4, 5, 6].map(zone => {
+          const pos = ZONE_LABEL_POS[zone];
+          return (
+            <text key={`zone-num-${zone}`} x={pos.x} y={pos.y + 22}
+              textAnchor="middle" fill="black" fontSize="11"
+              fontWeight="700" opacity="0.5" style={{ pointerEvents: "none" }}>
+              Z{zone}
+            </text>
+          );
+        })}
+
         {/* Layer 4: Zone stat labels on top */}
         {[1, 2, 3, 4, 5, 6].map(zone => {
           const stats = getZoneStats(zone, selectedPlayerId || undefined);

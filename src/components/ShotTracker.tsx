@@ -310,6 +310,18 @@ const ShotTracker = () => {
             );
           })}
 
+          {[1, 2, 3, 4, 5, 6].map(zone => {
+            const pos = ZONE_LABEL_POS[zone];
+            return (
+              <text key={`zone-num-${zone}`} x={pos.x} y={pos.y}
+                textAnchor="middle" dominantBaseline="central"
+                fill="white" fontSize="18" fontWeight="800"
+                opacity="0.45" style={{ pointerEvents: "none" }}>
+                {zone}
+              </text>
+            );
+          })}
+
           <AnimatePresence>
             {courtShots.map(shot => (
               <motion.circle key={shot.id}
