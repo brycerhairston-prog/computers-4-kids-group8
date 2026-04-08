@@ -5,12 +5,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import c4kLogo from "@/assets/c4k-logo.png";
 import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale, Minus, Plus, Ban } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useMemo, useState, useCallback } from "react";
 import type { TeamSelectionMode, Team, Shot, ZoneStats } from "@/context/GameContext";
+import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
+import courtImage from "@/assets/court-layout.png";
 
 const COLORS = ["hsl(142, 71%, 45%)", "hsl(0, 84%, 60%)", "hsl(45, 93%, 47%)", "hsl(217, 91%, 60%)", "hsl(280, 68%, 60%)", "hsl(190, 90%, 50%)"];
 const TEAM_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+const TOOLTIP_STYLE = {
+  background: "hsl(220, 20%, 15%)",
+  border: "1px solid hsl(220, 15%, 25%)",
+  borderRadius: 8,
+  color: "white",
+  fontSize: 11,
+};
+
+const getHeatColor = (fgPct: number): string => {
+  if (fgPct === 0) return "rgba(59, 130, 246, 0.6)";
+  if (fgPct <= 20) return "rgba(99, 102, 241, 0.7)";
+  if (fgPct <= 40) return "rgba(168, 85, 247, 0.7)";
+  if (fgPct <= 60) return "rgba(234, 88, 12, 0.7)";
+  if (fgPct <= 80) return "rgba(239, 68, 68, 0.75)";
+  return "rgba(220, 38, 38, 0.85)";
+};
 
 function computePlayerStats(playerId: string, shotSource: Shot[]) {
   const playerShots = shotSource.filter(s => s.playerId === playerId);
