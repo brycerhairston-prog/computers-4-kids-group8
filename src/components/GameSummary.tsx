@@ -160,18 +160,30 @@ const PlayerZonePieCharts = ({ players, shotSource }: { players: { id: string; n
     <div className="glass-card rounded-xl p-4 space-y-2">
       <h3 className="text-sm font-display font-bold text-foreground">📊 Zone Performance by Player</h3>
       <Accordion type="multiple">
-        {players.map(p => {
+        {players.map((p, idx) => {
           const stats = computePlayerStats(p.id, shotSource);
           if (stats.attempts === 0) return null;
+          const playerColor = PLAYER_COLORS[idx % PLAYER_COLORS.length];
+          const fgPct = stats.attempts > 0 ? Math.round((stats.makes / stats.attempts) * 100) : 0;
           return (
-            <AccordionItem key={p.id} value={p.id} className="border border-border rounded-lg bg-secondary/30">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center gap-2 flex-1">
-                  <div className="w-1 h-5 rounded-full bg-primary" />
-                  <span className="text-sm font-bold text-foreground">{p.name}</span>
-                  <span className="text-[10px] text-muted-foreground ml-auto mr-2">
-                    Overall: {stats.makes}/{stats.attempts} ({stats.attempts > 0 ? Math.round((stats.makes / stats.attempts) * 100) : 0}%)
-                  </span>
+            <AccordionItem key={p.id} value={p.id} className="border border-border rounded-lg overflow-hidden border-l-4 mb-2" style={{ borderLeftColor: playerColor }}>
+              <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-secondary/50 transition-colors">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-md" style={{ background: playerColor, color: "white" }}>
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex flex-col items-start gap-0.5">
+                    <span className="text-sm font-bold text-foreground flex items-center gap-1">🏀 {p.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-muted-foreground">
+                        {stats.makes}/{stats.attempts} ({fgPct}%)
+                      </span>
+                      <div className="w-16 h-1.5 rounded-full bg-secondary overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${fgPct}%`, background: getFgColor(fgPct) }} />
+                      </div>
+                    </div>
+                  </div>
+                  <span className="ml-auto mr-2 text-xs font-bold tabular-nums" style={{ color: playerColor }}>{stats.totalPoints} pts</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4">
@@ -231,15 +243,25 @@ const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string;
     <div className="glass-card rounded-xl p-4 space-y-4">
       <h3 className="text-sm font-display font-bold text-foreground">🔥 Player Heat Maps</h3>
       <Accordion type="multiple">
-        {players.map(p => {
+        {players.map((p, idx) => {
           const stats = computePlayerStats(p.id, shotSource);
           if (stats.attempts === 0) return null;
+          const playerColor = PLAYER_COLORS[idx % PLAYER_COLORS.length];
+          const fgPct = stats.attempts > 0 ? Math.round((stats.makes / stats.attempts) * 100) : 0;
           return (
-            <AccordionItem key={p.id} value={p.id} className="border border-border rounded-lg bg-secondary/30">
-              <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-5 rounded-full bg-primary" />
-                  <span className="text-xs font-bold text-foreground">{p.name}</span>
+            <AccordionItem key={p.id} value={p.id} className="border border-border rounded-lg overflow-hidden border-l-4 mb-2" style={{ borderLeftColor: playerColor }}>
+              <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-secondary/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-md" style={{ background: playerColor, color: "white" }}>
+                    {p.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-sm font-bold text-foreground flex items-center gap-1">🏀 {p.name}</span>
+                  <div className="flex items-center gap-2 ml-2">
+                    <div className="w-12 h-1.5 rounded-full bg-secondary overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${fgPct}%`, background: getFgColor(fgPct) }} />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">{fgPct}%</span>
+                  </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-4 pb-4">
