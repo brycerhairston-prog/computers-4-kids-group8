@@ -1,36 +1,32 @@
 
 
-## Plan: Make Accordion Tabs More Fun & Engaging for Young Students
+## Plan: Make Detailed Stats Table More Appealing
 
 ### Problem
-The accordion triggers for player sections look plain — just text and a chevron on a dark card. For a younger audience, they need more color, personality, and visual feedback.
+The `PlayerStatsTable` is a plain HTML table with minimal styling — just text rows with borders. It needs the same colorful, engaging treatment applied to the accordion sections.
 
-### Changes
+### Changes — `src/components/GameSummary.tsx` (PlayerStatsTable, lines 82–124)
 
-**1. `src/components/GameSummary.tsx` — Restyle all AccordionItem/Trigger instances**
+Replace the plain table with styled player cards/rows that match the accordion style:
 
-For both `PlayerZonePieCharts` and `PlayerHeatMaps`:
+1. **Player avatar** — Same colored circle with initial as the accordion triggers, using `PLAYER_COLORS`
+2. **Colored left border** — 4px left border on each player row matching their color
+3. **FG% progress bar** — Same green/yellow/red mini bar used in the accordions, placed next to the FG% number
+4. **Points highlight** — Larger, bolder points display with the player's color
+5. **Best Zone badge** — Style it as a small colored pill/badge instead of plain text
+6. **Basketball emoji** — Add 🏀 next to player names for consistency
+7. **Row hover effect** — Subtle background highlight on hover (`hover:bg-secondary/50`)
+8. **Card-style rows** — Each player row becomes a rounded card with padding and `bg-card/50` background instead of flat table rows
 
-- Replace the thin `w-1 h-5` color bar with a **colored circle avatar** showing the player's first initial (using the player's assigned color from the context)
-- Add a **colorful left border** (4px) on each AccordionItem using the player's color
-- Add a **subtle gradient background** on the trigger that shifts on hover (e.g., from `bg-secondary/30` to a slight glow of the player's color)
-- Replace the plain chevron with a **bouncy animated arrow** — use framer-motion to add a small scale pulse when collapsed, and rotate smoothly on open
-- Add a small **emoji badge** (e.g., basketball 🏀) next to each player name
-- Show a **mini FG% progress bar** (colored green-to-red based on percentage) inline in the trigger alongside the text stats
-- On open state, add a subtle **top border glow** matching the player's color
-
-**2. `src/components/ui/accordion.tsx` — No changes needed**
-
-All styling will be applied via className overrides in GameSummary.
+The layout shifts from a traditional `<table>` to a stacked card list, which is more visually engaging and easier to read on mobile.
 
 ### Technical Details
 
-- Player colors come from `useGame().players` — each player has a `color` property
-- The colored avatar: `<div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: playerColor }}>{initial}</div>`
-- Mini progress bar: a small `<div>` with width set to FG%, colored with a green-yellow-red gradient
-- Framer-motion `animate` on the chevron for smooth rotation
-- AccordionItem gets `style={{ borderLeftColor: playerColor }}` with `border-l-4`
+- Reuse `PLAYER_COLORS`, `getFgColor` helpers already in the file
+- Each player becomes a flex row card: avatar | name+emoji | stats grid (shots, makes, FG% with bar, points, best zone badge)
+- Best zone badge uses inline style with a muted version of the zone's heat color
+- Responsive: on small screens the stats wrap below the name
 
 ### Files Modified
-- `src/components/GameSummary.tsx` — restyle accordion triggers in both PlayerZonePieCharts and PlayerHeatMaps
+- `src/components/GameSummary.tsx` — rewrite `PlayerStatsTable` from plain table to styled card rows
 
