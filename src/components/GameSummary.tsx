@@ -285,6 +285,7 @@ const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string;
   return (
     <div className="glass-card rounded-xl p-4 space-y-4">
       <h3 className="text-sm font-display font-bold text-foreground">🔥 Player Heat Maps</h3>
+      <p className="text-xs text-muted-foreground">👆 Click on a zone to view shot breakdown pie charts</p>
       <Accordion type="multiple">
         {players.map((p, idx) => {
           const stats = computePlayerStats(p.id, shotSource);
