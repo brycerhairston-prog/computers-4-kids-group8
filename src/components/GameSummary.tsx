@@ -15,6 +15,23 @@ import courtImage from "@/assets/court-layout.png";
 const COLORS = ["hsl(142, 71%, 45%)", "hsl(0, 84%, 60%)", "hsl(45, 93%, 47%)", "hsl(217, 91%, 60%)", "hsl(280, 68%, 60%)", "hsl(190, 90%, 50%)"];
 const TEAM_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+const PLAYER_COLORS = [
+  "hsl(25, 95%, 55%)",   // orange (primary)
+  "hsl(170, 70%, 45%)",  // teal (accent)
+  "hsl(280, 68%, 60%)",  // purple
+  "hsl(217, 91%, 60%)",  // blue
+  "hsl(45, 93%, 47%)",   // gold
+  "hsl(340, 75%, 55%)",  // pink
+  "hsl(142, 71%, 45%)",  // green
+  "hsl(190, 90%, 50%)",  // cyan
+];
+
+const getFgColor = (pct: number) => {
+  if (pct >= 60) return "hsl(142, 71%, 45%)";
+  if (pct >= 40) return "hsl(45, 93%, 47%)";
+  return "hsl(0, 84%, 60%)";
+};
+
 const TOOLTIP_STYLE = {
   background: "hsl(220, 20%, 15%)",
   border: "1px solid hsl(220, 15%, 25%)",
