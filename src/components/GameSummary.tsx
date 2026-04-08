@@ -5,12 +5,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import c4kLogo from "@/assets/c4k-logo.png";
 import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale, Minus, Plus, Ban } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useMemo, useState, useCallback } from "react";
 import type { TeamSelectionMode, Team, Shot, ZoneStats } from "@/context/GameContext";
+import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
+import courtImage from "@/assets/court-layout.png";
 
 const COLORS = ["hsl(142, 71%, 45%)", "hsl(0, 84%, 60%)", "hsl(45, 93%, 47%)", "hsl(217, 91%, 60%)", "hsl(280, 68%, 60%)", "hsl(190, 90%, 50%)"];
 const TEAM_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+const TOOLTIP_STYLE = {
+  background: "hsl(220, 20%, 15%)",
+  border: "1px solid hsl(220, 15%, 25%)",
+  borderRadius: 8,
+  color: "white",
+  fontSize: 11,
+};
+
+const getHeatColor = (fgPct: number): string => {
+  if (fgPct === 0) return "rgba(59, 130, 246, 0.6)";
+  if (fgPct <= 20) return "rgba(99, 102, 241, 0.7)";
+  if (fgPct <= 40) return "rgba(168, 85, 247, 0.7)";
+  if (fgPct <= 60) return "rgba(234, 88, 12, 0.7)";
+  if (fgPct <= 80) return "rgba(239, 68, 68, 0.75)";
+  return "rgba(220, 38, 38, 0.85)";
+};
 
 function computePlayerStats(playerId: string, shotSource: Shot[]) {
   const playerShots = shotSource.filter(s => s.playerId === playerId);
@@ -118,30 +137,135 @@ const MvpBanner = ({ players, shotSource }: { players: { id: string; name: strin
   );
 };
 
-const PlayerBarChart = ({ players, shotSource }: { players: { id: string; name: string }[]; shotSource: Shot[] }) => {
-  const barData = players.map(p => {
-    const stats = computePlayerStats(p.id, shotSource);
-    return {
-      name: p.name,
-      points: stats.totalPoints,
-      fgPct: stats.attempts > 0 ? Math.round((stats.makes / stats.attempts) * 100) : 0,
-    };
-  });
+const PlayerZonePieCharts = ({ players, shotSource }: { players: { id: string; name: string }[]; shotSource: Shot[] }) => {
+  return (
+    <div className="glass-card rounded-xl p-4 space-y-4">
+      <h3 className="text-sm font-display font-bold text-foreground">📊 Zone Performance by Player</h3>
+      {players.map(p => {
+        const stats = computePlayerStats(p.id, shotSource);
+        if (stats.attempts === 0) return null;
+        return (
+          <div key={p.id} className="space-y-2">
+            <h4 className="text-xs font-bold text-foreground">{p.name}</h4>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              {[1, 2, 3, 4, 5, 6].map(z => {
+                const zs = stats.zones[z];
+                const fgPct = zs.fgPct;
+                const radius = zs.attempts > 0 ? Math.max(20, Math.round(20 + (fgPct / 100) * 35)) : 20;
+                const pieData = [
+                  { name: "Makes", value: zs.makes },
+                  { name: "Misses", value: zs.attempts - zs.makes },
+                ];
+                return (
+                  <div key={z} className="flex flex-col items-center">
+                    <span className="text-[10px] text-muted-foreground mb-1">Z{z} ({ZONE_POINTS[z]}pt)</span>
+                    {zs.attempts > 0 ? (
+                      <div style={{ width: radius * 2 + 10, height: radius * 2 + 10 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={pieData} dataKey="value" cx="50%" cy="50%" outerRadius={radius} innerRadius={0} strokeWidth={1}>
+                              <Cell fill="hsl(142, 71%, 45%)" />
+                              <Cell fill="hsl(0, 84%, 60%)" />
+                            </Pie>
+                            <Tooltip contentStyle={TOOLTIP_STYLE}
+                              formatter={(value: number, name: string) => [value, name]} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center text-[10px] text-muted-foreground" style={{ width: 50, height: 50 }}>
+                        No shots
+                      </div>
+                    )}
+                    <span className="text-[10px] font-bold text-foreground">
+                      {zs.makes}/{zs.attempts} ({fgPct.toFixed(0)}%)
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string; name: string }[]; shotSource: Shot[]; teams?: Team[] }) => {
+  const [hoveredZone, setHoveredZone] = useState<{ playerId: string; zone: number } | null>(null);
 
   return (
-    <div className="glass-card rounded-xl p-4 space-y-3">
-      <h3 className="text-sm font-display font-bold text-foreground">📊 Player Comparison</h3>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={barData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
-            <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
-            <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, color: "hsl(var(--foreground))" }} />
-            <Bar dataKey="points" name="Points" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="fgPct" name="FG%" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+    <div className="glass-card rounded-xl p-4 space-y-4">
+      <h3 className="text-sm font-display font-bold text-foreground">🔥 Player Heat Maps</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {players.map(p => {
+          const stats = computePlayerStats(p.id, shotSource);
+          if (stats.attempts === 0) return null;
+          return (
+            <div key={p.id} className="space-y-1">
+              <h4 className="text-xs font-bold text-foreground text-center">{p.name}</h4>
+              <div className="relative">
+                <svg viewBox={COURT_VIEWBOX} className="w-full rounded-md overflow-hidden" preserveAspectRatio="xMidYMid meet" style={{ background: "white" }}>
+                  <defs>
+                    {[1, 2, 3, 4, 5, 6].map(zone => (
+                      <clipPath key={`clip-${p.id}-${zone}`} id={`summary-clip-${p.id}-${zone}`}>
+                        <path d={ZONE_PATHS[zone]} />
+                      </clipPath>
+                    ))}
+                  </defs>
+                  <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
+                  {[1, 2, 3, 4, 5, 6].map(zone => {
+                    const zs = stats.zones[zone];
+                    if (zs.attempts === 0) return null;
+                    return (
+                      <rect key={`heat-${zone}`} x="0" y="0" width="400" height="500"
+                        fill={getHeatColor(zs.fgPct)} clipPath={`url(#summary-clip-${p.id}-${zone})`} opacity="0.55" />
+                    );
+                  })}
+                  {[1, 2, 3, 4, 5, 6].map(zone => {
+                    const pos = ZONE_LABEL_POS[zone];
+                    const zs = stats.zones[zone];
+                    const isHovered = hoveredZone?.playerId === p.id && hoveredZone?.zone === zone;
+                    return (
+                      <g key={`label-${zone}`}
+                        onMouseEnter={() => setHoveredZone({ playerId: p.id, zone })}
+                        onMouseLeave={() => setHoveredZone(null)}
+                        style={{ cursor: "pointer" }}>
+                        <rect x={pos.x - 28} y={pos.y - 24} width="56" height="36" rx="4" fill="white" fillOpacity="0.8" />
+                        <text x={pos.x} y={pos.y - 8} textAnchor="middle" fill="black" fontSize="11" fontWeight="700">
+                          {zs.makes}/{zs.attempts}
+                        </text>
+                        <text x={pos.x} y={pos.y + 8} textAnchor="middle" fill="black" fontSize="10" opacity="0.8">
+                          {zs.fgPct.toFixed(0)}%
+                        </text>
+                        {isHovered && zs.attempts > 0 && (
+                          <foreignObject x={pos.x - 45} y={pos.y + 14} width="90" height="90">
+                            <div style={{ width: 90, height: 90 }}>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                  <Pie
+                                    data={[
+                                      { name: "Makes", value: zs.makes },
+                                      { name: "Misses", value: zs.attempts - zs.makes },
+                                    ]}
+                                    dataKey="value" cx="50%" cy="50%" outerRadius={35} innerRadius={0} strokeWidth={1}>
+                                    <Cell fill="hsl(142, 71%, 45%)" />
+                                    <Cell fill="hsl(0, 84%, 60%)" />
+                                  </Pie>
+                                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                                </PieChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </foreignObject>
+                        )}
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -185,7 +309,7 @@ const TeamPerformanceSection = ({ teams, players, shotSource }: { teams: Team[];
                         {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
                       <Tooltip formatter={(value: number, name: string, props: any) => [`${props.payload.makes}/${value} (${props.payload.fgPct.toFixed(0)}%)`, name]}
-                        contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11, color: "hsl(var(--foreground))" }} />
+                        contentStyle={TOOLTIP_STYLE} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -660,7 +784,8 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
 
             <TabsContent value="individual" className="space-y-6 mt-4">
               <MvpBanner players={players} shotSource={individualShots} />
-              <PlayerBarChart players={players} shotSource={individualShots} />
+              <PlayerZonePieCharts players={players} shotSource={individualShots} />
+              <PlayerHeatMaps players={players} shotSource={individualShots} />
               <div className="glass-card rounded-xl p-4 space-y-3">
                 <h3 className="text-sm font-display font-bold text-foreground">📋 Individual Round Stats</h3>
                 <PlayerStatsTable players={players} shotSource={individualShots} />
@@ -670,6 +795,8 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
             <TabsContent value="team" className="space-y-6 mt-4">
               <MvpBanner players={players} shotSource={teamShots} />
               <TeamPerformanceSection teams={teams} players={players} shotSource={teamShots} />
+              <PlayerZonePieCharts players={players} shotSource={teamShots} />
+              <PlayerHeatMaps players={players} shotSource={teamShots} teams={teams} />
               <div className="glass-card rounded-xl p-4 space-y-3">
                 <h3 className="text-sm font-display font-bold text-foreground">📋 Team Round Player Stats</h3>
                 <PlayerStatsTable players={players} shotSource={teamShots} />
@@ -678,7 +805,8 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
 
             <TabsContent value="overall" className="space-y-6 mt-4">
               <MvpBanner players={players} shotSource={allShots} />
-              <PlayerBarChart players={players} shotSource={allShots} />
+              <PlayerZonePieCharts players={players} shotSource={allShots} />
+              <PlayerHeatMaps players={players} shotSource={allShots} />
               <div className="glass-card rounded-xl p-4 space-y-3">
                 <h3 className="text-sm font-display font-bold text-foreground">📋 Combined Stats (Both Rounds)</h3>
                 <PlayerStatsTable players={players} shotSource={allShots} />
@@ -689,7 +817,8 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
         ) : (
           <>
             <MvpBanner players={players} shotSource={gameMode === "team" ? teamShots : individualShots} />
-            <PlayerBarChart players={players} shotSource={gameMode === "team" ? teamShots : individualShots} />
+            <PlayerZonePieCharts players={players} shotSource={gameMode === "team" ? teamShots : individualShots} />
+            <PlayerHeatMaps players={players} shotSource={gameMode === "team" ? teamShots : individualShots} teams={gameMode === "team" ? teams : undefined} />
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
               className="glass-card rounded-xl p-4 space-y-3">
               <h3 className="text-sm font-display font-bold text-foreground">📋 Detailed Stats</h3>
