@@ -285,10 +285,11 @@ const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string;
                   })}
                 </svg>
               </div>
-            </div>
+              </AccordionContent>
+            </AccordionItem>
           );
         })}
-      </div>
+      </Accordion>
     </div>
   );
 };
