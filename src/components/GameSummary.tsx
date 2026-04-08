@@ -95,7 +95,7 @@ const PlayerStatsTable = ({ players, shotSource }: { players: { id: string; name
       {summaries.map(p => {
         const fgPct = p.stats.attempts > 0 ? Math.round((p.stats.makes / p.stats.attempts) * 100) : 0;
         const bestZoneLabel = p.bestZone
-          ? ZONE_LABELS[p.bestZone.zone]?.replace(/Zone \d+ - /, "") ?? ""
+          ? `${ZONE_LABELS[p.bestZone.zone]?.replace(/Zone \d+ - /, "") ?? ""} (Zone ${p.bestZone.zone})`
           : null;
         return (
           <div
@@ -192,7 +192,7 @@ const MvpBanner = ({ players, shotSource }: { players: { id: string; name: strin
       <p className="text-muted-foreground text-sm">
         {mvp.stats.totalPoints} points · {mvp.stats.makes}/{mvp.stats.attempts} shots ·{" "}
         {mvp.stats.attempts > 0 ? Math.round((mvp.stats.makes / mvp.stats.attempts) * 100) : 0}% FG
-        {mvp.bestZone && ` · Best Zone: ${ZONE_LABELS[mvp.bestZone.zone]} (${mvp.bestZone.fgPct.toFixed(0)}%)`}
+        {mvp.bestZone && ` · Best Zone: ${ZONE_LABELS[mvp.bestZone.zone]?.replace(/Zone \d+ - /, "") ?? ""} (Zone ${mvp.bestZone.zone}) (${mvp.bestZone.fgPct.toFixed(0)}%)`}
       </p>
     </motion.div>
   );
@@ -403,7 +403,7 @@ const TeamPerformanceSection = ({ teams, players, shotSource }: { teams: Team[];
                 <h4 className="text-lg font-display font-bold text-foreground">{t.name}</h4>
                 <p className="text-xs text-muted-foreground">
                   {t.stats.totalPoints} pts · {t.stats.makes}/{t.stats.attempts} ({t.stats.attempts > 0 ? Math.round((t.stats.makes / t.stats.attempts) * 100) : 0}% FG)
-                  {t.bestZone && ` · Best: ${ZONE_LABELS[t.bestZone.zone]}`}
+                  {t.bestZone && ` · Best: ${ZONE_LABELS[t.bestZone.zone]?.replace(/Zone \d+ - /, "") ?? ""} (Zone ${t.bestZone.zone})`}
                 </p>
                 <p className="text-[10px] text-muted-foreground">Players: {teamPlayers.map(p => p.name).join(", ")}</p>
               </div>
