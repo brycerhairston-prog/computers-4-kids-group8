@@ -80,45 +80,88 @@ interface GameSummaryProps {
 }
 
 const PlayerStatsTable = ({ players, shotSource }: { players: { id: string; name: string }[]; shotSource: Shot[] }) => {
-  const summaries = players.map(p => {
+  const summaries = players.map((p, idx) => {
     const stats = computePlayerStats(p.id, shotSource);
     const bestZone = Object.entries(stats.zones).reduce((best, [z, zs]) =>
       zs.fgPct > (best?.fgPct ?? 0) && zs.attempts > 0 ? { zone: Number(z), ...zs } : best,
       null as (null | { zone: number; makes: number; attempts: number; fgPct: number })
     );
-    return { ...p, stats, bestZone };
+    const playerColor = PLAYER_COLORS[idx % PLAYER_COLORS.length];
+    return { ...p, stats, bestZone, playerColor };
   });
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="border-b border-border text-muted-foreground">
-            <th className="text-left py-2 px-1">Player</th>
-            <th className="text-center py-2 px-1">Shots</th>
-            <th className="text-center py-2 px-1">Makes</th>
-            <th className="text-center py-2 px-1">FG%</th>
-            <th className="text-center py-2 px-1">Points</th>
-            <th className="text-center py-2 px-1">Best Zone</th>
-          </tr>
-        </thead>
-        <tbody>
-          {summaries.map(p => (
-            <tr key={p.id} className="border-b border-border/50">
-              <td className="py-2 px-1 font-medium">{p.name}</td>
-              <td className="text-center py-2 px-1 tabular-nums">{p.stats.attempts}</td>
-              <td className="text-center py-2 px-1 tabular-nums">{p.stats.makes}</td>
-              <td className="text-center py-2 px-1 tabular-nums font-semibold">
-                {p.stats.attempts > 0 ? Math.round((p.stats.makes / p.stats.attempts) * 100) : 0}%
-              </td>
-              <td className="text-center py-2 px-1 tabular-nums font-bold text-primary">{p.stats.totalPoints}</td>
-              <td className="text-center py-2 px-1 text-[10px]">
-                {p.bestZone ? `${ZONE_LABELS[p.bestZone.zone]} (${p.bestZone.fgPct.toFixed(0)}%)` : "—"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-2">
+      {summaries.map(p => {
+        const fgPct = p.stats.attempts > 0 ? Math.round((p.stats.makes / p.stats.attempts) * 100) : 0;
+        const bestZoneLabel = p.bestZone
+          ? ZONE_LABELS[p.bestZone.zone]?.replace(/Zone \d+ - /, "") ?? ""
+          : null;
+        return (
+          <div
+            key={p.id}
+            className="flex items-center gap-3 p-3 rounded-xl bg-card/50 border-l-4 transition-colors hover:bg-secondary/50"
+            style={{ borderLeftColor: p.playerColor }}
+          >
+            {/* Avatar */}
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-md shrink-0"
+              style={{ background: p.playerColor }}
+            >
+              {p.name.charAt(0).toUpperCase()}
+            </div>
+
+            {/* Name */}
+            <div className="flex items-center gap-1 min-w-[80px]">
+              <span className="text-sm font-semibold text-foreground">{p.name}</span>
+              <span className="text-sm">🏀</span>
+            </div>
+
+            {/* Stats grid */}
+            <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-xs">
+              <div className="flex flex-col items-center">
+                <span className="text-muted-foreground text-[10px] uppercase tracking-wide">Shots</span>
+                <span className="tabular-nums font-medium text-foreground">{p.stats.attempts}</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-muted-foreground text-[10px] uppercase tracking-wide">Makes</span>
+                <span className="tabular-nums font-medium text-foreground">{p.stats.makes}</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-muted-foreground text-[10px] uppercase tracking-wide">FG%</span>
+                <span className="tabular-nums font-semibold" style={{ color: getFgColor(fgPct) }}>{fgPct}%</span>
+                <div className="w-14 h-1.5 rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${fgPct}%`, background: getFgColor(fgPct) }}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-muted-foreground text-[10px] uppercase tracking-wide">Points</span>
+                <span
+                  className="tabular-nums text-base font-bold"
+                  style={{ color: p.playerColor }}
+                >
+                  {p.stats.totalPoints}
+                </span>
+              </div>
+            </div>
+
+            {/* Best Zone badge */}
+            {bestZoneLabel ? (
+              <div
+                className="hidden md:flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold text-white shrink-0"
+                style={{ background: getFgColor(p.bestZone!.fgPct) }}
+              >
+                ⭐ {bestZoneLabel} ({p.bestZone!.fgPct.toFixed(0)}%)
+              </div>
+            ) : (
+              <div className="hidden md:block w-20" />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
