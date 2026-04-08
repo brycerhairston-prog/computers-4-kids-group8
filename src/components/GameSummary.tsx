@@ -309,7 +309,7 @@ const TeamPerformanceSection = ({ teams, players, shotSource }: { teams: Team[];
                         {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
                       <Tooltip formatter={(value: number, name: string, props: any) => [`${props.payload.makes}/${value} (${props.payload.fgPct.toFixed(0)}%)`, name]}
-                        contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11, color: "hsl(var(--foreground))" }} />
+                        contentStyle={TOOLTIP_STYLE} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
