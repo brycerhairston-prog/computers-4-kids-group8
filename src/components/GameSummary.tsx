@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import c4kLogo from "@/assets/c4k-logo.png";
 import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale, Minus, Plus, Ban } from "lucide-react";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useMemo, useState, useCallback } from "react";
 import type { TeamSelectionMode, Team, Shot, ZoneStats } from "@/context/GameContext";
@@ -141,63 +142,67 @@ const PlayerZonePieCharts = ({ players, shotSource }: { players: { id: string; n
   return (
     <div className="glass-card rounded-xl p-4 space-y-2">
       <h3 className="text-sm font-display font-bold text-foreground">📊 Zone Performance by Player</h3>
-      <div className="flex flex-col gap-4">
+      <Accordion type="multiple">
         {players.map(p => {
           const stats = computePlayerStats(p.id, shotSource);
           if (stats.attempts === 0) return null;
           return (
-            <div key={p.id} className="border border-border rounded-lg p-4 bg-secondary/30 space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-5 rounded-full bg-primary" />
-                <h4 className="text-sm font-bold text-foreground">{p.name}</h4>
-                <span className="text-[10px] text-muted-foreground ml-auto">
-                  Overall: {stats.makes}/{stats.attempts} ({stats.attempts > 0 ? Math.round((stats.makes / stats.attempts) * 100) : 0}%)
-                </span>
-              </div>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                {[1, 2, 3, 4, 5, 6].map(z => {
-                  const zs = stats.zones[z];
-                  const fgPct = zs.fgPct;
-                  const radius = zs.attempts > 0 ? Math.max(20, Math.round(20 + (fgPct / 100) * 35)) : 20;
-                  const pieData = [
-                    { name: "Makes", value: zs.makes },
-                    { name: "Misses", value: zs.attempts - zs.makes },
-                  ];
-                  return (
-                    <div key={z} className="flex flex-col items-center border border-border/50 rounded-md p-2 bg-card/50">
-                      <span className="text-[10px] font-semibold text-muted-foreground mb-1 bg-secondary/60 px-1.5 py-0.5 rounded-full">
-                        Z{z} ({ZONE_POINTS[z]}pt)
-                      </span>
-                      {zs.attempts > 0 ? (
-                        <div style={{ width: radius * 2 + 10, height: radius * 2 + 10 }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie data={pieData} dataKey="value" cx="50%" cy="50%" outerRadius={radius} innerRadius={0} strokeWidth={1}>
-                                <Cell fill="hsl(142, 71%, 45%)" />
-                                <Cell fill="hsl(0, 84%, 60%)" />
-                              </Pie>
-                              <Tooltip contentStyle={TOOLTIP_STYLE}
-                                itemStyle={{ color: "white" }} labelStyle={{ color: "white" }}
-                                formatter={(value: number, name: string) => [value, name]} />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center text-[10px] text-muted-foreground" style={{ width: 50, height: 50 }}>
-                          No shots
-                        </div>
-                      )}
-                      <span className="text-[10px] font-bold text-foreground">
-                        {zs.makes}/{zs.attempts} ({fgPct.toFixed(0)}%)
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <AccordionItem key={p.id} value={p.id} className="border border-border rounded-lg bg-secondary/30">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex items-center gap-2 flex-1">
+                  <div className="w-1 h-5 rounded-full bg-primary" />
+                  <span className="text-sm font-bold text-foreground">{p.name}</span>
+                  <span className="text-[10px] text-muted-foreground ml-auto mr-2">
+                    Overall: {stats.makes}/{stats.attempts} ({stats.attempts > 0 ? Math.round((stats.makes / stats.attempts) * 100) : 0}%)
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 pt-2">
+                  {[1, 2, 3, 4, 5, 6].map(z => {
+                    const zs = stats.zones[z];
+                    const fgPct = zs.fgPct;
+                    const radius = zs.attempts > 0 ? Math.max(20, Math.round(20 + (fgPct / 100) * 35)) : 20;
+                    const pieData = [
+                      { name: "Makes", value: zs.makes },
+                      { name: "Misses", value: zs.attempts - zs.makes },
+                    ];
+                    return (
+                      <div key={z} className="flex flex-col items-center border border-border/50 rounded-md p-2 bg-card/50">
+                        <span className="text-[10px] font-semibold text-muted-foreground mb-1 bg-secondary/60 px-1.5 py-0.5 rounded-full">
+                          Z{z} ({ZONE_POINTS[z]}pt)
+                        </span>
+                        {zs.attempts > 0 ? (
+                          <div style={{ width: radius * 2 + 10, height: radius * 2 + 10 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie data={pieData} dataKey="value" cx="50%" cy="50%" outerRadius={radius} innerRadius={0} strokeWidth={1}>
+                                  <Cell fill="hsl(142, 71%, 45%)" />
+                                  <Cell fill="hsl(0, 84%, 60%)" />
+                                </Pie>
+                                <Tooltip contentStyle={TOOLTIP_STYLE}
+                                  itemStyle={{ color: "white" }} labelStyle={{ color: "white" }}
+                                  formatter={(value: number, name: string) => [value, name]} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center text-[10px] text-muted-foreground" style={{ width: 50, height: 50 }}>
+                            No shots
+                          </div>
+                        )}
+                        <span className="text-[10px] font-bold text-foreground">
+                          {zs.makes}/{zs.attempts} ({fgPct.toFixed(0)}%)
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
           );
         })}
-      </div>
+      </Accordion>
     </div>
   );
 };
@@ -208,13 +213,19 @@ const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string;
   return (
     <div className="glass-card rounded-xl p-4 space-y-4">
       <h3 className="text-sm font-display font-bold text-foreground">🔥 Player Heat Maps</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Accordion type="multiple">
         {players.map(p => {
           const stats = computePlayerStats(p.id, shotSource);
           if (stats.attempts === 0) return null;
           return (
-            <div key={p.id} className="space-y-1">
-              <h4 className="text-xs font-bold text-foreground text-center">{p.name}</h4>
+            <AccordionItem key={p.id} value={p.id} className="border border-border rounded-lg bg-secondary/30">
+              <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 rounded-full bg-primary" />
+                  <span className="text-xs font-bold text-foreground">{p.name}</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
               <div className="relative">
                 <svg viewBox={COURT_VIEWBOX} className="w-full rounded-md overflow-hidden" preserveAspectRatio="xMidYMid meet" style={{ background: "white" }}>
                   <defs>
@@ -274,10 +285,11 @@ const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string;
                   })}
                 </svg>
               </div>
-            </div>
+              </AccordionContent>
+            </AccordionItem>
           );
         })}
-      </div>
+      </Accordion>
     </div>
   );
 };
