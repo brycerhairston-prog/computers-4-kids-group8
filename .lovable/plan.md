@@ -1,15 +1,24 @@
 
 
-## Plan: Enlarge Heat Map Hover Pie Charts
+## Plan: Switch Heat Map Pie Charts from Hover to Click Toggle
 
-### Change — `src/components/GameSummary.tsx` (~lines 264–281)
+### Problem
+The hover-triggered pie charts disappear when moving the cursor toward them, making them unusable for some zones.
 
-Increase the `foreignObject` and inner `div` dimensions from `90×90` to `130×130`, and adjust the position offset so the pie chart stays centered above/near the zone label:
+### Changes — `src/components/GameSummary.tsx`
 
-- `foreignObject`: change `x={pos.x - 45}` → `x={pos.x - 65}`, `width="90" height="90"` → `width="130" height="130"`
-- Inner `div`: change `width: 90, height: 90` → `width: 130, height: 130`
-- `Pie outerRadius`: increase from default (~35) to `50` for a larger, more readable chart
+**In `PlayerHeatMaps` (~lines 211–280):**
+
+1. Rename `hoveredZone` → `selectedZone` (semantic clarity)
+2. Replace `onMouseEnter`/`onMouseLeave` with an `onClick` handler that toggles:
+   ```tsx
+   onClick={() => setSelectedZone(prev => 
+     prev?.playerId === p.id && prev?.zone === zone ? null : { playerId: p.id, zone }
+   )}
+   ```
+3. Remove `onMouseEnter` and `onMouseLeave` from the `<g>` element
+4. Keep `cursor: "pointer"` so users know zones are clickable
 
 ### Files Modified
-- `src/components/GameSummary.tsx` — resize foreignObject, div, and pie radius in `PlayerHeatMaps` hover overlay
+- `src/components/GameSummary.tsx`
 
