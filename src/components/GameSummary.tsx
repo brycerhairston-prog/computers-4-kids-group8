@@ -139,54 +139,64 @@ const MvpBanner = ({ players, shotSource }: { players: { id: string; name: strin
 
 const PlayerZonePieCharts = ({ players, shotSource }: { players: { id: string; name: string }[]; shotSource: Shot[] }) => {
   return (
-    <div className="glass-card rounded-xl p-4 space-y-4">
+    <div className="glass-card rounded-xl p-4 space-y-2">
       <h3 className="text-sm font-display font-bold text-foreground">📊 Zone Performance by Player</h3>
-      {players.map(p => {
-        const stats = computePlayerStats(p.id, shotSource);
-        if (stats.attempts === 0) return null;
-        return (
-          <div key={p.id} className="space-y-2">
-            <h4 className="text-xs font-bold text-foreground">{p.name}</h4>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {[1, 2, 3, 4, 5, 6].map(z => {
-                const zs = stats.zones[z];
-                const fgPct = zs.fgPct;
-                const radius = zs.attempts > 0 ? Math.max(20, Math.round(20 + (fgPct / 100) * 35)) : 20;
-                const pieData = [
-                  { name: "Makes", value: zs.makes },
-                  { name: "Misses", value: zs.attempts - zs.makes },
-                ];
-                return (
-                  <div key={z} className="flex flex-col items-center">
-                    <span className="text-[10px] text-muted-foreground mb-1">Z{z} ({ZONE_POINTS[z]}pt)</span>
-                    {zs.attempts > 0 ? (
-                      <div style={{ width: radius * 2 + 10, height: radius * 2 + 10 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie data={pieData} dataKey="value" cx="50%" cy="50%" outerRadius={radius} innerRadius={0} strokeWidth={1}>
-                              <Cell fill="hsl(142, 71%, 45%)" />
-                              <Cell fill="hsl(0, 84%, 60%)" />
-                            </Pie>
-                            <Tooltip contentStyle={TOOLTIP_STYLE}
-                              formatter={(value: number, name: string) => [value, name]} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center text-[10px] text-muted-foreground" style={{ width: 50, height: 50 }}>
-                        No shots
-                      </div>
-                    )}
-                    <span className="text-[10px] font-bold text-foreground">
-                      {zs.makes}/{zs.attempts} ({fgPct.toFixed(0)}%)
-                    </span>
-                  </div>
-                );
-              })}
+      <div className="flex flex-col gap-4">
+        {players.map(p => {
+          const stats = computePlayerStats(p.id, shotSource);
+          if (stats.attempts === 0) return null;
+          return (
+            <div key={p.id} className="border border-border rounded-lg p-4 bg-secondary/30 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-5 rounded-full bg-primary" />
+                <h4 className="text-sm font-bold text-foreground">{p.name}</h4>
+                <span className="text-[10px] text-muted-foreground ml-auto">
+                  Overall: {stats.makes}/{stats.attempts} ({stats.fgPct.toFixed(0)}%)
+                </span>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                {[1, 2, 3, 4, 5, 6].map(z => {
+                  const zs = stats.zones[z];
+                  const fgPct = zs.fgPct;
+                  const radius = zs.attempts > 0 ? Math.max(20, Math.round(20 + (fgPct / 100) * 35)) : 20;
+                  const pieData = [
+                    { name: "Makes", value: zs.makes },
+                    { name: "Misses", value: zs.attempts - zs.makes },
+                  ];
+                  return (
+                    <div key={z} className="flex flex-col items-center border border-border/50 rounded-md p-2 bg-card/50">
+                      <span className="text-[10px] font-semibold text-muted-foreground mb-1 bg-secondary/60 px-1.5 py-0.5 rounded-full">
+                        Z{z} ({ZONE_POINTS[z]}pt)
+                      </span>
+                      {zs.attempts > 0 ? (
+                        <div style={{ width: radius * 2 + 10, height: radius * 2 + 10 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie data={pieData} dataKey="value" cx="50%" cy="50%" outerRadius={radius} innerRadius={0} strokeWidth={1}>
+                                <Cell fill="hsl(142, 71%, 45%)" />
+                                <Cell fill="hsl(0, 84%, 60%)" />
+                              </Pie>
+                              <Tooltip contentStyle={TOOLTIP_STYLE}
+                                formatter={(value: number, name: string) => [value, name]} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center text-[10px] text-muted-foreground" style={{ width: 50, height: 50 }}>
+                          No shots
+                        </div>
+                      )}
+                      <span className="text-[10px] font-bold text-foreground">
+                        {zs.makes}/{zs.attempts} ({fgPct.toFixed(0)}%)
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 };
