@@ -60,7 +60,51 @@
     --sidebar-border: 220 15% 22%;
     --sidebar-ring: 25 95% 55%;
   }
+
+  /* Light mode overrides */
+  .light {
+    --background: 0 0% 97%;
+    --foreground: 220 20% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 12%;
+    --primary: 25 95% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 220 15% 25%;
+    --muted: 220 15% 94%;
+    --muted-foreground: 215 15% 45%;
+    --accent: 170 70% 40%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 15% 85%;
+    --input: 220 15% 85%;
+    --ring: 25 95% 50%;
+    --court-bg: 30 25% 85%;
+    --court-line: 30 30% 55%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 220 15% 25%;
+    --sidebar-primary: 25 95% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 94%;
+    --sidebar-accent-foreground: 220 15% 25%;
+    --sidebar-border: 220 15% 85%;
+    --sidebar-ring: 25 95% 50%;
+  }
+
+  /* Colorblind mode */
+  .colorblind {
+    --shot-made: 210 80% 55%;
+    --shot-missed: 45 95% 55%;
+  }
 }
+
+/* Text size scaling */
+[data-text-size="sm"] { font-size: 14px; }
+[data-text-size="md"] { font-size: 16px; }
+[data-text-size="lg"] { font-size: 18px; }
 
 @layer base {
   * {
