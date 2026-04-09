@@ -101,15 +101,6 @@
   }
 }
 
-/* Text-only scaling via CSS variable */
-:root {
-  --text-scale: 1;
-}
-
-p, span, li, td, th, label, h1, h2, h3, h4, h5, h6,
-a, button, input, textarea, select {
-  font-size: calc(1em * var(--text-scale));
-}
 
 @layer base {
   * {
