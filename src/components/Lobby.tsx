@@ -92,7 +92,8 @@ const Lobby = () => {
           animate={{ opacity: 1, scale: 1 }}
           className="glass-card rounded-xl p-6 max-w-md w-full space-y-6"
         >
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-2 relative">
+            <div className="absolute top-0 right-0"><SettingsPanel /></div>
             <img src={c4kLogo} alt="C4K" className="w-10 h-10 mx-auto" />
             <h1 className="text-2xl font-display font-bold text-foreground">Game Lobby</h1>
             <div className="flex items-center justify-center gap-2">
@@ -251,7 +252,8 @@ const Lobby = () => {
             exit={{ opacity: 0, scale: 0.95 }}
             className="glass-card rounded-xl p-8 max-w-md w-full space-y-8"
           >
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-2 relative">
+              <div className="absolute top-0 right-0"><SettingsPanel /></div>
               <img src={c4kLogo} alt="C4K" className="w-12 h-12 mx-auto" />
               <h1 className="text-3xl font-display font-bold text-foreground">Tabletop Basketball</h1>
               <p className="text-sm text-muted-foreground">Real-time multiplayer analytics game</p>
@@ -291,10 +293,11 @@ const Lobby = () => {
               <Button size="icon" variant="ghost" onClick={() => setView("welcome")}>
                 <ArrowLeft className="w-4 h-4" />
               </Button>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-xl font-display font-bold text-foreground">Create Game</h2>
                 <p className="text-xs text-muted-foreground">Set up a new game session</p>
               </div>
+              <SettingsPanel />
             </div>
 
             {playerNameInputsJsx}
@@ -321,10 +324,11 @@ const Lobby = () => {
               <Button size="icon" variant="ghost" onClick={() => setView("welcome")}>
                 <ArrowLeft className="w-4 h-4" />
               </Button>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-xl font-display font-bold text-foreground">Join Game</h2>
                 <p className="text-xs text-muted-foreground">Enter a game code to join</p>
               </div>
+              <SettingsPanel />
             </div>
 
             <div className="space-y-3">
