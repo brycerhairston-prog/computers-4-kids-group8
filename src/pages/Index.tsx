@@ -100,6 +100,23 @@ const PlayingDashboard = () => {
                 <HeatMap />
               </TabsContent>
             </Tabs>
+            <div className="glass-card rounded-lg p-4 space-y-2">
+              <h3 className="text-sm font-display font-bold text-primary">📖 How to Use</h3>
+              <ul className="text-xs text-muted-foreground space-y-1.5">
+                <li>
+                  <strong className="text-foreground">Shot Tracker:</strong> Select your player, then tap a zone on the court to log a shot. Green pins = made, red pins = missed. Your shot count updates in the progress bar above.
+                </li>
+                <li>
+                  <strong className="text-foreground">Heat Map:</strong> Switch to the Heat Map tab to see color-coded zones. Colors range from blue (cold / low accuracy) to green (hot / high accuracy). Each zone shows makes/attempts and FG%.
+                </li>
+                <li>
+                  <strong className="text-foreground">Stats Table:</strong> The table on the right tracks each player's attempts, makes, FG%, and total points in real time. Tap a player name to filter the heat map to just their shots.
+                </li>
+                <li>
+                  <strong className="text-foreground">Settings (⚙️):</strong> Adjust dark/light mode, colorblind mode, and text size from the gear icon in the header.
+                </li>
+              </ul>
+            </div>
           </div>
           <div className="space-y-4">
             <DataTable />
@@ -137,23 +154,6 @@ const PlayingDashboard = () => {
                 </li>
                 <li>
                   <strong className="text-foreground">Practice Round:</strong> 5 bonus shots, any zone allowed.
-                </li>
-              </ul>
-            </div>
-            <div className="glass-card rounded-lg p-4 space-y-2">
-              <h3 className="text-sm font-display font-bold text-primary">📖 How to Use</h3>
-              <ul className="text-xs text-muted-foreground space-y-1.5">
-                <li>
-                  <strong className="text-foreground">Shot Tracker:</strong> Select your player, then tap a zone on the court to log a shot. Green pins = made, red pins = missed. Your shot count updates in the progress bar above.
-                </li>
-                <li>
-                  <strong className="text-foreground">Heat Map:</strong> Switch to the Heat Map tab to see color-coded zones. Colors range from blue (cold / low accuracy) to green (hot / high accuracy). Each zone shows makes/attempts and FG%.
-                </li>
-                <li>
-                  <strong className="text-foreground">Stats Table:</strong> The table on the right tracks each player's attempts, makes, FG%, and total points in real time. Tap a player name to filter the heat map to just their shots.
-                </li>
-                <li>
-                  <strong className="text-foreground">Settings (⚙️):</strong> Adjust dark/light mode, colorblind mode, and text size from the gear icon in the header.
                 </li>
               </ul>
             </div>
