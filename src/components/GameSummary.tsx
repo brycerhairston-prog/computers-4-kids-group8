@@ -903,6 +903,18 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
                   <li><strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.</li>
                   <li><strong className="text-foreground">Hot Zones</strong> show where a player shoots best.</li>
                   <li><strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.</li>
+                  <li className="pt-2"><strong className="text-primary">🎯 Strategy & Decision-Making</strong></li>
+                  <li>• <strong className="text-foreground">Take Smart Shots:</strong> Focus on zones where your FG% is highest.</li>
+                  <li>• <strong className="text-foreground">Risk vs Reward:</strong> 3-point shots are worth more, but often have lower success rates.</li>
+                  <li>• <strong className="text-foreground">Adjust in Real Time:</strong> If you're missing from a zone, try switching areas.</li>
+                  <li className="pt-2"><strong className="text-primary">🔍 Pattern Recognition</strong></li>
+                  <li>• <strong className="text-foreground">Hot Streaks vs Cold Streaks:</strong> Look for changes in performance over time.</li>
+                  <li>• <strong className="text-foreground">Shot Clustering:</strong> Groups of makes in one area suggest a strong zone.</li>
+                  <li>• <strong className="text-foreground">Avoid Cold Zones:</strong> Repeated misses in a zone may indicate a weakness.</li>
+                  <li className="pt-2"><strong className="text-primary">🧪 Experimental Thinking</strong></li>
+                  <li>• <strong className="text-foreground">Test Hypotheses:</strong> Try focusing on one zone and see if your performance improves.</li>
+                  <li>• <strong className="text-foreground">Change Variables:</strong> Move your shot location and observe how results change.</li>
+                  <li>• <strong className="text-foreground">Learn from Data:</strong> Use results to adjust your strategy, not guess.</li>
                 </ul>
               </div>
             </TabsContent>
@@ -922,6 +934,18 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
                   <li><strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.</li>
                   <li><strong className="text-foreground">Hot Zones</strong> show where a player shoots best.</li>
                   <li><strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.</li>
+                  <li className="pt-2"><strong className="text-primary">🎯 Strategy & Decision-Making</strong></li>
+                  <li>• <strong className="text-foreground">Take Smart Shots:</strong> Focus on zones where your FG% is highest.</li>
+                  <li>• <strong className="text-foreground">Risk vs Reward:</strong> 3-point shots are worth more, but often have lower success rates.</li>
+                  <li>• <strong className="text-foreground">Adjust in Real Time:</strong> If you're missing from a zone, try switching areas.</li>
+                  <li className="pt-2"><strong className="text-primary">🔍 Pattern Recognition</strong></li>
+                  <li>• <strong className="text-foreground">Hot Streaks vs Cold Streaks:</strong> Look for changes in performance over time.</li>
+                  <li>• <strong className="text-foreground">Shot Clustering:</strong> Groups of makes in one area suggest a strong zone.</li>
+                  <li>• <strong className="text-foreground">Avoid Cold Zones:</strong> Repeated misses in a zone may indicate a weakness.</li>
+                  <li className="pt-2"><strong className="text-primary">🧪 Experimental Thinking</strong></li>
+                  <li>• <strong className="text-foreground">Test Hypotheses:</strong> Try focusing on one zone and see if your performance improves.</li>
+                  <li>• <strong className="text-foreground">Change Variables:</strong> Move your shot location and observe how results change.</li>
+                  <li>• <strong className="text-foreground">Learn from Data:</strong> Use results to adjust your strategy, not guess.</li>
                 </ul>
               </div>
             </TabsContent>
@@ -941,6 +965,18 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
                   <li><strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.</li>
                   <li><strong className="text-foreground">Hot Zones</strong> show where a player shoots best.</li>
                   <li><strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.</li>
+                  <li className="pt-2"><strong className="text-primary">🎯 Strategy & Decision-Making</strong></li>
+                  <li>• <strong className="text-foreground">Take Smart Shots:</strong> Focus on zones where your FG% is highest.</li>
+                  <li>• <strong className="text-foreground">Risk vs Reward:</strong> 3-point shots are worth more, but often have lower success rates.</li>
+                  <li>• <strong className="text-foreground">Adjust in Real Time:</strong> If you're missing from a zone, try switching areas.</li>
+                  <li className="pt-2"><strong className="text-primary">🔍 Pattern Recognition</strong></li>
+                  <li>• <strong className="text-foreground">Hot Streaks vs Cold Streaks:</strong> Look for changes in performance over time.</li>
+                  <li>• <strong className="text-foreground">Shot Clustering:</strong> Groups of makes in one area suggest a strong zone.</li>
+                  <li>• <strong className="text-foreground">Avoid Cold Zones:</strong> Repeated misses in a zone may indicate a weakness.</li>
+                  <li className="pt-2"><strong className="text-primary">🧪 Experimental Thinking</strong></li>
+                  <li>• <strong className="text-foreground">Test Hypotheses:</strong> Try focusing on one zone and see if your performance improves.</li>
+                  <li>• <strong className="text-foreground">Change Variables:</strong> Move your shot location and observe how results change.</li>
+                  <li>• <strong className="text-foreground">Learn from Data:</strong> Use results to adjust your strategy, not guess.</li>
                 </ul>
               </div>
             </TabsContent>
@@ -964,6 +1000,18 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
                 <li><strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.</li>
                 <li><strong className="text-foreground">Hot Zones</strong> show where a player shoots best.</li>
                 <li><strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.</li>
+                <li className="pt-2"><strong className="text-primary">🎯 Strategy & Decision-Making</strong></li>
+                <li>• <strong className="text-foreground">Take Smart Shots:</strong> Focus on zones where your FG% is highest.</li>
+                <li>• <strong className="text-foreground">Risk vs Reward:</strong> 3-point shots are worth more, but often have lower success rates.</li>
+                <li>• <strong className="text-foreground">Adjust in Real Time:</strong> If you're missing from a zone, try switching areas.</li>
+                <li className="pt-2"><strong className="text-primary">🔍 Pattern Recognition</strong></li>
+                <li>• <strong className="text-foreground">Hot Streaks vs Cold Streaks:</strong> Look for changes in performance over time.</li>
+                <li>• <strong className="text-foreground">Shot Clustering:</strong> Groups of makes in one area suggest a strong zone.</li>
+                <li>• <strong className="text-foreground">Avoid Cold Zones:</strong> Repeated misses in a zone may indicate a weakness.</li>
+                <li className="pt-2"><strong className="text-primary">🧪 Experimental Thinking</strong></li>
+                <li>• <strong className="text-foreground">Test Hypotheses:</strong> Try focusing on one zone and see if your performance improves.</li>
+                <li>• <strong className="text-foreground">Change Variables:</strong> Move your shot location and observe how results change.</li>
+                <li>• <strong className="text-foreground">Learn from Data:</strong> Use results to adjust your strategy, not guess.</li>
               </ul>
             </div>
           </>
