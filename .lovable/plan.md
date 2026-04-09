@@ -1,29 +1,34 @@
 
 
-## Plan: Fix Text Scaling Across All Screens
+## Plan: Fix Text Scaling — Scale Only Text, Not Layout
 
 ### Problem
-The current CSS rule uses `1em` for scaling, which is relative to the parent element. This causes **compounding** — nested text elements (e.g. a `span` inside a `button` inside a `div`) get scaled multiple times. Additionally, Tailwind utility classes like `text-xs`, `text-sm` set font-size in `rem`, but the CSS override replaces them with an `em`-based calculation, breaking expected sizes on some elements.
+Setting `document.documentElement.style.fontSize` changes the root font-size, which affects **all** `rem`-based values — not just text, but also padding, margins, widths, heights, gaps, and border-radius. This makes the entire UI zoom in/out rather than just changing text size.
 
 ### Solution
-Instead of overriding `font-size` on individual elements, scale the root `<html>` font-size directly. Since Tailwind classes use `rem` (relative to root), changing the root font-size will naturally scale **all** text across every screen — Lobby, GameSetup, GameSummary, and the main UI — without compounding issues.
+Instead of changing the root font-size, use a CSS custom property (`--text-scale`) and apply it only to text-bearing elements via a targeted CSS rule. To avoid the old compounding issue with `em`, we'll use `rem` as the base unit in the calculation.
 
 ### Changes
 
-**1. `src/index.css`** — Remove the per-element font-size override
-- Delete the selector block (lines 109-112) that applies `font-size: calc(1em * var(--text-scale))` to p, span, button, etc.
-- Keep the `--text-scale` variable on `:root`
+**1. `src/context/SettingsContext.tsx`**
+- Replace `document.documentElement.style.fontSize = ...` with setting a CSS variable: `document.documentElement.style.setProperty('--text-scale', String(fontSize / 16))`
+- Remove the direct fontSize override so layout `rem` values stay at browser default (16px)
 
-**2. `src/context/SettingsContext.tsx`** — Scale root font-size directly
-- In the `fontSize` effect, instead of setting `--text-scale`, set `document.documentElement.style.fontSize` to `${fontSize}px`
-- This makes all `rem`-based Tailwind classes scale automatically across every component and screen
+**2. `src/index.css`**
+- Add a rule targeting text elements using the CSS variable with `rem` (not `em`) to prevent compounding:
+```css
+p, span, label, h1, h2, h3, h4, h5, h6, li, td, th, a, button, input, select, textarea {
+  font-size: calc(1rem * var(--text-scale, 1));
+}
+```
+- Using `1rem` means every element calculates from the unchanged root (16px), so nesting doesn't compound
 
-### Why This Fixes It
-- No more compounding from nested `em` calculations
-- Every Tailwind text class (`text-xs`, `text-sm`, `text-2xl`, etc.) uses `rem`, so they all respond to root font-size changes
-- Works universally across Lobby, GameSetup, Summary, and main game — no per-component changes needed
+### Why This Works
+- `rem` is always relative to the root, so nested elements won't multiply the scale
+- Layout properties (padding, margin, width, gap) remain unaffected since the root font-size stays at 16px
+- All text across every screen scales uniformly
 
 ### Files Modified
-- `src/index.css` — remove per-element font-size rule
-- `src/context/SettingsContext.tsx` — change effect to set root font-size
+- `src/context/SettingsContext.tsx` — set `--text-scale` CSS variable instead of root font-size
+- `src/index.css` — add targeted text-scaling rule using `rem`
 
