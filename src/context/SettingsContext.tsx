@@ -3,6 +3,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 type Theme = "dark" | "light";
 type TextSize = "sm" | "md" | "lg";
 
+const TEXT_SIZE_MAP: Record<TextSize, number> = { sm: 14, md: 16, lg: 18 };
+
 interface SettingsContextType {
   theme: Theme;
   setTheme: (t: Theme) => void;
@@ -10,6 +12,8 @@ interface SettingsContextType {
   setColorblindMode: (v: boolean) => void;
   textSize: TextSize;
   setTextSize: (s: TextSize) => void;
+  fontSize: number;
+  setFontSize: (n: number) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -30,6 +34,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [textSize, setTextSizeState] = useState<TextSize>(() =>
     (localStorage.getItem("app-text-size") as TextSize) || "md"
   );
+  const [fontSize, setFontSizeState] = useState<number>(() =>
+    Number(localStorage.getItem("app-font-size")) || 16
+  );
 
   const setTheme = (t: Theme) => {
     setThemeState(t);
@@ -42,6 +49,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const setTextSize = (s: TextSize) => {
     setTextSizeState(s);
     localStorage.setItem("app-text-size", s);
+    const px = TEXT_SIZE_MAP[s];
+    setFontSizeState(px);
+    localStorage.setItem("app-font-size", String(px));
+  };
+  const setFontSize = (n: number) => {
+    setFontSizeState(n);
+    localStorage.setItem("app-font-size", String(n));
   };
 
   useEffect(() => {
@@ -68,8 +82,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     document.documentElement.setAttribute("data-text-size", textSize);
   }, [textSize]);
 
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${fontSize}px`;
+  }, [fontSize]);
+
   return (
-    <SettingsContext.Provider value={{ theme, setTheme, colorblindMode, setColorblindMode, textSize, setTextSize }}>
+    <SettingsContext.Provider value={{ theme, setTheme, colorblindMode, setColorblindMode, textSize, setTextSize, fontSize, setFontSize }}>
       {children}
     </SettingsContext.Provider>
   );

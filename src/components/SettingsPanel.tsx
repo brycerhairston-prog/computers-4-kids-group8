@@ -4,10 +4,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { useSettings } from "@/context/SettingsContext";
 
 const SettingsPanel = () => {
-  const { theme, setTheme, colorblindMode, setColorblindMode, textSize, setTextSize } = useSettings();
+  const { theme, setTheme, colorblindMode, setColorblindMode, textSize, setTextSize, fontSize, setFontSize } = useSettings();
 
   return (
     <Sheet>
@@ -67,6 +68,19 @@ const SettingsPanel = () => {
                 <Label htmlFor="ts-lg" className="text-base cursor-pointer">Large</Label>
               </div>
             </RadioGroup>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Fine-tune</span>
+                <span className="text-xs font-medium text-foreground">{fontSize}px</span>
+              </div>
+              <Slider
+                min={12}
+                max={22}
+                step={1}
+                value={[fontSize]}
+                onValueChange={([v]) => setFontSize(v)}
+              />
+            </div>
           </div>
         </div>
       </SheetContent>
