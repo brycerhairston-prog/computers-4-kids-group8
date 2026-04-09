@@ -7,19 +7,19 @@ import courtImage from "@/assets/court-layout.png";
 const getHeatColor = (fgPct: number): string => {
   if (fgPct === 0) return "rgba(59, 130, 246, 0.65)";
   if (fgPct <= 20) return "rgba(6, 182, 212, 0.7)";
-  if (fgPct <= 40) return "rgba(96, 165, 250, 0.7)";
+  if (fgPct <= 40) return "rgba(239, 68, 68, 0.85)";
   if (fgPct <= 60) return "rgba(234, 179, 8, 0.75)";
   if (fgPct <= 80) return "rgba(249, 115, 22, 0.75)";
-  return "rgba(239, 68, 68, 0.85)";
+  return "rgba(34, 197, 94, 0.8)";
 };
 
 const legendItems = [
   { label: "0%", color: "bg-blue-500" },
   { label: "1–20%", color: "bg-cyan-500" },
-  { label: "21–40%", color: "bg-blue-400" },
+  { label: "21–40%", color: "bg-red-500" },
   { label: "41–60%", color: "bg-yellow-500" },
   { label: "61–80%", color: "bg-orange-500" },
-  { label: "81–100%", color: "bg-red-500" },
+  { label: "81–100%", color: "bg-green-500" },
 ];
 
 const CourtBackground = () => (
