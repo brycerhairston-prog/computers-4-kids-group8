@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Users, Plus, LogIn, ArrowLeft, Loader2, Trash2, UserMinus, DoorOpen } from "lucide-react";
 import { toast } from "sonner";
+import SettingsPanel from "@/components/SettingsPanel";
 
 type LobbyView = "welcome" | "create" | "join" | "waiting";
 

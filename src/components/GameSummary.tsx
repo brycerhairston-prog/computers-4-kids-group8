@@ -764,6 +764,7 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
             <Button size="sm" onClick={handleReset} className="gap-1 text-xs">
               <RotateCcw className="w-3 h-3" /> New Game
             </Button>
+            <SettingsPanel />
           </div>
         </div>
       </header>
