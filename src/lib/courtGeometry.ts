@@ -7,21 +7,21 @@ type Point = { x: number; y: number };
 const BIG_ARC = {
   cx: 200,
   cy: 150,
-  rx: 193,
-  ry: 156,
+  rx: 196,
+  ry: 157,
 };
 
 const PAINT = {
   left: 135,
   right: 265,
   top: 0,
-  bottom: 195,
+  bottom: 198,
 };
 
-const LEFT_DIAGONAL_TOP: Point = { x: 103, y: 283 };
-const RIGHT_DIAGONAL_TOP: Point = { x: 297, y: 283 };
-const LEFT_DIAGONAL_BOTTOM: Point = { x: 40, y: 500 };
-const RIGHT_DIAGONAL_BOTTOM: Point = { x: 360, y: 500 };
+const LEFT_DIAGONAL_TOP: Point = { x: 101, y: 285 };
+const RIGHT_DIAGONAL_TOP: Point = { x: 299, y: 285 };
+const LEFT_DIAGONAL_BOTTOM: Point = { x: 38, y: 500 };
+const RIGHT_DIAGONAL_BOTTOM: Point = { x: 362, y: 500 };
 
 const LEFT_ARC_EXTREME: Point = { x: BIG_ARC.cx - BIG_ARC.rx, y: BIG_ARC.cy };
 const RIGHT_ARC_EXTREME: Point = { x: BIG_ARC.cx + BIG_ARC.rx, y: BIG_ARC.cy };
