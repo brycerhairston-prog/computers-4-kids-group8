@@ -83,7 +83,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [textSize]);
 
   useEffect(() => {
-    document.documentElement.style.fontSize = `${fontSize}px`;
+    document.documentElement.style.setProperty('--text-scale', String(fontSize / 16));
   }, [fontSize]);
 
   return (
