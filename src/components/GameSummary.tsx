@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import c4kLogo from "@/assets/c4k-logo.png";
 import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale, Minus, Plus, Ban } from "lucide-react";
+import SettingsPanel from "@/components/SettingsPanel";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useMemo, useState, useCallback } from "react";
@@ -763,6 +764,7 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
             <Button size="sm" onClick={handleReset} className="gap-1 text-xs">
               <RotateCcw className="w-3 h-3" /> New Game
             </Button>
+            <SettingsPanel />
           </div>
         </div>
       </header>
