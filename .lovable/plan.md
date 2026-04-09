@@ -1,23 +1,18 @@
 
 
-## Plan: Swap Heat Map Colors for 21–40% and 81–100%
+## Plan: Add "How to Use" Instructions Below Game Rules
 
-### Changes
+### Change
 
-**1. `src/components/HeatMap.tsx` — Swap colors**
+**`src/pages/Index.tsx`** — Add a new card below the Game Rules card (after line 136)
 
-In `getHeatColor`:
-- 21–40%: Change from light blue to **red** `rgba(239, 68, 68, 0.85)`
-- 81–100%: Change from red to **green** `rgba(34, 197, 94, 0.8)`
+A new "📖 How to Use" card with the same `glass-card` styling, containing:
 
-In `legendItems`:
-- 21–40%: Change from `bg-blue-400` to `bg-red-500`
-- 81–100%: Change from `bg-red-500` to `bg-green-500`
-
-**2. Fix runtime error: `useSettings must be used within SettingsProvider`**
-
-The `SettingsPanel` component is rendered inside `Index.tsx`, which is inside `SettingsProvider` in `App.tsx` — so the wrapping looks correct. This may be a stale build artifact. Will verify the component tree renders correctly after the color change edit; if the error persists, will investigate further.
+- **Shot Tracker:** Select your player, then tap a zone on the court to log a shot. Green pins = made, red pins = missed. Your shot count updates in the progress bar above.
+- **Heat Map:** Switch to the Heat Map tab to see color-coded zones. Colors range from blue (cold / low accuracy) to green (hot / high accuracy). Each zone shows makes/attempts and FG%.
+- **Stats Table:** The table on the right tracks each player's attempts, makes, FG%, and total points in real time. Tap a player name to filter the heat map to just their shots.
+- **Settings (⚙️):** Adjust dark/light mode, colorblind mode, and text size from the gear icon in the header.
 
 ### Files Modified
-- `src/components/HeatMap.tsx`
+- `src/pages/Index.tsx` — add one new card section
 
