@@ -1,24 +1,35 @@
 
 
-## Plan: Widen Text Size Range for More Noticeable Differences
+## Plan: Change Text Scaling to Affect Only Text, Not Layout
 
-Currently the preset sizes are sm=14, md=16, lg=18 and the slider range is 12–22px. The differences are too subtle.
+### Problem
+Currently, `document.documentElement.style.fontSize` is set to the chosen pixel value. Since Tailwind uses `rem` units for everything (spacing, padding, widths, etc.), changing the root font-size effectively zooms the entire page layout rather than just scaling text.
+
+### Solution
+Instead of changing the root `font-size`, use a CSS custom property (e.g. `--text-scale`) and apply it only to text elements via CSS overrides. This way spacing/padding/layout stays fixed while text grows or shrinks.
 
 ### Changes
 
 **1. `src/context/SettingsContext.tsx`**
-- Change `TEXT_SIZE_MAP` to: `{ sm: 10, md: 16, lg: 24 }` — much bigger spread between presets
+- Remove `document.documentElement.style.fontSize = ...` 
+- Instead, set a CSS variable: `document.documentElement.style.setProperty('--text-scale', fontSize / 16)` (a unitless multiplier)
 
-**2. `src/components/SettingsPanel.tsx`**
-- Change slider `min` from 12 to **8**
-- Change slider `max` from 22 to **32**
-- This gives a much wider range: tiny text on the left, very large text on the right
+**2. `src/index.css`**
+- Remove the `[data-text-size]` font-size rules
+- Add a utility that targets text elements specifically using the `--text-scale` variable:
+```css
+body {
+  --text-scale: 1;
+}
 
-**3. `src/index.css`**
-- Update the `data-text-size` CSS rules to match: `sm` = 10px, `md` = 16px, `lg` = 24px
+p, span, li, td, th, label, h1, h2, h3, h4, h5, h6,
+a, button, input, textarea, select {
+  font-size: calc(1em * var(--text-scale));
+}
+```
+This scales text content by the multiplier while leaving `rem`-based layout (margins, padding, widths, gaps) untouched.
 
 ### Files Modified
-- `src/context/SettingsContext.tsx`
-- `src/components/SettingsPanel.tsx`
-- `src/index.css`
+- `src/context/SettingsContext.tsx` — swap root font-size for CSS variable
+- `src/index.css` — add text-only scaling rules, remove old `[data-text-size]` rules
 
