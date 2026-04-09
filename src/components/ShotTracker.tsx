@@ -311,6 +311,7 @@ const ShotTracker = () => {
           onClick={handleCourtClick}>
           <CourtBackground />
 
+
           {/* Blocked zone overlays */}
           {blockedZones.map(zone => {
             const pos = ZONE_LABEL_POS[zone];
