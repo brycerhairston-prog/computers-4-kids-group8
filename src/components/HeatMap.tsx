@@ -69,10 +69,6 @@ const HeatMap = () => {
           );
         })}
 
-        {/* Debug zone boundary outlines */}
-        {[1, 2, 3, 4, 5, 6].map(zone => (
-          <path key={`debug-${zone}`} d={ZONE_PATHS[zone]} fill="none" stroke="rgba(255,0,0,0.5)" strokeWidth="1.5" strokeDasharray="4 2" style={{ pointerEvents: "none" }} />
-        ))}
 
         {/* Zone number labels */}
         {[1, 2, 3, 4, 5, 6].map(zone => {
