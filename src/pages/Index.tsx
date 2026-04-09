@@ -58,6 +58,8 @@ const PlayingDashboard = () => {
             {isGameOver && (
               <span className="text-xs font-bold bg-primary text-primary-foreground rounded-full px-3 py-1 animate-pulse shadow-lg">🏆 Game Over!</span>
             )}
+              <SettingsPanel />
+              <FeedbackDialog />
               {mp.isMultiplayer ? (
                 <>
                   {mp.isHost && (
@@ -112,6 +114,23 @@ const PlayingDashboard = () => {
                 </li>
                 <li>
                   <strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.
+                </li>
+              </ul>
+            </div>
+            <div className="glass-card rounded-lg p-4 space-y-2">
+              <h3 className="text-sm font-display font-bold text-accent">📋 Game Rules</h3>
+              <ul className="text-xs text-muted-foreground space-y-1.5">
+                <li>
+                  <strong className="text-foreground">Individual Mode:</strong> 20 shots per player. Can't shoot the same zone twice in a row.
+                </li>
+                <li>
+                  <strong className="text-foreground">Team Mode:</strong> 30 shots per team. Teams can block 2 zones on opponents' boards.
+                </li>
+                <li>
+                  <strong className="text-foreground">Scoring:</strong> Zone 1 = 1pt · Zones 2–3 = 2pts · Zones 4–6 = 3pts.
+                </li>
+                <li>
+                  <strong className="text-foreground">Practice Round:</strong> 5 bonus shots, any zone allowed.
                 </li>
               </ul>
             </div>
