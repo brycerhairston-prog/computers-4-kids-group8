@@ -1,34 +1,41 @@
 
 
-## Plan: Fix Text Scaling — Scale Only Text, Not Layout
+## Plan: Recalibrate Court Zone Geometry to Match Court Image
 
 ### Problem
-Setting `document.documentElement.style.fontSize` changes the root font-size, which affects **all** `rem`-based values — not just text, but also padding, margins, widths, heights, gaps, and border-radius. This makes the entire UI zoom in/out rather than just changing text size.
+The zone polygon boundaries (paint box, three-point arc, diagonal lines) defined in `courtGeometry.ts` don't perfectly align with the black lines drawn on the `court-layout.png` image. This causes:
+- Heat map colors bleeding past the visible court lines
+- Click-to-shoot zone detection registering the wrong zone near boundaries
 
-### Solution
-Instead of changing the root font-size, use a CSS custom property (`--text-scale`) and apply it only to text-bearing elements via a targeted CSS rule. To avoid the old compounding issue with `em`, we'll use `rem` as the base unit in the calculation.
+### Approach
+1. Add visible stroke outlines of the zone paths on the Shot Tracker court (temporary debug aid) so zone boundaries are clearly visible against the court image
+2. Adjust the geometry constants in `courtGeometry.ts` to match the actual court image lines
+3. Remove the debug outlines once alignment is confirmed
 
 ### Changes
 
-**1. `src/context/SettingsContext.tsx`**
-- Replace `document.documentElement.style.fontSize = ...` with setting a CSS variable: `document.documentElement.style.setProperty('--text-scale', String(fontSize / 16))`
-- Remove the direct fontSize override so layout `rem` values stay at browser default (16px)
+**`src/lib/courtGeometry.ts`** — Adjust geometry constants to match court image:
+- Tune `PAINT` boundaries (left, right, bottom) to align with the painted rectangle
+- Tune `BIG_ARC` parameters (cx, cy, rx, ry) to align with the three-point arc curve
+- Tune diagonal line endpoints (`LEFT_DIAGONAL_TOP`, `RIGHT_DIAGONAL_TOP`, `LEFT_DIAGONAL_BOTTOM`, `RIGHT_DIAGONAL_BOTTOM`) to match the visible sidelines
 
-**2. `src/index.css`**
-- Add a rule targeting text elements using the CSS variable with `rem` (not `em`) to prevent compounding:
-```css
-p, span, label, h1, h2, h3, h4, h5, h6, li, td, th, a, button, input, select, textarea {
-  font-size: calc(1rem * var(--text-scale, 1));
-}
+**`src/components/ShotTracker.tsx`** — Add faint zone boundary strokes:
+- Render each `ZONE_PATHS[zone]` as a stroked `<path>` (no fill) on top of the court image so zones are visually outlined, helping confirm alignment
+
+**`src/components/HeatMap.tsx`** — Same zone boundary strokes for the heat map view
+
+### Technical Detail
+The core issue is the hardcoded numeric constants. The fix involves iterative tuning of these values:
 ```
-- Using `1rem` means every element calculates from the unchanged root (16px), so nesting doesn't compound
+PAINT: { left, right, top, bottom }
+BIG_ARC: { cx, cy, rx, ry }
+Diagonal endpoints: 4 points
+```
 
-### Why This Works
-- `rem` is always relative to the root, so nested elements won't multiply the scale
-- Layout properties (padding, margin, width, gap) remain unaffected since the root font-size stays at 16px
-- All text across every screen scales uniformly
+These define all 6 zone polygons. Adjusting them shifts both the click detection and the heat map clip paths simultaneously since both use `ZONE_PATHS` from the same source.
 
 ### Files Modified
-- `src/context/SettingsContext.tsx` — set `--text-scale` CSS variable instead of root font-size
-- `src/index.css` — add targeted text-scaling rule using `rem`
+- `src/lib/courtGeometry.ts` — recalibrate geometry constants
+- `src/components/ShotTracker.tsx` — add zone boundary outlines
+- `src/components/HeatMap.tsx` — add zone boundary outlines
 
