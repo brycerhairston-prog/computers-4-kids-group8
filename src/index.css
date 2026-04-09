@@ -101,10 +101,15 @@
   }
 }
 
-/* Text size scaling */
-[data-text-size="sm"] { font-size: 10px; }
-[data-text-size="md"] { font-size: 16px; }
-[data-text-size="lg"] { font-size: 24px; }
+/* Text-only scaling via CSS variable */
+body {
+  --text-scale: 1;
+}
+
+p, span, li, td, th, label, h1, h2, h3, h4, h5, h6,
+a, button, input, textarea, select {
+  font-size: calc(1em * var(--text-scale));
+}
 
 @layer base {
   * {
