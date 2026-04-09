@@ -1,19 +1,25 @@
 
 
-## Plan: Move "How to Use" Card to Left Column
+## Plan: Make Tips Cards Collapsible (Open by Default)
 
-Move the "📖 How to Use" card from the right column (below Data Science Tips and Game Rules) to the left column (below the Shot Tracker/Heat Map tabs), so users can see instructions alongside the court without scrolling.
+Wrap the three info cards — "How to Use", "Data Science Tips", and "Game Rules" — with the Collapsible component (already available at `src/components/ui/collapsible.tsx`). Each will start open and can be toggled closed/open by clicking the header.
 
 ### Changes
 
 **`src/pages/Index.tsx`**
-- Cut the "📖 How to Use" card (lines 143-159) from the right column
-- Paste it into the left column `<div>` (after the `</Tabs>` closing tag, around line 102), so it sits directly below the court
+- Import `Collapsible, CollapsibleTrigger, CollapsibleContent` from `@/components/ui/collapsible`
+- Import `ChevronDown` from `lucide-react` for the toggle indicator
+- Wrap each of the 3 cards with `<Collapsible defaultOpen>`:
+  - The `h3` header becomes a `CollapsibleTrigger` styled as a clickable row with a chevron that rotates when collapsed
+  - The `ul` content goes inside `CollapsibleContent`
+- All three cards remain open on first load; clicking the header collapses/expands them
 
-### Result
-- Left column: Shot Tracker / Heat Map tabs + How to Use card
-- Right column: DataTable + Data Science Tips + Game Rules (less scrolling needed)
+### Visual Behavior
+- Header row shows the title + a small chevron arrow on the right
+- Chevron rotates 180 degrees when collapsed
+- Smooth open/close animation via Radix Collapsible defaults
+- Cards keep their existing `glass-card` styling
 
 ### Files Modified
-- `src/pages/Index.tsx` — move one block (~17 lines)
+- `src/pages/Index.tsx` — wrap 3 cards with Collapsible
 
