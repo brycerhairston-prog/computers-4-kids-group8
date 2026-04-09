@@ -6,22 +6,22 @@ type Point = { x: number; y: number };
 
 const BIG_ARC = {
   cx: 200,
-  cy: 147.5,
-  rx: 186.5,
-  ry: 150.5,
+  cy: 150,
+  rx: 191,
+  ry: 155,
 };
 
 const PAINT = {
-  left: 133.5,
-  right: 266.5,
+  left: 137,
+  right: 263,
   top: 0,
-  bottom: 200,
+  bottom: 193,
 };
 
-const LEFT_DIAGONAL_TOP: Point = { x: 108, y: 278 };
-const RIGHT_DIAGONAL_TOP: Point = { x: 292, y: 278 };
-const LEFT_DIAGONAL_BOTTOM: Point = { x: 43, y: 500 };
-const RIGHT_DIAGONAL_BOTTOM: Point = { x: 357, y: 500 };
+const LEFT_DIAGONAL_TOP: Point = { x: 104, y: 282 };
+const RIGHT_DIAGONAL_TOP: Point = { x: 296, y: 282 };
+const LEFT_DIAGONAL_BOTTOM: Point = { x: 40, y: 500 };
+const RIGHT_DIAGONAL_BOTTOM: Point = { x: 360, y: 500 };
 
 const LEFT_ARC_EXTREME: Point = { x: BIG_ARC.cx - BIG_ARC.rx, y: BIG_ARC.cy };
 const RIGHT_ARC_EXTREME: Point = { x: BIG_ARC.cx + BIG_ARC.rx, y: BIG_ARC.cy };
