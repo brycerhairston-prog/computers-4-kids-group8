@@ -1,18 +1,11 @@
 
 
-## Plan: Add "How to Use" Instructions Below Game Rules
+## Plan: Remove "Add Player" Input from Player Stats Table
 
 ### Change
 
-**`src/pages/Index.tsx`** — Add a new card below the Game Rules card (after line 136)
-
-A new "📖 How to Use" card with the same `glass-card` styling, containing:
-
-- **Shot Tracker:** Select your player, then tap a zone on the court to log a shot. Green pins = made, red pins = missed. Your shot count updates in the progress bar above.
-- **Heat Map:** Switch to the Heat Map tab to see color-coded zones. Colors range from blue (cold / low accuracy) to green (hot / high accuracy). Each zone shows makes/attempts and FG%.
-- **Stats Table:** The table on the right tracks each player's attempts, makes, FG%, and total points in real time. Tap a player name to filter the heat map to just their shots.
-- **Settings (⚙️):** Adjust dark/light mode, colorblind mode, and text size from the gear icon in the header.
+**`src/components/DataTable.tsx`** — Delete the input + button section at the bottom of the component (the `<div className="flex gap-2">` block containing the "New player name..." input and "Add" button). This keeps the table clean during gameplay since players are already added during game setup.
 
 ### Files Modified
-- `src/pages/Index.tsx` — add one new card section
+- `src/components/DataTable.tsx` — remove ~10 lines (the add-player form at the bottom)
 
