@@ -7,8 +7,8 @@ type Point = { x: number; y: number };
 const BIG_ARC = {
   cx: 200,
   cy: 150,
-  rx: 196,
-  ry: 157,
+  rx: 194,
+  ry: 156,
 };
 
 const PAINT = {
