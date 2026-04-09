@@ -74,8 +74,8 @@ const SettingsPanel = () => {
                 <span className="text-xs font-medium text-foreground">{fontSize}px</span>
               </div>
               <Slider
-                min={12}
-                max={22}
+                min={8}
+                max={32}
                 step={1}
                 value={[fontSize]}
                 onValueChange={([v]) => setFontSize(v)}

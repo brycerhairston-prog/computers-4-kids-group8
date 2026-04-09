@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 type Theme = "dark" | "light";
 type TextSize = "sm" | "md" | "lg";
 
-const TEXT_SIZE_MAP: Record<TextSize, number> = { sm: 14, md: 16, lg: 18 };
+const TEXT_SIZE_MAP: Record<TextSize, number> = { sm: 10, md: 16, lg: 24 };
 
 interface SettingsContextType {
   theme: Theme;
