@@ -9,6 +9,8 @@ import Lobby from "@/components/Lobby";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RotateCcw } from "lucide-react";
+import SettingsPanel from "@/components/SettingsPanel";
+import FeedbackDialog from "@/components/FeedbackDialog";
 import { motion } from "framer-motion";
 import c4kLogo from "@/assets/c4k-logo.png";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
