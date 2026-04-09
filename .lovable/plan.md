@@ -1,37 +1,23 @@
 
 
-## Plan: Add Text Size Slider + Improve Heat Map Color Contrast
+## Plan: Swap Heat Map Colors for 21–40% and 81–100%
 
 ### Changes
 
-**1. `src/context/SettingsContext.tsx` — Add `fontSize` number state**
-- Add `fontSize: number` (default 16, persisted to localStorage)
-- Preset mapping: sm=14, md=16, lg=18
-- Add `setFontSize(n: number)` that sets `document.documentElement.style.fontSize`
-- When a preset is selected, also update `fontSize`
+**1. `src/components/HeatMap.tsx` — Swap colors**
 
-**2. `src/components/SettingsPanel.tsx` — Add slider below radio buttons**
-- Import `Slider` component
-- Add slider (range 12–22px) below Small/Medium/Large radio group
-- Show current pixel value label
-- Radio buttons snap slider to preset; slider allows fine-tuning
+In `getHeatColor`:
+- 21–40%: Change from light blue to **red** `rgba(239, 68, 68, 0.85)`
+- 81–100%: Change from red to **green** `rgba(34, 197, 94, 0.8)`
 
-**3. `src/components/HeatMap.tsx` — New high-contrast color scale**
-- Replace current gradient with:
-  - 0%: Blue `rgba(59, 130, 246, 0.65)`
-  - 1–20%: Cyan `rgba(6, 182, 212, 0.7)`
-  - 21–40%: Light Blue `rgba(96, 165, 250, 0.7)`
-  - 41–60%: Yellow `rgba(234, 179, 8, 0.75)`
-  - 61–80%: Orange `rgba(249, 115, 22, 0.75)`
-  - 81–100%: Red `rgba(239, 68, 68, 0.85)`
-- Update legend: `bg-blue-500`, `bg-cyan-500`, `bg-blue-400`, `bg-yellow-500`, `bg-orange-500`, `bg-red-500`
+In `legendItems`:
+- 21–40%: Change from `bg-blue-400` to `bg-red-500`
+- 81–100%: Change from `bg-red-500` to `bg-green-500`
 
-**4. `src/index.css` — Minor tweak**
-- Keep `data-text-size` rules as fallbacks, also respect `style.fontSize` from slider
+**2. Fix runtime error: `useSettings must be used within SettingsProvider`**
+
+The `SettingsPanel` component is rendered inside `Index.tsx`, which is inside `SettingsProvider` in `App.tsx` — so the wrapping looks correct. This may be a stale build artifact. Will verify the component tree renders correctly after the color change edit; if the error persists, will investigate further.
 
 ### Files Modified
-- `src/context/SettingsContext.tsx`
-- `src/components/SettingsPanel.tsx`
 - `src/components/HeatMap.tsx`
-- `src/index.css`
 
