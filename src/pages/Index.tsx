@@ -8,7 +8,8 @@ import GameSummary from "@/components/GameSummary";
 import Lobby from "@/components/Lobby";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import SettingsPanel from "@/components/SettingsPanel";
 import FeedbackDialog from "@/components/FeedbackDialog";
 import { motion } from "framer-motion";
@@ -100,63 +101,62 @@ const PlayingDashboard = () => {
                 <HeatMap />
               </TabsContent>
             </Tabs>
-            <div className="glass-card rounded-lg p-4 space-y-2">
-              <h3 className="text-sm font-display font-bold text-primary">📖 How to Use</h3>
-              <ul className="text-xs text-muted-foreground space-y-1.5">
-                <li>
-                  <strong className="text-foreground">Shot Tracker:</strong> Select your player, then tap a zone on the court to log a shot. Green pins = made, red pins = missed. Your shot count updates in the progress bar above.
-                </li>
-                <li>
-                  <strong className="text-foreground">Heat Map:</strong> Switch to the Heat Map tab to see color-coded zones. Colors range from blue (cold / low accuracy) to green (hot / high accuracy). Each zone shows makes/attempts and FG%.
-                </li>
-                <li>
-                  <strong className="text-foreground">Stats Table:</strong> The table on the right tracks each player's attempts, makes, FG%, and total points in real time. Tap a player name to filter the heat map to just their shots.
-                </li>
-                <li>
-                  <strong className="text-foreground">Settings (⚙️):</strong> Adjust dark/light mode, colorblind mode, and text size from the gear icon in the header.
-                </li>
-              </ul>
-            </div>
+            <Collapsible defaultOpen className="glass-card rounded-lg p-4 space-y-2">
+              <CollapsibleTrigger className="flex items-center justify-between w-full group">
+                <h3 className="text-sm font-display font-bold text-primary">📖 How to Use</h3>
+                <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=closed]:rotate-[-90deg]" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <ul className="text-xs text-muted-foreground space-y-1.5 pt-1">
+                  <li><strong className="text-foreground">Shot Tracker:</strong> Select your player, then tap a zone on the court to log a shot. Green pins = made, red pins = missed. Your shot count updates in the progress bar above.</li>
+                  <li><strong className="text-foreground">Heat Map:</strong> Switch to the Heat Map tab to see color-coded zones. Colors range from blue (cold / low accuracy) to green (hot / high accuracy). Each zone shows makes/attempts and FG%.</li>
+                  <li><strong className="text-foreground">Stats Table:</strong> The table on the right tracks each player's attempts, makes, FG%, and total points in real time. Tap a player name to filter the heat map to just their shots.</li>
+                  <li><strong className="text-foreground">Settings (⚙️):</strong> Adjust dark/light mode, colorblind mode, and text size from the gear icon in the header.</li>
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
           <div className="space-y-4">
             <DataTable />
-            <div className="glass-card rounded-lg p-4 space-y-2">
-              <h3 className="text-sm font-display font-bold text-primary">🧠 Data Science Tips</h3>
-               <ul className="text-xs text-muted-foreground space-y-1.5">
-                <li><strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.</li>
-                <li><strong className="text-foreground">Hot Zones</strong> show where a player shoots best.</li>
-                <li><strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.</li>
-                <li className="pt-2"><strong className="text-primary">🎯 Strategy & Decision-Making</strong></li>
-                <li>• <strong className="text-foreground">Take Smart Shots:</strong> Focus on zones where your FG% is highest.</li>
-                <li>• <strong className="text-foreground">Risk vs Reward:</strong> 3-point shots are worth more, but often have lower success rates.</li>
-                <li>• <strong className="text-foreground">Adjust in Real Time:</strong> If you're missing from a zone, try switching areas.</li>
-                <li className="pt-2"><strong className="text-primary">🔍 Pattern Recognition</strong></li>
-                <li>• <strong className="text-foreground">Hot Streaks vs Cold Streaks:</strong> Look for changes in performance over time.</li>
-                <li>• <strong className="text-foreground">Shot Clustering:</strong> Groups of makes in one area suggest a strong zone.</li>
-                <li>• <strong className="text-foreground">Avoid Cold Zones:</strong> Repeated misses in a zone may indicate a weakness.</li>
-                <li className="pt-2"><strong className="text-primary">🧪 Experimental Thinking</strong></li>
-                <li>• <strong className="text-foreground">Test Hypotheses:</strong> Try focusing on one zone and see if your performance improves.</li>
-                <li>• <strong className="text-foreground">Change Variables:</strong> Move your shot location and observe how results change.</li>
-                <li>• <strong className="text-foreground">Learn from Data:</strong> Use results to adjust your strategy, not guess.</li>
-              </ul>
-            </div>
-            <div className="glass-card rounded-lg p-4 space-y-2">
-              <h3 className="text-sm font-display font-bold text-accent">📋 Game Rules</h3>
-              <ul className="text-xs text-muted-foreground space-y-1.5">
-                <li>
-                  <strong className="text-foreground">Individual Mode:</strong> 20 shots per player. Can't shoot the same zone twice in a row.
-                </li>
-                <li>
-                  <strong className="text-foreground">Team Mode:</strong> 30 shots per team. Teams can block 2 zones on opponents' boards.
-                </li>
-                <li>
-                  <strong className="text-foreground">Scoring:</strong> Zone 1 = 1pt · Zones 2–3 = 2pts · Zones 4–6 = 3pts.
-                </li>
-                <li>
-                  <strong className="text-foreground">Practice Round:</strong> 5 bonus shots, any zone allowed.
-                </li>
-              </ul>
-            </div>
+            <Collapsible defaultOpen className="glass-card rounded-lg p-4 space-y-2">
+              <CollapsibleTrigger className="flex items-center justify-between w-full group">
+                <h3 className="text-sm font-display font-bold text-primary">🧠 Data Science Tips</h3>
+                <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=closed]:rotate-[-90deg]" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <ul className="text-xs text-muted-foreground space-y-1.5 pt-1">
+                  <li><strong className="text-foreground">FG% (Field Goal Percentage)</strong> = Makes ÷ Attempts × 100.</li>
+                  <li><strong className="text-foreground">Hot Zones</strong> show where a player shoots best.</li>
+                  <li><strong className="text-foreground">Pattern Recognition:</strong> Look for clusters of green pins.</li>
+                  <li className="pt-2"><strong className="text-primary">🎯 Strategy & Decision-Making</strong></li>
+                  <li>• <strong className="text-foreground">Take Smart Shots:</strong> Focus on zones where your FG% is highest.</li>
+                  <li>• <strong className="text-foreground">Risk vs Reward:</strong> 3-point shots are worth more, but often have lower success rates.</li>
+                  <li>• <strong className="text-foreground">Adjust in Real Time:</strong> If you're missing from a zone, try switching areas.</li>
+                  <li className="pt-2"><strong className="text-primary">🔍 Pattern Recognition</strong></li>
+                  <li>• <strong className="text-foreground">Hot Streaks vs Cold Streaks:</strong> Look for changes in performance over time.</li>
+                  <li>• <strong className="text-foreground">Shot Clustering:</strong> Groups of makes in one area suggest a strong zone.</li>
+                  <li>• <strong className="text-foreground">Avoid Cold Zones:</strong> Repeated misses in a zone may indicate a weakness.</li>
+                  <li className="pt-2"><strong className="text-primary">🧪 Experimental Thinking</strong></li>
+                  <li>• <strong className="text-foreground">Test Hypotheses:</strong> Try focusing on one zone and see if your performance improves.</li>
+                  <li>• <strong className="text-foreground">Change Variables:</strong> Move your shot location and observe how results change.</li>
+                  <li>• <strong className="text-foreground">Learn from Data:</strong> Use results to adjust your strategy, not guess.</li>
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
+            <Collapsible defaultOpen className="glass-card rounded-lg p-4 space-y-2">
+              <CollapsibleTrigger className="flex items-center justify-between w-full group">
+                <h3 className="text-sm font-display font-bold text-accent">📋 Game Rules</h3>
+                <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=closed]:rotate-[-90deg]" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <ul className="text-xs text-muted-foreground space-y-1.5 pt-1">
+                  <li><strong className="text-foreground">Individual Mode:</strong> 20 shots per player. Can't shoot the same zone twice in a row.</li>
+                  <li><strong className="text-foreground">Team Mode:</strong> 30 shots per team. Teams can block 2 zones on opponents' boards.</li>
+                  <li><strong className="text-foreground">Scoring:</strong> Zone 1 = 1pt · Zones 2–3 = 2pts · Zones 4–6 = 3pts.</li>
+                  <li><strong className="text-foreground">Practice Round:</strong> 5 bonus shots, any zone allowed.</li>
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         </motion.div>
       </main>
