@@ -1,8 +1,6 @@
 import { useGame, ZONE_POINTS, ZONE_LABELS } from "@/context/GameContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { Plus, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Tooltip,
@@ -11,15 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 
 const DataTable = () => {
-  const { players, addPlayer, removePlayer, getPlayerStats, selectedPlayerId, selectPlayer, exportCSV } = useGame();
-  const [newName, setNewName] = useState("");
-
-  const handleAdd = () => {
-    const name = newName.trim();
-    if (!name) return;
-    addPlayer(name);
-    setNewName("");
-  };
+  const { players, getPlayerStats, selectedPlayerId, selectPlayer, exportCSV } = useGame();
 
   const handleExport = () => {
     const csv = exportCSV();
@@ -113,18 +103,6 @@ const DataTable = () => {
         </table>
       </div>
 
-      <div className="flex gap-2">
-        <Input
-          value={newName}
-          onChange={e => setNewName(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleAdd()}
-          placeholder="New player name..."
-          className="h-8 text-sm bg-secondary/50"
-        />
-        <Button size="sm" onClick={handleAdd} className="gap-1 shrink-0">
-          <Plus className="w-3 h-3" /> Add
-        </Button>
-      </div>
     </div>
   );
 };
