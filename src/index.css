@@ -102,9 +102,9 @@
 }
 
 /* Text size scaling */
-[data-text-size="sm"] { font-size: 14px; }
+[data-text-size="sm"] { font-size: 10px; }
 [data-text-size="md"] { font-size: 16px; }
-[data-text-size="lg"] { font-size: 18px; }
+[data-text-size="lg"] { font-size: 24px; }
 
 @layer base {
   * {
