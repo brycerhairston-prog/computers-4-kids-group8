@@ -102,7 +102,7 @@
 }
 
 /* Text-only scaling via CSS variable */
-body {
+:root {
   --text-scale: 1;
 }
 
