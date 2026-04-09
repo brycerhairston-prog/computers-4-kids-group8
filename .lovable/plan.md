@@ -1,11 +1,24 @@
 
 
-## Plan: Remove "Add Player" Input from Player Stats Table
+## Plan: Widen Text Size Range for More Noticeable Differences
 
-### Change
+Currently the preset sizes are sm=14, md=16, lg=18 and the slider range is 12–22px. The differences are too subtle.
 
-**`src/components/DataTable.tsx`** — Delete the input + button section at the bottom of the component (the `<div className="flex gap-2">` block containing the "New player name..." input and "Add" button). This keeps the table clean during gameplay since players are already added during game setup.
+### Changes
+
+**1. `src/context/SettingsContext.tsx`**
+- Change `TEXT_SIZE_MAP` to: `{ sm: 10, md: 16, lg: 24 }` — much bigger spread between presets
+
+**2. `src/components/SettingsPanel.tsx`**
+- Change slider `min` from 12 to **8**
+- Change slider `max` from 22 to **32**
+- This gives a much wider range: tiny text on the left, very large text on the right
+
+**3. `src/index.css`**
+- Update the `data-text-size` CSS rules to match: `sm` = 10px, `md` = 16px, `lg` = 24px
 
 ### Files Modified
-- `src/components/DataTable.tsx` — remove ~10 lines (the add-player form at the bottom)
+- `src/context/SettingsContext.tsx`
+- `src/components/SettingsPanel.tsx`
+- `src/index.css`
 
