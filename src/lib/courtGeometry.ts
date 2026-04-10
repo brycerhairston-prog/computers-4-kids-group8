@@ -82,6 +82,7 @@ function isPointInPolygon(point: Point, polygon: Point[]): boolean {
 
 const leftArcToBottom = sampleEllipseArc(Math.PI, Math.PI / 2);
 const bottomToRightArc = sampleEllipseArc(Math.PI / 2, 0);
+const rightArcToBottom = sampleEllipseArc(0, Math.PI / 2);
 const leftOuterArc = sampleEllipseArc(Math.PI, LEFT_DIAGONAL_ANGLE);
 const centerOuterArc = sampleEllipseArc(LEFT_DIAGONAL_ANGLE, RIGHT_DIAGONAL_ANGLE);
 const rightOuterArc = sampleEllipseArc(RIGHT_DIAGONAL_ANGLE, 0);
@@ -105,8 +106,7 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: PAINT.right, y: 0 },
     { x: RIGHT_ARC_EXTREME.x, y: 0 },
     RIGHT_ARC_EXTREME,
-    ...bottomToRightArc.slice(1),
-    ARC_BOTTOM,
+    ...rightArcToBottom.slice(1),
     { x: ARC_BOTTOM.x, y: PAINT.bottom },
     { x: PAINT.right, y: PAINT.bottom },
   ],
