@@ -1,34 +1,31 @@
 
 
-## Plan: Inset Zone Polygons to Keep Colors Inside Court Lines
+## Plan: Fix Zone Fill Gaps and Bleeding
 
-### Problem
-The zone fill colors bleed over the black court lines because the zone polygons are drawn exactly on top of the lines. When a color fills right up to (or past) a boundary line, it covers the line and looks messy. The colors need to stay cleanly *inside* each zone's boundaries.
-
-### Solution
-Shrink each zone polygon inward by ~3-4px so the colored fills stop before reaching the black court lines. This creates a small gap between the color and the line, giving a clean, professional look. Both the heat map clip paths and the shot tracker zone detection will use the same inset geometry.
+### Problems
+1. **Zone 4 white gap**: The inset polygon jumps from the arc endpoint directly to the diagonal bottom point at (42,500), skipping the diagonal top point. This creates a straight cut across the zone leaving unfilled white space.
+2. **Zone 2 bleeding**: The inset polygon has the same issue in reverse — it doesn't include a proper transition point where the arc meets the diagonal boundary.
+3. **Zone 1 underfilled**: The 4px inset is too aggressive for the paint rectangle, making the fill noticeably smaller than the painted area.
 
 ### Changes
 
 **`src/lib/courtGeometry.ts`**:
-- Inset the `PAINT` rectangle by ~3px on each inner edge (left+3, right-3, bottom-3) — top stays at 0 since it's the court edge
-- Reduce the `BIG_ARC` radii (`rx`, `ry`) by ~4px to pull the three-point arc inward
-- Adjust the diagonal line endpoints inward by ~3-4px
-- These changes affect all 6 zone polygons simultaneously since they all derive from the same constants
-- Keep `getZoneFromPoint` using the *original* (non-inset) polygons for click detection so taps near lines still register. Export a separate set of `ZONE_FILL_PATHS` for rendering only.
 
-**`src/components/HeatMap.tsx`**:
-- Import and use `ZONE_FILL_PATHS` instead of `ZONE_PATHS` for the clip paths so colors stay inside the lines
+1. **Reduce INSET from 4 to 2** — this keeps colors inside the lines without shrinking zones too visibly (fixes Zone 1)
 
-**`src/components/ShotTracker.tsx`**:
-- Use `ZONE_FILL_PATHS` for any zone fill rendering (blocked zone overlays)
+2. **Fix Zone 4 inset polygon** — add `INSET_LEFT_DIAGONAL_TOP` between the arc endpoint and the diagonal bottom so the polygon traces the diagonal line instead of cutting across:
+   ```
+   4: [
+     (0,0) → inset left arc extreme → along arc →
+     INSET_LEFT_DIAGONAL_TOP →    ← NEW: fills the gap
+     INSET_LEFT_DIAGONAL_BOTTOM → (0,500)
+   ]
+   ```
 
-### Why Two Sets of Paths
-- **`ZONE_PATHS`** (original): Used for click/tap detection — generous boundaries so taps near lines always register in a zone
-- **`ZONE_FILL_PATHS`** (inset): Used for visual rendering — colors stay cleanly inside the court lines
+3. **Fix Zone 6 inset polygon** — same mirror fix, add `INSET_RIGHT_DIAGONAL_TOP` so the polygon follows the diagonal line properly
+
+4. **Adjust diagonal inset offsets** — use proper perpendicular offsets for the diagonal lines instead of simple x±4 / y±4, which caused the diagonal boundaries to shift unevenly and bleed
 
 ### Files Modified
-- `src/lib/courtGeometry.ts` — add inset polygon set for rendering
-- `src/components/HeatMap.tsx` — use inset paths for clip regions
-- `src/components/ShotTracker.tsx` — use inset paths for blocked zone fills
+- `src/lib/courtGeometry.ts` — reduce inset, fix zone 4/6 polygon gaps, adjust diagonal offsets
 
