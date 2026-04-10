@@ -1,6 +1,6 @@
 import { useGame, ZONE_LABELS, ZONE_POINTS, INDIVIDUAL_SHOT_LIMIT, TEAM_SHOT_LIMIT, PRACTICE_SHOT_LIMIT } from "@/context/GameContext";
 import { useMultiplayer } from "@/context/MultiplayerContext";
-import { ZONE_FILL_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, getZoneFromPoint } from "@/lib/courtGeometry";
+import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, getZoneFromPoint } from "@/lib/courtGeometry";
 import courtImage from "@/assets/court-layout.png";
 import { useState, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -317,7 +317,7 @@ const ShotTracker = () => {
             const pos = ZONE_LABEL_POS[zone];
             return (
               <g key={`blocked-${zone}`}>
-                <path d={ZONE_FILL_PATHS[zone]} fill="hsl(0 84% 60% / 0.2)" stroke="hsl(0 84% 60% / 0.5)" strokeWidth="2" strokeDasharray="8 4" />
+                <path d={ZONE_PATHS[zone]} fill="hsl(0 84% 60% / 0.2)" stroke="hsl(0 84% 60% / 0.5)" strokeWidth="2" strokeDasharray="8 4" />
                 <line x1={pos.x - 12} y1={pos.y - 12} x2={pos.x + 12} y2={pos.y + 12} stroke="hsl(0 84% 60%)" strokeWidth="4" strokeLinecap="round" />
                 <line x1={pos.x + 12} y1={pos.y - 12} x2={pos.x - 12} y2={pos.y + 12} stroke="hsl(0 84% 60%)" strokeWidth="4" strokeLinecap="round" />
               </g>

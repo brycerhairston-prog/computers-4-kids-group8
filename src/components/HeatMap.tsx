@@ -1,6 +1,6 @@
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { useGame, ZONE_LABELS, ZONE_POINTS } from "@/context/GameContext";
-import { ZONE_FILL_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
+import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
 import { motion } from "framer-motion";
 import courtImage from "@/assets/court-layout.png";
 
@@ -43,7 +43,7 @@ const HeatMap = () => {
         <defs>
           {[1, 2, 3, 4, 5, 6].map(zone => (
             <clipPath key={`clip-${zone}`} id={`zone-clip-${zone}`}>
-              <path d={ZONE_FILL_PATHS[zone]} />
+              <path d={ZONE_PATHS[zone]} />
             </clipPath>
           ))}
         </defs>
