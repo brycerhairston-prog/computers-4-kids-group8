@@ -140,24 +140,40 @@ export const ZONE_PATHS: Record<number, string> = Object.fromEntries(
 
 // --- Inset geometry for visual rendering (colors stay inside court lines) ---
 const INSET = 2;
+const PAINT_INSET = 1;        // Zone 1: tighter inset so paint fills more
+const ARC_OUTER_INSET = 1;    // Zones 4/6: closer to three-point line
+const MIDRANGE_BOTTOM_EXTRA = 2; // Zones 2/3: pull bottom edge up
+const DIAGONAL_INSET = 4;     // Zone 5: pull left/right edges inward
 
+// Inner arc (zones 2/3) — standard inset
 const INSET_BIG_ARC = {
   cx: BIG_ARC.cx,
   cy: BIG_ARC.cy,
   rx: BIG_ARC.rx - INSET,
-  ry: BIG_ARC.ry - INSET,
+  ry: BIG_ARC.ry - INSET - MIDRANGE_BOTTOM_EXTRA, // extra shrink upward
+};
+
+// Outer arc (zones 4/6) — less inset so fill reaches closer to line
+const OUTER_BIG_ARC = {
+  cx: BIG_ARC.cx,
+  cy: BIG_ARC.cy,
+  rx: BIG_ARC.rx - ARC_OUTER_INSET,
+  ry: BIG_ARC.ry - ARC_OUTER_INSET,
 };
 
 const INSET_PAINT = {
-  left: PAINT.left + INSET,
-  right: PAINT.right - INSET,
+  left: PAINT.left + PAINT_INSET,
+  right: PAINT.right - PAINT_INSET,
   top: PAINT.top,
-  bottom: PAINT.bottom - INSET,
+  bottom: PAINT.bottom - PAINT_INSET,
 };
 
 const INSET_LEFT_ARC_EXTREME: Point = { x: INSET_BIG_ARC.cx - INSET_BIG_ARC.rx, y: INSET_BIG_ARC.cy };
 const INSET_RIGHT_ARC_EXTREME: Point = { x: INSET_BIG_ARC.cx + INSET_BIG_ARC.rx, y: INSET_BIG_ARC.cy };
 const INSET_ARC_BOTTOM: Point = { x: INSET_BIG_ARC.cx, y: INSET_BIG_ARC.cy + INSET_BIG_ARC.ry };
+
+const OUTER_LEFT_ARC_EXTREME: Point = { x: OUTER_BIG_ARC.cx - OUTER_BIG_ARC.rx, y: OUTER_BIG_ARC.cy };
+const OUTER_RIGHT_ARC_EXTREME: Point = { x: OUTER_BIG_ARC.cx + OUTER_BIG_ARC.rx, y: OUTER_BIG_ARC.cy };
 
 function sampleInsetEllipseArc(startAngle: number, endAngle: number, steps = ARC_SAMPLES): Point[] {
   const points: Point[] = [];
@@ -171,14 +187,30 @@ function sampleInsetEllipseArc(startAngle: number, endAngle: number, steps = ARC
   return points;
 }
 
+function sampleOuterEllipseArc(startAngle: number, endAngle: number, steps = ARC_SAMPLES): Point[] {
+  const points: Point[] = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const t = startAngle + ((endAngle - startAngle) * i) / steps;
+    points.push({
+      x: OUTER_BIG_ARC.cx + OUTER_BIG_ARC.rx * Math.cos(t),
+      y: OUTER_BIG_ARC.cy + OUTER_BIG_ARC.ry * Math.sin(t),
+    });
+  }
+  return points;
+}
+
 const INSET_LEFT_DIAGONAL_ANGLE = Math.acos((LEFT_DIAGONAL_TOP.x - INSET_BIG_ARC.cx) / INSET_BIG_ARC.rx);
 const INSET_RIGHT_DIAGONAL_ANGLE = Math.acos((RIGHT_DIAGONAL_TOP.x - INSET_BIG_ARC.cx) / INSET_BIG_ARC.rx);
+const OUTER_LEFT_DIAGONAL_ANGLE = Math.acos((LEFT_DIAGONAL_TOP.x - OUTER_BIG_ARC.cx) / OUTER_BIG_ARC.rx);
+const OUTER_RIGHT_DIAGONAL_ANGLE = Math.acos((RIGHT_DIAGONAL_TOP.x - OUTER_BIG_ARC.cx) / OUTER_BIG_ARC.rx);
 
 const insetLeftArcToBottom = sampleInsetEllipseArc(Math.PI, Math.PI / 2);
 const insetRightArcToBottom = sampleInsetEllipseArc(0, Math.PI / 2);
-const insetLeftOuterArc = sampleInsetEllipseArc(Math.PI, INSET_LEFT_DIAGONAL_ANGLE);
+const outerLeftOuterArc = sampleOuterEllipseArc(Math.PI, OUTER_LEFT_DIAGONAL_ANGLE);
+const outerRightOuterArc = sampleOuterEllipseArc(OUTER_RIGHT_DIAGONAL_ANGLE, 0);
+
+// Center outer arc for Zone 5 uses the inner (more inset) arc to raise its top
 const insetCenterOuterArc = sampleInsetEllipseArc(INSET_LEFT_DIAGONAL_ANGLE, INSET_RIGHT_DIAGONAL_ANGLE);
-const insetRightOuterArc = sampleInsetEllipseArc(INSET_RIGHT_DIAGONAL_ANGLE, 0);
 
 // Perpendicular inset for the diagonal lines
 const leftDx = LEFT_DIAGONAL_BOTTOM.x - LEFT_DIAGONAL_TOP.x;
@@ -187,17 +219,23 @@ const leftLen = Math.sqrt(leftDx * leftDx + leftDy * leftDy);
 const leftNx = leftDy / leftLen;   // normal x (pointing inward/right)
 const leftNy = -leftDx / leftLen;  // normal y
 
-const INSET_LEFT_DIAGONAL_TOP: Point = { x: LEFT_DIAGONAL_TOP.x + leftNx * INSET, y: LEFT_DIAGONAL_TOP.y + leftNy * INSET };
-const INSET_LEFT_DIAGONAL_BOTTOM: Point = { x: LEFT_DIAGONAL_BOTTOM.x + leftNx * INSET, y: LEFT_DIAGONAL_BOTTOM.y + leftNy * INSET };
-
 const rightDx = RIGHT_DIAGONAL_BOTTOM.x - RIGHT_DIAGONAL_TOP.x;
 const rightDy = RIGHT_DIAGONAL_BOTTOM.y - RIGHT_DIAGONAL_TOP.y;
 const rightLen = Math.sqrt(rightDx * rightDx + rightDy * rightDy);
 const rightNx = -rightDy / rightLen;  // normal x (pointing inward/left)
 const rightNy = rightDx / rightLen;   // normal y
 
+// Standard diagonal inset (zones 4/6)
+const INSET_LEFT_DIAGONAL_TOP: Point = { x: LEFT_DIAGONAL_TOP.x + leftNx * INSET, y: LEFT_DIAGONAL_TOP.y + leftNy * INSET };
+const INSET_LEFT_DIAGONAL_BOTTOM: Point = { x: LEFT_DIAGONAL_BOTTOM.x + leftNx * INSET, y: LEFT_DIAGONAL_BOTTOM.y + leftNy * INSET };
 const INSET_RIGHT_DIAGONAL_TOP: Point = { x: RIGHT_DIAGONAL_TOP.x + rightNx * INSET, y: RIGHT_DIAGONAL_TOP.y + rightNy * INSET };
 const INSET_RIGHT_DIAGONAL_BOTTOM: Point = { x: RIGHT_DIAGONAL_BOTTOM.x + rightNx * INSET, y: RIGHT_DIAGONAL_BOTTOM.y + rightNy * INSET };
+
+// Wider diagonal inset for Zone 5
+const Z5_LEFT_DIAGONAL_TOP: Point = { x: LEFT_DIAGONAL_TOP.x + leftNx * DIAGONAL_INSET, y: LEFT_DIAGONAL_TOP.y + leftNy * DIAGONAL_INSET };
+const Z5_LEFT_DIAGONAL_BOTTOM: Point = { x: LEFT_DIAGONAL_BOTTOM.x + leftNx * DIAGONAL_INSET, y: LEFT_DIAGONAL_BOTTOM.y + leftNy * DIAGONAL_INSET };
+const Z5_RIGHT_DIAGONAL_TOP: Point = { x: RIGHT_DIAGONAL_TOP.x + rightNx * DIAGONAL_INSET, y: RIGHT_DIAGONAL_TOP.y + rightNy * DIAGONAL_INSET };
+const Z5_RIGHT_DIAGONAL_BOTTOM: Point = { x: RIGHT_DIAGONAL_BOTTOM.x + rightNx * DIAGONAL_INSET, y: RIGHT_DIAGONAL_BOTTOM.y + rightNy * DIAGONAL_INSET };
 
 const ZONE_FILL_POLYGONS: Record<number, Point[]> = {
   1: [
@@ -209,8 +247,8 @@ const ZONE_FILL_POLYGONS: Record<number, Point[]> = {
   2: [
     { x: INSET_LEFT_ARC_EXTREME.x, y: 0 },
     { x: INSET_PAINT.left, y: 0 },
-    { x: INSET_PAINT.left, y: INSET_PAINT.bottom },
-    { x: INSET_ARC_BOTTOM.x, y: INSET_PAINT.bottom },
+    { x: INSET_PAINT.left, y: INSET_PAINT.bottom - MIDRANGE_BOTTOM_EXTRA },
+    { x: INSET_ARC_BOTTOM.x, y: INSET_PAINT.bottom - MIDRANGE_BOTTOM_EXTRA },
     INSET_ARC_BOTTOM,
     ...insetLeftArcToBottom.slice(0, -1).reverse(),
   ],
@@ -219,32 +257,32 @@ const ZONE_FILL_POLYGONS: Record<number, Point[]> = {
     { x: INSET_RIGHT_ARC_EXTREME.x, y: 0 },
     INSET_RIGHT_ARC_EXTREME,
     ...insetRightArcToBottom.slice(1),
-    { x: INSET_ARC_BOTTOM.x, y: INSET_PAINT.bottom },
-    { x: INSET_PAINT.right, y: INSET_PAINT.bottom },
+    { x: INSET_ARC_BOTTOM.x, y: INSET_PAINT.bottom - MIDRANGE_BOTTOM_EXTRA },
+    { x: INSET_PAINT.right, y: INSET_PAINT.bottom - MIDRANGE_BOTTOM_EXTRA },
   ],
   4: [
     { x: 0, y: 0 },
-    { x: INSET_LEFT_ARC_EXTREME.x, y: 0 },
-    INSET_LEFT_ARC_EXTREME,
-    ...insetLeftOuterArc.slice(1),
+    { x: OUTER_LEFT_ARC_EXTREME.x, y: 0 },
+    OUTER_LEFT_ARC_EXTREME,
+    ...outerLeftOuterArc.slice(1),
     INSET_LEFT_DIAGONAL_TOP,
     INSET_LEFT_DIAGONAL_BOTTOM,
     { x: 0, y: 500 },
   ],
   5: [
-    INSET_LEFT_DIAGONAL_BOTTOM,
-    INSET_LEFT_DIAGONAL_TOP,
+    Z5_LEFT_DIAGONAL_BOTTOM,
+    Z5_LEFT_DIAGONAL_TOP,
     ...insetCenterOuterArc.slice(1),
-    INSET_RIGHT_DIAGONAL_TOP,
-    INSET_RIGHT_DIAGONAL_BOTTOM,
+    Z5_RIGHT_DIAGONAL_TOP,
+    Z5_RIGHT_DIAGONAL_BOTTOM,
   ],
   6: [
-    { x: INSET_RIGHT_ARC_EXTREME.x, y: 0 },
+    { x: OUTER_RIGHT_ARC_EXTREME.x, y: 0 },
     { x: 400, y: 0 },
     { x: 400, y: 500 },
     INSET_RIGHT_DIAGONAL_BOTTOM,
     INSET_RIGHT_DIAGONAL_TOP,
-    ...insetRightOuterArc,
+    ...outerRightOuterArc,
   ],
 };
 
