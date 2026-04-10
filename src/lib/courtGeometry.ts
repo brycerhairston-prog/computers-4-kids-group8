@@ -82,6 +82,7 @@ function isPointInPolygon(point: Point, polygon: Point[]): boolean {
 
 const leftArcToBottom = sampleEllipseArc(Math.PI, Math.PI / 2);
 const bottomToRightArc = sampleEllipseArc(Math.PI / 2, 0);
+const rightArcToBottom = sampleEllipseArc(0, Math.PI / 2);
 const leftOuterArc = sampleEllipseArc(Math.PI, LEFT_DIAGONAL_ANGLE);
 const centerOuterArc = sampleEllipseArc(LEFT_DIAGONAL_ANGLE, RIGHT_DIAGONAL_ANGLE);
 const rightOuterArc = sampleEllipseArc(RIGHT_DIAGONAL_ANGLE, 0);
