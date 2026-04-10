@@ -139,7 +139,7 @@ export const ZONE_PATHS: Record<number, string> = Object.fromEntries(
 ) as Record<number, string>;
 
 // --- Inset geometry for visual rendering (colors stay inside court lines) ---
-const INSET = 4;
+const INSET = 2;
 
 const INSET_BIG_ARC = {
   cx: BIG_ARC.cx,
@@ -180,10 +180,24 @@ const insetLeftOuterArc = sampleInsetEllipseArc(Math.PI, INSET_LEFT_DIAGONAL_ANG
 const insetCenterOuterArc = sampleInsetEllipseArc(INSET_LEFT_DIAGONAL_ANGLE, INSET_RIGHT_DIAGONAL_ANGLE);
 const insetRightOuterArc = sampleInsetEllipseArc(INSET_RIGHT_DIAGONAL_ANGLE, 0);
 
-const INSET_LEFT_DIAGONAL_TOP: Point = { x: LEFT_DIAGONAL_TOP.x + INSET, y: LEFT_DIAGONAL_TOP.y + INSET };
-const INSET_RIGHT_DIAGONAL_TOP: Point = { x: RIGHT_DIAGONAL_TOP.x - INSET, y: RIGHT_DIAGONAL_TOP.y + INSET };
-const INSET_LEFT_DIAGONAL_BOTTOM: Point = { x: LEFT_DIAGONAL_BOTTOM.x + INSET, y: LEFT_DIAGONAL_BOTTOM.y };
-const INSET_RIGHT_DIAGONAL_BOTTOM: Point = { x: RIGHT_DIAGONAL_BOTTOM.x - INSET, y: RIGHT_DIAGONAL_BOTTOM.y };
+// Perpendicular inset for the diagonal lines
+const leftDx = LEFT_DIAGONAL_BOTTOM.x - LEFT_DIAGONAL_TOP.x;
+const leftDy = LEFT_DIAGONAL_BOTTOM.y - LEFT_DIAGONAL_TOP.y;
+const leftLen = Math.sqrt(leftDx * leftDx + leftDy * leftDy);
+const leftNx = leftDy / leftLen;   // normal x (pointing inward/right)
+const leftNy = -leftDx / leftLen;  // normal y
+
+const INSET_LEFT_DIAGONAL_TOP: Point = { x: LEFT_DIAGONAL_TOP.x + leftNx * INSET, y: LEFT_DIAGONAL_TOP.y + leftNy * INSET };
+const INSET_LEFT_DIAGONAL_BOTTOM: Point = { x: LEFT_DIAGONAL_BOTTOM.x + leftNx * INSET, y: LEFT_DIAGONAL_BOTTOM.y + leftNy * INSET };
+
+const rightDx = RIGHT_DIAGONAL_BOTTOM.x - RIGHT_DIAGONAL_TOP.x;
+const rightDy = RIGHT_DIAGONAL_BOTTOM.y - RIGHT_DIAGONAL_TOP.y;
+const rightLen = Math.sqrt(rightDx * rightDx + rightDy * rightDy);
+const rightNx = -rightDy / rightLen;  // normal x (pointing inward/left)
+const rightNy = rightDx / rightLen;   // normal y
+
+const INSET_RIGHT_DIAGONAL_TOP: Point = { x: RIGHT_DIAGONAL_TOP.x + rightNx * INSET, y: RIGHT_DIAGONAL_TOP.y + rightNy * INSET };
+const INSET_RIGHT_DIAGONAL_BOTTOM: Point = { x: RIGHT_DIAGONAL_BOTTOM.x + rightNx * INSET, y: RIGHT_DIAGONAL_BOTTOM.y + rightNy * INSET };
 
 const ZONE_FILL_POLYGONS: Record<number, Point[]> = {
   1: [
@@ -213,6 +227,7 @@ const ZONE_FILL_POLYGONS: Record<number, Point[]> = {
     { x: INSET_LEFT_ARC_EXTREME.x, y: 0 },
     INSET_LEFT_ARC_EXTREME,
     ...insetLeftOuterArc.slice(1),
+    INSET_LEFT_DIAGONAL_TOP,
     INSET_LEFT_DIAGONAL_BOTTOM,
     { x: 0, y: 500 },
   ],
@@ -220,6 +235,7 @@ const ZONE_FILL_POLYGONS: Record<number, Point[]> = {
     INSET_LEFT_DIAGONAL_BOTTOM,
     INSET_LEFT_DIAGONAL_TOP,
     ...insetCenterOuterArc.slice(1),
+    INSET_RIGHT_DIAGONAL_TOP,
     INSET_RIGHT_DIAGONAL_BOTTOM,
   ],
   6: [
@@ -227,6 +243,7 @@ const ZONE_FILL_POLYGONS: Record<number, Point[]> = {
     { x: 400, y: 0 },
     { x: 400, y: 500 },
     INSET_RIGHT_DIAGONAL_BOTTOM,
+    INSET_RIGHT_DIAGONAL_TOP,
     ...insetRightOuterArc,
   ],
 };
