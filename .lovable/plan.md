@@ -1,31 +1,30 @@
 
 
-## Plan: Fix Zone Fill Gaps and Bleeding
+## Plan: Fine-Tune Zone Fill Boundaries
 
-### Problems
-1. **Zone 4 white gap**: The inset polygon jumps from the arc endpoint directly to the diagonal bottom point at (42,500), skipping the diagonal top point. This creates a straight cut across the zone leaving unfilled white space.
-2. **Zone 2 bleeding**: The inset polygon has the same issue in reverse — it doesn't include a proper transition point where the arc meets the diagonal boundary.
-3. **Zone 1 underfilled**: The 4px inset is too aggressive for the paint rectangle, making the fill noticeably smaller than the painted area.
+### Summary
+Adjust the inset fill polygons so each zone's color fits cleanly within its court lines. These are small pixel-level tweaks to `ZONE_FILL_POLYGONS` in `courtGeometry.ts` — no structural changes needed.
 
-### Changes
+### Changes (all in `src/lib/courtGeometry.ts`)
 
-**`src/lib/courtGeometry.ts`**:
+1. **Zone 1 (Paint) — expand slightly**: Reduce the paint inset from 2 to 1 on left/right/bottom edges so the fill better covers the painted area:
+   - `INSET_PAINT.left = PAINT.left + 1`
+   - `INSET_PAINT.right = PAINT.right - 1`  
+   - `INSET_PAINT.bottom = PAINT.bottom - 1`
 
-1. **Reduce INSET from 4 to 2** — this keeps colors inside the lines without shrinking zones too visibly (fixes Zone 1)
+2. **Zones 2 and 3 (Mid-Range) — shrink upward**: Pull the bottom boundary of Zones 2/3 up by using `INSET_PAINT.bottom - 2` instead of `INSET_PAINT.bottom` for the horizontal edge where they meet the paint, and similarly pull `INSET_ARC_BOTTOM` up by reducing the inset arc `ry` by an extra 2px (total 4px inset on ry only).
 
-2. **Fix Zone 4 inset polygon** — add `INSET_LEFT_DIAGONAL_TOP` between the arc endpoint and the diagonal bottom so the polygon traces the diagonal line instead of cutting across:
-   ```
-   4: [
-     (0,0) → inset left arc extreme → along arc →
-     INSET_LEFT_DIAGONAL_TOP →    ← NEW: fills the gap
-     INSET_LEFT_DIAGONAL_BOTTOM → (0,500)
-   ]
-   ```
+3. **Zone 5 (Center Three) — shrink inward and raise top**: Increase the diagonal inset multiplier for Zone 5's diagonal boundaries from `INSET` (2) to `INSET + 2` (4) to pull left/right edges in. Also raise the arc portion by using the larger `ry` reduction from step 2, which naturally pulls Zone 5's top edge down (toward the basket, i.e., "up" visually since basket is at top).
 
-3. **Fix Zone 6 inset polygon** — same mirror fix, add `INSET_RIGHT_DIAGONAL_TOP` so the polygon follows the diagonal line properly
+4. **Zones 4 and 6 (Corner Threes) — expand upward toward arc line**: Reduce the arc inset for the outer arcs only — use `rx - 1` instead of `rx - 2` for the outer arc segments used by Zones 4 and 6, so their fill extends closer to the three-point line.
 
-4. **Adjust diagonal inset offsets** — use proper perpendicular offsets for the diagonal lines instead of simple x±4 / y±4, which caused the diagonal boundaries to shift unevenly and bleed
+### Technical Approach
+Rather than one global `INSET` constant, introduce zone-specific adjustments:
+- `PAINT_INSET = 1` (for Zone 1)
+- `ARC_INSET = 2` for inner arcs (Zones 2/3), `ARC_OUTER_INSET = 1` for outer arcs (Zones 4/6)
+- `MIDRANGE_BOTTOM_EXTRA = 2` to pull Zones 2/3 bottom edges up
+- `DIAGONAL_INSET = 4` for Zone 5's side boundaries
 
 ### Files Modified
-- `src/lib/courtGeometry.ts` — reduce inset, fix zone 4/6 polygon gaps, adjust diagonal offsets
+- `src/lib/courtGeometry.ts` — adjust inset values per-zone for tighter fits
 
