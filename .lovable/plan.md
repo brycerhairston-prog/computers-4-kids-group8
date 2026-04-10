@@ -1,41 +1,31 @@
 
 
-## Plan: Recalibrate Court Zone Geometry to Match Court Image
+## Plan: Fix Zone 3 Gap and Tighten Zone Boundaries
 
-### Problem
-The zone polygon boundaries (paint box, three-point arc, diagonal lines) defined in `courtGeometry.ts` don't perfectly align with the black lines drawn on the `court-layout.png` image. This causes:
-- Heat map colors bleeding past the visible court lines
-- Click-to-shoot zone detection registering the wrong zone near boundaries
+### Root Cause
+Zone 3's polygon has a **self-intersecting path** because the arc points are in the wrong winding order. After placing `RIGHT_ARC_EXTREME` (394,150), the code appends `bottomToRightArc.slice(1)` — but this arc goes from bottom→right, meaning it jumps back down to near (200,306) then retraces up to (394,150). This creates a bowtie shape with an unfilled gap.
 
-### Approach
-1. Add visible stroke outlines of the zone paths on the Shot Tracker court (temporary debug aid) so zone boundaries are clearly visible against the court image
-2. Adjust the geometry constants in `courtGeometry.ts` to match the actual court image lines
-3. Remove the debug outlines once alignment is confirmed
+Zone 2 handles this correctly by reversing its arc: `leftArcToBottom.slice(0,-1).reverse()`.
 
 ### Changes
 
-**`src/lib/courtGeometry.ts`** — Adjust geometry constants to match court image:
-- Tune `PAINT` boundaries (left, right, bottom) to align with the painted rectangle
-- Tune `BIG_ARC` parameters (cx, cy, rx, ry) to align with the three-point arc curve
-- Tune diagonal line endpoints (`LEFT_DIAGONAL_TOP`, `RIGHT_DIAGONAL_TOP`, `LEFT_DIAGONAL_BOTTOM`, `RIGHT_DIAGONAL_BOTTOM`) to match the visible sidelines
+**`src/lib/courtGeometry.ts`** — Fix Zone 3 arc winding:
+- Add a new arc segment: `const rightArcToBottom = sampleEllipseArc(0, Math.PI / 2);` which traces from the right extreme DOWN to the arc bottom
+- Replace Zone 3's polygon to use this correctly-wound arc:
+  ```
+  3: [
+    { x: PAINT.right, y: 0 },
+    { x: RIGHT_ARC_EXTREME.x, y: 0 },
+    RIGHT_ARC_EXTREME,
+    ...rightArcToBottom.slice(1),   // correct direction: right → bottom
+    { x: ARC_BOTTOM.x, y: PAINT.bottom },
+    { x: PAINT.right, y: PAINT.bottom },
+  ]
+  ```
+  (The last point of `rightArcToBottom` is ARC_BOTTOM, so we don't need to add it separately)
 
-**`src/components/ShotTracker.tsx`** — Add faint zone boundary strokes:
-- Render each `ZONE_PATHS[zone]` as a stroked `<path>` (no fill) on top of the court image so zones are visually outlined, helping confirm alignment
-
-**`src/components/HeatMap.tsx`** — Same zone boundary strokes for the heat map view
-
-### Technical Detail
-The core issue is the hardcoded numeric constants. The fix involves iterative tuning of these values:
-```
-PAINT: { left, right, top, bottom }
-BIG_ARC: { cx, cy, rx, ry }
-Diagonal endpoints: 4 points
-```
-
-These define all 6 zone polygons. Adjusting them shifts both the click detection and the heat map clip paths simultaneously since both use `ZONE_PATHS` from the same source.
+This single fix resolves the Zone 3 gap. No changes needed to `HeatMap.tsx` or `ShotTracker.tsx` since both consume `ZONE_PATHS` from this same geometry file.
 
 ### Files Modified
-- `src/lib/courtGeometry.ts` — recalibrate geometry constants
-- `src/components/ShotTracker.tsx` — add zone boundary outlines
-- `src/components/HeatMap.tsx` — add zone boundary outlines
+- `src/lib/courtGeometry.ts` — fix Zone 3 arc direction
 
