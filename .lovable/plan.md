@@ -1,31 +1,34 @@
 
 
-## Plan: Fix Zone 3 Gap and Tighten Zone Boundaries
+## Plan: Inset Zone Polygons to Keep Colors Inside Court Lines
 
-### Root Cause
-Zone 3's polygon has a **self-intersecting path** because the arc points are in the wrong winding order. After placing `RIGHT_ARC_EXTREME` (394,150), the code appends `bottomToRightArc.slice(1)` — but this arc goes from bottom→right, meaning it jumps back down to near (200,306) then retraces up to (394,150). This creates a bowtie shape with an unfilled gap.
+### Problem
+The zone fill colors bleed over the black court lines because the zone polygons are drawn exactly on top of the lines. When a color fills right up to (or past) a boundary line, it covers the line and looks messy. The colors need to stay cleanly *inside* each zone's boundaries.
 
-Zone 2 handles this correctly by reversing its arc: `leftArcToBottom.slice(0,-1).reverse()`.
+### Solution
+Shrink each zone polygon inward by ~3-4px so the colored fills stop before reaching the black court lines. This creates a small gap between the color and the line, giving a clean, professional look. Both the heat map clip paths and the shot tracker zone detection will use the same inset geometry.
 
 ### Changes
 
-**`src/lib/courtGeometry.ts`** — Fix Zone 3 arc winding:
-- Add a new arc segment: `const rightArcToBottom = sampleEllipseArc(0, Math.PI / 2);` which traces from the right extreme DOWN to the arc bottom
-- Replace Zone 3's polygon to use this correctly-wound arc:
-  ```
-  3: [
-    { x: PAINT.right, y: 0 },
-    { x: RIGHT_ARC_EXTREME.x, y: 0 },
-    RIGHT_ARC_EXTREME,
-    ...rightArcToBottom.slice(1),   // correct direction: right → bottom
-    { x: ARC_BOTTOM.x, y: PAINT.bottom },
-    { x: PAINT.right, y: PAINT.bottom },
-  ]
-  ```
-  (The last point of `rightArcToBottom` is ARC_BOTTOM, so we don't need to add it separately)
+**`src/lib/courtGeometry.ts`**:
+- Inset the `PAINT` rectangle by ~3px on each inner edge (left+3, right-3, bottom-3) — top stays at 0 since it's the court edge
+- Reduce the `BIG_ARC` radii (`rx`, `ry`) by ~4px to pull the three-point arc inward
+- Adjust the diagonal line endpoints inward by ~3-4px
+- These changes affect all 6 zone polygons simultaneously since they all derive from the same constants
+- Keep `getZoneFromPoint` using the *original* (non-inset) polygons for click detection so taps near lines still register. Export a separate set of `ZONE_FILL_PATHS` for rendering only.
 
-This single fix resolves the Zone 3 gap. No changes needed to `HeatMap.tsx` or `ShotTracker.tsx` since both consume `ZONE_PATHS` from this same geometry file.
+**`src/components/HeatMap.tsx`**:
+- Import and use `ZONE_FILL_PATHS` instead of `ZONE_PATHS` for the clip paths so colors stay inside the lines
+
+**`src/components/ShotTracker.tsx`**:
+- Use `ZONE_FILL_PATHS` for any zone fill rendering (blocked zone overlays)
+
+### Why Two Sets of Paths
+- **`ZONE_PATHS`** (original): Used for click/tap detection — generous boundaries so taps near lines always register in a zone
+- **`ZONE_FILL_PATHS`** (inset): Used for visual rendering — colors stay cleanly inside the court lines
 
 ### Files Modified
-- `src/lib/courtGeometry.ts` — fix Zone 3 arc direction
+- `src/lib/courtGeometry.ts` — add inset polygon set for rendering
+- `src/components/HeatMap.tsx` — use inset paths for clip regions
+- `src/components/ShotTracker.tsx` — use inset paths for blocked zone fills
 
