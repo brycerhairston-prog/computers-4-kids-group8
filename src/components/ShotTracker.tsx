@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Undo2, ChevronDown, ChevronRight, Lock, Ban } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const CourtBackground = () => (
   <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
 );
 
 const ShotTracker = () => {
+  const { t } = useTranslation();
+  const zoneName = (z: number) => t(`zones.${z}`);
   const {
     shots, addShot, removeShot, players, selectedPlayerId, selectPlayer,
     gameMode, teams, getPlayerShotCount, getTeamShotCount, getPlayerTeam, isGameOver,
