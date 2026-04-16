@@ -13,14 +13,14 @@ const SettingsPanel = () => {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button size="sm" variant="outline" className="gap-1 text-xs">
-          <Settings className="w-3.5 h-3.5" />
+        <Button size="sm" variant="outline" className="gap-1 text-xs" aria-label="Open settings">
+          <Settings className="w-3.5 h-3.5" aria-hidden="true" />
         </Button>
       </SheetTrigger>
       <SheetContent className="w-80">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5 text-primary" /> Settings
+            <Settings className="w-5 h-5 text-primary" aria-hidden="true" /> Settings
           </SheetTitle>
         </SheetHeader>
         <div className="space-y-6 mt-6">

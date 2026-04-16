@@ -60,17 +60,17 @@ const GameSetup = () => {
   const manualReady = needsManualTeams && manualTeamA.length > 0 && manualTeamB.length > 0 && unassignedPlayers.length === 0;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <main className="min-h-screen bg-background flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="glass-card rounded-xl p-6 max-w-lg w-full space-y-6"
       >
-        <div className="text-center space-y-1">
+        <header className="text-center space-y-1">
           <img src={c4kLogo} alt="C4K" className="w-10 h-10 mx-auto" />
           <h1 className="text-2xl font-display font-bold text-foreground">Tabletop Basketball Analytics</h1>
           <p className="text-sm text-muted-foreground">Set up your game below</p>
-        </div>
+        </header>
 
         {/* Players */}
         <div className="space-y-2">
@@ -84,8 +84,9 @@ const GameSetup = () => {
                     removePlayer(p.id);
                     setManualTeamA(prev => prev.filter(id => id !== p.id));
                     setManualTeamB(prev => prev.filter(id => id !== p.id));
-                  }}>
-                  <Trash2 className="w-3 h-3" />
+                  }}
+                  aria-label={`Remove ${p.name}`}>
+                  <Trash2 className="w-3 h-3" aria-hidden="true" />
                 </Button>
               </div>
             ))}
@@ -95,7 +96,7 @@ const GameSetup = () => {
               onKeyDown={e => e.key === "Enter" && handleAdd()}
               placeholder="Add player..." className="h-8 text-sm bg-secondary/50" />
             <Button size="sm" onClick={handleAdd} className="gap-1 shrink-0">
-              <Plus className="w-3 h-3" /> Add
+              <Plus className="w-3 h-3" aria-hidden="true" /> Add
             </Button>
           </div>
         </div>
@@ -212,7 +213,7 @@ const GameSetup = () => {
         </Button>
         {!canStart && <p className="text-xs text-center text-muted-foreground">Add at least 2 players to start</p>}
       </motion.div>
-    </div>
+    </main>
   );
 };
 

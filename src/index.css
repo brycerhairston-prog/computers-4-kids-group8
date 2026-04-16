@@ -15,7 +15,7 @@
     --popover: 220 18% 14%;
     --popover-foreground: 210 20% 95%;
 
-    --primary: 25 95% 55%;
+    --primary: 25 95% 45%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 15% 20%;
@@ -32,7 +32,7 @@
 
     --border: 220 15% 22%;
     --input: 220 15% 22%;
-    --ring: 25 95% 55%;
+    --ring: 25 95% 45%;
 
     --radius: 0.75rem;
 
@@ -53,12 +53,12 @@
 
     --sidebar-background: 220 18% 12%;
     --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 25 95% 55%;
+    --sidebar-primary: 25 95% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 18%;
     --sidebar-accent-foreground: 210 20% 90%;
     --sidebar-border: 220 15% 22%;
-    --sidebar-ring: 25 95% 55%;
+    --sidebar-ring: 25 95% 45%;
   }
 
   /* Light mode overrides */
@@ -69,7 +69,7 @@
     --card-foreground: 220 20% 12%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 12%;
-    --primary: 25 95% 50%;
+    --primary: 25 95% 38%;
     --primary-foreground: 0 0% 100%;
     --secondary: 220 15% 92%;
     --secondary-foreground: 220 15% 25%;
@@ -81,17 +81,17 @@
     --destructive-foreground: 0 0% 100%;
     --border: 220 15% 85%;
     --input: 220 15% 85%;
-    --ring: 25 95% 50%;
+    --ring: 25 95% 38%;
     --court-bg: 30 25% 85%;
     --court-line: 30 30% 55%;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 220 15% 25%;
-    --sidebar-primary: 25 95% 50%;
+    --sidebar-primary: 25 95% 38%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 94%;
     --sidebar-accent-foreground: 220 15% 25%;
     --sidebar-border: 220 15% 85%;
-    --sidebar-ring: 25 95% 50%;
+    --sidebar-ring: 25 95% 38%;
   }
 
   /* Colorblind mode */
