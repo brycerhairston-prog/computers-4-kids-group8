@@ -1,41 +1,61 @@
 
 
-## Plan: Fix Accessibility Issues
+## Plan: Add Multi-Language Translator to Settings
 
-### 1. Landmark Structure
-Wrap top-level layouts in semantic HTML5 tags across key screens:
-- **`src/components/Lobby.tsx`** — change root `<div>` containers to `<main>`, wrap header section (logo, title, settings) in `<header>`, wrap creator credits in `<footer>`.
-- **`src/pages/Index.tsx`** — wrap main game view in `<main>` with appropriate `<header>` for the top nav/logo area.
-- **`src/components/GameSummary.tsx`** — wrap content in `<main>` and the title/logo area in `<header>`.
-- **`src/components/GameSetup.tsx`** — wrap in `<main>` with `<header>` for title section.
+### Goal
+Add a language selector in the Settings panel that translates all UI text across the entire app (Lobby, Setup, Gameplay, Summary, Settings) into common languages.
 
-### 2. Text Contrast on Primary Buttons
-Current `--primary: 25 95% 55%` (orange) with white foreground may fail 4.5:1. Fix in **`src/index.css`**:
-- Darken `--primary` in dark mode to `25 95% 45%` (or similar) so white text on it passes WCAG AA.
-- Verify light mode `--primary: 25 95% 50%` against white — likely also needs darkening to ~`25 95% 40%`.
-- Keep `--primary-foreground: 0 0% 100%` (white) for clear contrast.
+### Approach
+Use **react-i18next** (industry standard, works offline, no API costs, instant switching). All translations are bundled JSON files — no network calls, no rate limits.
 
-### 3. ARIA Labels on Icon-Only Buttons & Decorative Icons
-Two-pronged fix:
+### Languages (Top 8 most common)
+- English (en) — default
+- Spanish (es)
+- French (fr)
+- German (de)
+- Chinese Simplified (zh)
+- Hindi (hi)
+- Arabic (ar) — includes RTL layout support
+- Portuguese (pt)
 
-**A. Decorative icons (icon + visible text)** — add `aria-hidden="true"` to the Lucide icon:
-- `src/components/Lobby.tsx`: Plus, LogIn, ArrowLeft, Loader2, Copy, Users, DoorOpen, Trash2, UserMinus icons that sit next to text labels
-- `src/components/SettingsPanel.tsx`: any icons paired with labels
-- `src/components/GameSummary.tsx`, `src/components/GameSetup.tsx`, `src/components/ShotTracker.tsx`: decorative icons with text
+### Changes
 
-**B. Icon-only buttons** — add `aria-label` to the `<Button>`:
-- Settings gear button in `SettingsPanel.tsx` → `aria-label="Open settings"`
-- Copy code button in `Lobby.tsx` → `aria-label="Copy game code"`
-- Back arrow buttons in Lobby create/join views → `aria-label="Go back"`
-- Remove player buttons (Trash2/UserMinus icon-only) → `aria-label="Remove {playerName}"`
-- Remove name field button in Lobby → `aria-label="Remove player field"`
+**1. Install dependencies**
+- `i18next`, `react-i18next`, `i18next-browser-languagedetector`
+
+**2. New files**
+- `src/i18n/config.ts` — initialize i18next, register all locale resources, detect saved language from localStorage
+- `src/i18n/locales/{en,es,fr,de,zh,hi,ar,pt}.json` — translation key/value pairs organized by section: `lobby`, `setup`, `game`, `summary`, `settings`, `common`
+
+**3. Settings integration**
+- `src/context/SettingsContext.tsx` — add `language` state + `setLanguage` that calls `i18n.changeLanguage()` and persists to localStorage; toggle `dir="rtl"` on `<html>` for Arabic
+- `src/components/SettingsPanel.tsx` — add a language `<Select>` dropdown above the Theme toggle
+
+**4. Replace hardcoded strings with translation keys**
+Use `const { t } = useTranslation()` and replace static text with `t('section.key')` in:
+- `src/components/Lobby.tsx` (welcome screen, create/join forms, waiting room, buttons)
+- `src/components/GameSetup.tsx` (mode selection, team config)
+- `src/components/ShotTracker.tsx` (player labels, shot count text)
+- `src/components/DataTable.tsx` (column headers, stats labels)
+- `src/components/HeatMap.tsx` (legend, zone labels)
+- `src/components/GameSummary.tsx` (winner banner, stats, action buttons)
+- `src/components/SettingsPanel.tsx` (all setting labels)
+- `src/components/FeedbackDialog.tsx` (form labels)
+- `src/pages/Index.tsx` (header subtitle, How to Use, Tips, Rules sections)
+
+**5. Bootstrap**
+- `src/main.tsx` — import `./i18n/config` once at startup so i18n is ready before render
+
+### Notes
+- Player names, team names, and game codes stay as-is (user-generated content, not translated)
+- Translations stored as static JSON = no API key, no cost, instant switching
+- RTL support for Arabic via `dir` attribute (Tailwind handles most layout via logical properties)
+- Translations will be machine-translated initially; users can request refinements later
 
 ### Files Modified
-- `src/index.css` — darken `--primary` for WCAG contrast
-- `src/components/Lobby.tsx` — semantic tags + aria attributes
-- `src/components/SettingsPanel.tsx` — aria-label on gear button + aria-hidden on icons
-- `src/components/GameSummary.tsx` — semantic tags + aria-hidden on icons
-- `src/components/GameSetup.tsx` — semantic tags + aria-hidden on icons
-- `src/components/ShotTracker.tsx` — aria-hidden on decorative icons, aria-label on icon-only buttons
-- `src/pages/Index.tsx` — `<main>` wrapper + `<header>` for top area
+- `package.json` (deps), `src/main.tsx`, `src/context/SettingsContext.tsx`, `src/components/SettingsPanel.tsx`, `src/components/Lobby.tsx`, `src/components/GameSetup.tsx`, `src/components/GameSummary.tsx`, `src/components/ShotTracker.tsx`, `src/components/DataTable.tsx`, `src/components/HeatMap.tsx`, `src/components/FeedbackDialog.tsx`, `src/pages/Index.tsx`
+
+### Files Created
+- `src/i18n/config.ts`
+- `src/i18n/locales/en.json`, `es.json`, `fr.json`, `de.json`, `zh.json`, `hi.json`, `ar.json`, `pt.json`
 
