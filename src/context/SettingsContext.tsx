@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import i18n, { RTL_LANGUAGES } from "@/i18n/config";
 
 type Theme = "dark" | "light";
 type TextSize = "sm" | "md" | "lg";
@@ -14,6 +15,8 @@ interface SettingsContextType {
   setTextSize: (s: TextSize) => void;
   fontSize: number;
   setFontSize: (n: number) => void;
+  language: string;
+  setLanguage: (lang: string) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -37,6 +40,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [fontSize, setFontSizeState] = useState<number>(() =>
     Number(localStorage.getItem("app-font-size")) || 16
   );
+  const [language, setLanguageState] = useState<string>(() =>
+    localStorage.getItem("app-language") || i18n.language || "en"
+  );
 
   const setTheme = (t: Theme) => {
     setThemeState(t);
@@ -56,6 +62,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const setFontSize = (n: number) => {
     setFontSizeState(n);
     localStorage.setItem("app-font-size", String(n));
+  };
+  const setLanguage = (lang: string) => {
+    setLanguageState(lang);
+    localStorage.setItem("app-language", lang);
+    i18n.changeLanguage(lang);
   };
 
   useEffect(() => {
@@ -86,8 +97,13 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     document.documentElement.style.setProperty('--text-scale', String(fontSize / 16));
   }, [fontSize]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute("lang", language);
+    document.documentElement.setAttribute("dir", RTL_LANGUAGES.includes(language) ? "rtl" : "ltr");
+  }, [language]);
+
   return (
-    <SettingsContext.Provider value={{ theme, setTheme, colorblindMode, setColorblindMode, textSize, setTextSize, fontSize, setFontSize }}>
+    <SettingsContext.Provider value={{ theme, setTheme, colorblindMode, setColorblindMode, textSize, setTextSize, fontSize, setFontSize, language, setLanguage }}>
       {children}
     </SettingsContext.Provider>
   );
