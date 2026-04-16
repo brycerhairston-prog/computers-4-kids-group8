@@ -15,6 +15,7 @@ import FeedbackDialog from "@/components/FeedbackDialog";
 import { motion } from "framer-motion";
 import c4kLogo from "@/assets/c4k-logo.png";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 let idCounter = 0;
 const genId = () => `team-${++idCounter}-${Date.now()}`;
@@ -31,6 +32,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 const PlayingDashboard = () => {
   const { resetGame, shots, gameMode, teams, players, isGameOver, gamePhase } = useGame();
   const mp = useMultiplayer();
+  const { t } = useTranslation();
 
   return (
     <div className="min-h-screen bg-background">
@@ -40,12 +42,12 @@ const PlayingDashboard = () => {
             <img src={c4kLogo} alt="C4K" className="w-8 h-8" />
             <div>
               <h1 className="text-lg font-display font-bold text-foreground leading-tight">
-                Tabletop Basketball Analytics
+                {t("game.appTitle")}
               </h1>
               <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                   <span className={`w-2 h-2 rounded-full inline-block ${gameMode === "team" ? "bg-blue-500" : "bg-orange-500"}`} />
                   {mp.isMultiplayer && mp.session ? `Game: ${mp.session.game_code} · ` : ""}
-                  {mp.isMultiplayer ? `${mp.sessionPlayers.length} players` : (gameMode === "individual" ? "Individual Mode" : `Team Mode · ${teams.map(t => t.name).join(" vs ")}`)}
+                  {mp.isMultiplayer ? `${mp.sessionPlayers.length} ${t("lobby.players").toLowerCase()}` : (gameMode === "individual" ? t("game.individualMode") : `${t("game.teamMode")} · ${teams.map(tm => tm.name).join(" vs ")}`)}
                   <span className="inline-flex items-center gap-1 ml-1 bg-primary/10 text-primary font-bold rounded-full px-2 py-0.5">🏀 {shots.length}</span>
                   {mp.isMultiplayer && (
                     <span className="ml-1 inline-flex items-center gap-0.5">
@@ -57,7 +59,7 @@ const PlayingDashboard = () => {
           </div>
           <div className="flex items-center gap-2">
             {isGameOver && (
-              <span className="text-xs font-bold bg-primary text-primary-foreground rounded-full px-3 py-1 animate-pulse shadow-lg">🏆 Game Over!</span>
+              <span className="text-xs font-bold bg-primary text-primary-foreground rounded-full px-3 py-1 animate-pulse shadow-lg">{t("game.gameOver")}</span>
             )}
               <SettingsPanel />
               <FeedbackDialog />
@@ -69,12 +71,12 @@ const PlayingDashboard = () => {
                     </Button>
                   )}
                   <Button size="sm" variant="outline" onClick={mp.leaveGame} className="gap-1 text-xs">
-                    Leave
+                    {t("common.leave")}
                   </Button>
                 </>
               ) : (
                 <Button size="sm" variant="outline" onClick={resetGame} className="gap-1 text-xs">
-                  <RotateCcw className="w-3 h-3" aria-hidden="true" /> New Game
+                  <RotateCcw className="w-3 h-3" aria-hidden="true" /> {t("common.newGame")}
                 </Button>
               )}
           </div>
@@ -91,8 +93,8 @@ const PlayingDashboard = () => {
           <div className="space-y-4">
             <Tabs defaultValue="tracker" className="w-full">
               <TabsList className="w-full">
-                <TabsTrigger value="tracker" className="flex-1">📍 Shot Tracker</TabsTrigger>
-                <TabsTrigger value="heatmap" className="flex-1">🔥 Heat Map</TabsTrigger>
+                <TabsTrigger value="tracker" className="flex-1">{t("game.shotTracker")}</TabsTrigger>
+                <TabsTrigger value="heatmap" className="flex-1">{t("game.heatMap")}</TabsTrigger>
               </TabsList>
               <TabsContent value="tracker">
                 <ShotTracker />
@@ -103,7 +105,7 @@ const PlayingDashboard = () => {
             </Tabs>
             <Collapsible defaultOpen className="glass-card rounded-lg p-4 space-y-2">
               <CollapsibleTrigger className="flex items-center justify-between w-full group">
-                <h3 className="text-sm font-display font-bold text-primary">📖 How to Use</h3>
+                <h3 className="text-sm font-display font-bold text-primary">{t("game.howToUse")}</h3>
                 <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=closed]:rotate-[-90deg]" />
               </CollapsibleTrigger>
               <CollapsibleContent>
@@ -120,7 +122,7 @@ const PlayingDashboard = () => {
             <DataTable />
             <Collapsible defaultOpen className="glass-card rounded-lg p-4 space-y-2">
               <CollapsibleTrigger className="flex items-center justify-between w-full group">
-                <h3 className="text-sm font-display font-bold text-primary">🧠 Data Science Tips</h3>
+                <h3 className="text-sm font-display font-bold text-primary">{t("game.dataTips")}</h3>
                 <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=closed]:rotate-[-90deg]" />
               </CollapsibleTrigger>
               <CollapsibleContent>
@@ -145,7 +147,7 @@ const PlayingDashboard = () => {
             </Collapsible>
             <Collapsible defaultOpen className="glass-card rounded-lg p-4 space-y-2">
               <CollapsibleTrigger className="flex items-center justify-between w-full group">
-                <h3 className="text-sm font-display font-bold text-accent">📋 Game Rules</h3>
+                <h3 className="text-sm font-display font-bold text-accent">{t("game.gameRules")}</h3>
                 <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=closed]:rotate-[-90deg]" />
               </CollapsibleTrigger>
               <CollapsibleContent>
