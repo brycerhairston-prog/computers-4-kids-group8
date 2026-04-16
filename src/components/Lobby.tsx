@@ -7,10 +7,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Users, Plus, LogIn, ArrowLeft, Loader2, Trash2, UserMinus, DoorOpen } from "lucide-react";
 import { toast } from "sonner";
 import SettingsPanel from "@/components/SettingsPanel";
+import { useTranslation } from "react-i18next";
 
 type LobbyView = "welcome" | "create" | "join" | "waiting";
 
 const Lobby = () => {
+  const { t } = useTranslation();
   const {
     session, sessionPlayers, isHost, isConnected, isLoading, localPlayerIds,
     createGame, joinGame, startMultiplayerGame, addPlayerToStation, removePlayer, leaveSession,
@@ -95,22 +97,22 @@ const Lobby = () => {
           <header className="text-center space-y-2 relative">
             <div className="absolute top-0 right-0"><SettingsPanel /></div>
             <img src={c4kLogo} alt="C4K" className="w-10 h-10 mx-auto" />
-            <h1 className="text-2xl font-display font-bold text-foreground">Game Lobby</h1>
+            <h1 className="text-2xl font-display font-bold text-foreground">{t("lobby.gameLobby")}</h1>
             <div className="flex items-center justify-center gap-2">
               <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-yellow-500"} animate-pulse`} />
               <span className="text-xs text-muted-foreground">
-                {isConnected ? "Connected" : "Connecting..."}
+                {isConnected ? t("lobby.connected") : t("lobby.connecting")}
               </span>
             </div>
           </header>
 
           <div className="text-center space-y-2">
-            <p className="text-sm text-muted-foreground">Share this code with other stations:</p>
+            <p className="text-sm text-muted-foreground">{t("lobby.shareCode")}</p>
             <div className="flex items-center justify-center gap-2">
               <span className="text-3xl font-mono font-bold tracking-[0.3em] text-primary bg-primary/10 px-4 py-2 rounded-lg">
                 {session.game_code}
               </span>
-              <Button size="icon" variant="outline" onClick={copyCode} aria-label="Copy game code">
+              <Button size="icon" variant="outline" onClick={copyCode} aria-label={t("lobby.copyCode")}>
                 <Copy className="w-4 h-4" aria-hidden="true" />
               </Button>
             </div>
@@ -120,19 +122,19 @@ const Lobby = () => {
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-display font-bold text-foreground">
               <Users className="w-4 h-4" aria-hidden="true" />
-              Players ({sessionPlayers.length})
+              {t("lobby.players")} ({sessionPlayers.length})
             </div>
 
             {/* Your station players */}
             {localPlayers.length > 0 && (
               <div className="space-y-1">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Your Station</p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t("lobby.yourStation")}</p>
                 {localPlayers.map(p => (
                   <div key={p.id} className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-md px-3 py-2">
                     <span className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
                     <span className="text-sm flex-1">{p.name}</span>
                     {isHost && localPlayers.length > 1 && (
-                      <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleRemovePlayer(p.id, p.name)} aria-label={`Remove ${p.name}`}>
+                      <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleRemovePlayer(p.id, p.name)} aria-label={t("lobby.removePlayer", { name: p.name })}>
                         <Trash2 className="w-3 h-3" aria-hidden="true" />
                       </Button>
                     )}
@@ -144,13 +146,13 @@ const Lobby = () => {
             {/* Other station players */}
             {otherPlayers.length > 0 && (
               <div className="space-y-1">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Other Stations</p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t("lobby.otherStations")}</p>
                 {otherPlayers.map(p => (
                   <div key={p.id} className="flex items-center gap-2 bg-secondary/30 rounded-md px-3 py-2">
                     <span className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
                     <span className="text-sm flex-1">{p.name}</span>
                     {isHost && (
-                      <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleRemovePlayer(p.id, p.name)} aria-label={`Remove ${p.name}`}>
+                      <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleRemovePlayer(p.id, p.name)} aria-label={t("lobby.removePlayer", { name: p.name })}>
                         <UserMinus className="w-3 h-3" aria-hidden="true" />
                       </Button>
                     )}
@@ -164,19 +166,19 @@ const Lobby = () => {
               <Input
                 value={newPlayerName}
                 onChange={e => setNewPlayerName(e.target.value)}
-                placeholder="Add player to your station..."
+                placeholder={t("lobby.addToStation")}
                 className="h-9 text-sm"
                 maxLength={20}
                 onKeyDown={e => e.key === "Enter" && handleAddPlayerToStation()}
               />
               <Button size="sm" className="h-9 gap-1 shrink-0" onClick={handleAddPlayerToStation} disabled={addingPlayer || !newPlayerName.trim()}>
                 {addingPlayer ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Plus className="w-3 h-3" aria-hidden="true" />}
-                Add
+                {t("common.add")}
               </Button>
             </div>
 
             <p className="text-xs text-muted-foreground text-center">
-              Waiting for players to join...
+              {t("lobby.waitingForPlayers")}
             </p>
           </div>
 
@@ -186,16 +188,16 @@ const Lobby = () => {
               disabled={sessionPlayers.length < 2}
               onClick={startMultiplayerGame}
             >
-              🏀 Start Game ({sessionPlayers.length} players)
+              {t("lobby.startGame", { count: sessionPlayers.length })}
             </Button>
           )}
           {!isHost && (
             <p className="text-sm text-center text-muted-foreground">
-              Waiting for host to start the game...
+              {t("lobby.waitingForHost")}
             </p>
           )}
           {isHost && sessionPlayers.length < 2 && (
-            <p className="text-xs text-center text-muted-foreground">Need at least 2 players to start</p>
+            <p className="text-xs text-center text-muted-foreground">{t("lobby.needPlayers")}</p>
           )}
 
           {/* Leave button */}
@@ -204,7 +206,7 @@ const Lobby = () => {
             className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
             onClick={handleLeaveSession}
           >
-            <DoorOpen className="w-4 h-4" aria-hidden="true" /> Leave Game
+            <DoorOpen className="w-4 h-4" aria-hidden="true" /> {t("lobby.leaveGame")}
           </Button>
         </motion.div>
       </main>
@@ -214,9 +216,9 @@ const Lobby = () => {
   const playerNameInputsJsx = (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground">Players at this station</label>
+        <label className="text-sm font-medium text-foreground">{t("lobby.playersAtStation")}</label>
         <Button size="sm" variant="ghost" onClick={addNameField} className="text-xs gap-1 h-7">
-          <Plus className="w-3 h-3" aria-hidden="true" /> Add Player
+          <Plus className="w-3 h-3" aria-hidden="true" /> {t("lobby.addPlayer")}
         </Button>
       </div>
       <div className="space-y-2">
@@ -225,19 +227,19 @@ const Lobby = () => {
             <Input
               value={name}
               onChange={e => updateName(idx, e.target.value)}
-              placeholder={`Player ${idx + 1} name...`}
+              placeholder={t("lobby.playerPlaceholder", { n: idx + 1 })}
               className="h-10 text-sm"
               maxLength={20}
             />
             {playerNames.length > 1 && (
-              <Button size="icon" variant="ghost" onClick={() => removeNameField(idx)} className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive" aria-label="Remove player field">
+              <Button size="icon" variant="ghost" onClick={() => removeNameField(idx)} className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive" aria-label={t("lobby.removePlayerField")}>
                 <Trash2 className="w-4 h-4" aria-hidden="true" />
               </Button>
             )}
           </div>
         ))}
       </div>
-      <p className="text-[10px] text-muted-foreground">Add all players using this device/station</p>
+      <p className="text-[10px] text-muted-foreground">{t("lobby.addAllPlayers")}</p>
     </div>
   );
 
@@ -255,8 +257,8 @@ const Lobby = () => {
             <header className="text-center space-y-2 relative">
               <div className="absolute top-0 right-0"><SettingsPanel /></div>
               <img src={c4kLogo} alt="C4K" className="w-12 h-12 mx-auto" />
-              <h1 className="text-3xl font-display font-bold text-foreground">Tabletop Basketball</h1>
-              <p className="text-sm text-muted-foreground">Real-time multiplayer analytics game</p>
+              <h1 className="text-3xl font-display font-bold text-foreground">{t("lobby.title")}</h1>
+              <p className="text-sm text-muted-foreground">{t("lobby.subtitle")}</p>
             </header>
 
             <div className="space-y-3">
@@ -264,20 +266,20 @@ const Lobby = () => {
                 className="w-full h-14 text-lg font-bold gap-3"
                 onClick={() => setView("create")}
               >
-                <Plus className="w-5 h-5" aria-hidden="true" /> Create Game
+                <Plus className="w-5 h-5" aria-hidden="true" /> {t("lobby.createGame")}
               </Button>
               <Button
                 variant="outline"
                 className="w-full h-14 text-lg font-bold gap-3"
                 onClick={() => setView("join")}
               >
-                <LogIn className="w-5 h-5" aria-hidden="true" /> Join Game
+                <LogIn className="w-5 h-5" aria-hidden="true" /> {t("lobby.joinGame")}
               </Button>
             </div>
 
             <footer className="text-[10px] text-muted-foreground/70 text-center">
-              Created By: Bryce Hairston, Muhammad Zain Abbas, Kassius Ayres, Christopher Lastrape, Abishek Mugunthan
-              <br />UVA Engineering Undergraduates
+              {t("lobby.createdBy")}
+              <br />{t("lobby.uvaCredit")}
             </footer>
           </motion.div>
         )}
@@ -291,12 +293,12 @@ const Lobby = () => {
             className="glass-card rounded-xl p-6 max-w-md w-full space-y-6"
           >
             <header className="flex items-center gap-3">
-              <Button size="icon" variant="ghost" onClick={() => setView("welcome")} aria-label="Go back">
+              <Button size="icon" variant="ghost" onClick={() => setView("welcome")} aria-label={t("lobby.goBack")}>
                 <ArrowLeft className="w-4 h-4" aria-hidden="true" />
               </Button>
               <div className="flex-1">
-                <h2 className="text-xl font-display font-bold text-foreground">Create Game</h2>
-                <p className="text-xs text-muted-foreground">Set up a new game session</p>
+                <h2 className="text-xl font-display font-bold text-foreground">{t("lobby.createGame")}</h2>
+                <p className="text-xs text-muted-foreground">{t("lobby.createSubtitle")}</p>
               </div>
               <SettingsPanel />
             </header>
@@ -308,7 +310,7 @@ const Lobby = () => {
               onClick={handleCreate}
               disabled={isLoading || validNames.length === 0}
             >
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : `Create Game (${validNames.length} player${validNames.length !== 1 ? "s" : ""})`}
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : t("lobby.creating", { count: validNames.length })}
             </Button>
           </motion.div>
         )}
@@ -322,18 +324,18 @@ const Lobby = () => {
             className="glass-card rounded-xl p-6 max-w-md w-full space-y-6"
           >
             <header className="flex items-center gap-3">
-              <Button size="icon" variant="ghost" onClick={() => setView("welcome")} aria-label="Go back">
+              <Button size="icon" variant="ghost" onClick={() => setView("welcome")} aria-label={t("lobby.goBack")}>
                 <ArrowLeft className="w-4 h-4" aria-hidden="true" />
               </Button>
               <div className="flex-1">
-                <h2 className="text-xl font-display font-bold text-foreground">Join Game</h2>
-                <p className="text-xs text-muted-foreground">Enter a game code to join</p>
+                <h2 className="text-xl font-display font-bold text-foreground">{t("lobby.joinGame")}</h2>
+                <p className="text-xs text-muted-foreground">{t("lobby.joinSubtitle")}</p>
               </div>
               <SettingsPanel />
             </header>
 
             <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground">Game Code</label>
+              <label className="text-sm font-medium text-foreground">{t("lobby.gameCode")}</label>
               <Input
                 value={gameCode}
                 onChange={e => setGameCode(e.target.value.toUpperCase())}
@@ -350,7 +352,7 @@ const Lobby = () => {
               onClick={handleJoin}
               disabled={isLoading || validNames.length === 0 || gameCode.length < 6}
             >
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : `Join Game (${validNames.length} player${validNames.length !== 1 ? "s" : ""})`}
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : t("lobby.joining", { count: validNames.length })}
             </Button>
           </motion.div>
         )}
