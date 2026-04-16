@@ -65,7 +65,7 @@ const PlayingDashboard = () => {
                 <>
                   {mp.isHost && (
                     <Button size="sm" variant="outline" onClick={mp.resetMultiplayerGame} className="gap-1 text-xs">
-                      <RotateCcw className="w-3 h-3" /> Reset
+                      <RotateCcw className="w-3 h-3" aria-hidden="true" /> Reset
                     </Button>
                   )}
                   <Button size="sm" variant="outline" onClick={mp.leaveGame} className="gap-1 text-xs">
@@ -74,7 +74,7 @@ const PlayingDashboard = () => {
                 </>
               ) : (
                 <Button size="sm" variant="outline" onClick={resetGame} className="gap-1 text-xs">
-                  <RotateCcw className="w-3 h-3" /> New Game
+                  <RotateCcw className="w-3 h-3" aria-hidden="true" /> New Game
                 </Button>
               )}
           </div>
