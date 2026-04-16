@@ -1,61 +1,57 @@
 
 
-## Plan: Add Multi-Language Translator to Settings
+## Plan: Translate Remaining Game UI Components
 
-### Goal
-Add a language selector in the Settings panel that translates all UI text across the entire app (Lobby, Setup, Gameplay, Summary, Settings) into common languages.
+### Scope
+Replace hardcoded English strings with `t()` translation calls in the gameplay components that were skipped in the initial i18n pass.
 
-### Approach
-Use **react-i18next** (industry standard, works offline, no API costs, instant switching). All translations are bundled JSON files — no network calls, no rate limits.
+### Components to Translate
 
-### Languages (Top 8 most common)
-- English (en) — default
-- Spanish (es)
-- French (fr)
-- German (de)
-- Chinese Simplified (zh)
-- Hindi (hi)
-- Arabic (ar) — includes RTL layout support
-- Portuguese (pt)
+**1. `src/components/DataTable.tsx`** — Player Stats tab
+- Title "📊 Player Stats"
+- Description "Click a player row to filter the heat map..."
+- Column headers: "Player", "Makes", "Pts", zone tooltips ("X point(s)")
+- CSV button label
 
-### Changes
+**2. `src/components/ShotTracker.tsx`** — Shot Tracker tab
+- Title "📍 Shot Tracker"
+- "Practice", "View Only", "Undo" labels
+- Shot count display ("X/Y shots", "Practice: X/Y", team count text)
+- Limit-reached messages ("X has reached their shot limit!", etc.)
+- Locked/blocked zone notices ("Can't shoot in X twice in a row", "Blocked zones: ...")
+- Pending shot confirmation: "Made", "Missed", "Cancel"
+- Bottom status: "Placing shot for X in Y (Zpt zone)"
+- Team "Done" badge, "Blocked: ..." label
 
-**1. Install dependencies**
-- `i18next`, `react-i18next`, `i18next-browser-languagedetector`
+**3. `src/components/HeatMap.tsx`** — Heat Map tab
+- Title, legend labels (0%, 1-20%, 21-40%, etc.), zone labels if any descriptive text
 
-**2. New files**
-- `src/i18n/config.ts` — initialize i18next, register all locale resources, detect saved language from localStorage
-- `src/i18n/locales/{en,es,fr,de,zh,hi,ar,pt}.json` — translation key/value pairs organized by section: `lobby`, `setup`, `game`, `summary`, `settings`, `common`
+**4. `src/components/GameSummary.tsx`** — Post-game screen
+- Winner banner, tab labels (Individual/Team/Overall), stat labels, action buttons (Play Again, Export, etc.)
 
-**3. Settings integration**
-- `src/context/SettingsContext.tsx` — add `language` state + `setLanguage` that calls `i18n.changeLanguage()` and persists to localStorage; toggle `dir="rtl"` on `<html>` for Arabic
-- `src/components/SettingsPanel.tsx` — add a language `<Select>` dropdown above the Theme toggle
+**5. `src/components/GameSetup.tsx`** — Setup screen
+- Mode titles/descriptions, team config labels, Start Game button
 
-**4. Replace hardcoded strings with translation keys**
-Use `const { t } = useTranslation()` and replace static text with `t('section.key')` in:
-- `src/components/Lobby.tsx` (welcome screen, create/join forms, waiting room, buttons)
-- `src/components/GameSetup.tsx` (mode selection, team config)
-- `src/components/ShotTracker.tsx` (player labels, shot count text)
-- `src/components/DataTable.tsx` (column headers, stats labels)
-- `src/components/HeatMap.tsx` (legend, zone labels)
-- `src/components/GameSummary.tsx` (winner banner, stats, action buttons)
-- `src/components/SettingsPanel.tsx` (all setting labels)
-- `src/components/FeedbackDialog.tsx` (form labels)
-- `src/pages/Index.tsx` (header subtitle, How to Use, Tips, Rules sections)
+### Translation Keys
+Add new keys to all 8 locale files (`en/es/fr/de/zh/hi/ar/pt.json`) under new sections:
+- `dataTable.*` — stats table strings
+- `shotTracker.*` — shot tracker strings (with interpolation: `{{playerName}}`, `{{count}}`, `{{limit}}`, `{{zone}}`)
+- `heatMap.*` — legend and labels
+- `summary.*` — extend existing summary keys
+- `setup.*` — extend existing setup keys
 
-**5. Bootstrap**
-- `src/main.tsx` — import `./i18n/config` once at startup so i18n is ready before render
+### Approach Per File
+For each component:
+1. Add `import { useTranslation } from "react-i18next"` and `const { t } = useTranslation()`
+2. Replace string literals with `t('key')` or `t('key', { interpolatedVar })`
+3. Keep dynamic content (player names, numbers, zone labels from `ZONE_LABELS`) as variables passed into translations
 
 ### Notes
-- Player names, team names, and game codes stay as-is (user-generated content, not translated)
-- Translations stored as static JSON = no API key, no cost, instant switching
-- RTL support for Arabic via `dir` attribute (Tailwind handles most layout via logical properties)
-- Translations will be machine-translated initially; users can request refinements later
+- `ZONE_LABELS` from `GameContext` (e.g. "Paint", "Mid-Range") will be added as a `zones.*` translation namespace so they translate too
+- Emoji icons (📊, 📍, 🏋️, ✓, ✗) stay in keys — they're universal
+- Numbers and player-entered names are not translated
 
 ### Files Modified
-- `package.json` (deps), `src/main.tsx`, `src/context/SettingsContext.tsx`, `src/components/SettingsPanel.tsx`, `src/components/Lobby.tsx`, `src/components/GameSetup.tsx`, `src/components/GameSummary.tsx`, `src/components/ShotTracker.tsx`, `src/components/DataTable.tsx`, `src/components/HeatMap.tsx`, `src/components/FeedbackDialog.tsx`, `src/pages/Index.tsx`
-
-### Files Created
-- `src/i18n/config.ts`
-- `src/i18n/locales/en.json`, `es.json`, `fr.json`, `de.json`, `zh.json`, `hi.json`, `ar.json`, `pt.json`
+- `src/components/DataTable.tsx`, `src/components/ShotTracker.tsx`, `src/components/HeatMap.tsx`, `src/components/GameSummary.tsx`, `src/components/GameSetup.tsx`
+- All 8 files in `src/i18n/locales/`
 
