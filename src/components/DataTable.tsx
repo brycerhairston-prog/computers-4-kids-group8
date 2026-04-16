@@ -1,7 +1,8 @@
-import { useGame, ZONE_POINTS, ZONE_LABELS } from "@/context/GameContext";
+import { useGame, ZONE_POINTS } from "@/context/GameContext";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   Tooltip,
   TooltipContent,
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 
 const DataTable = () => {
+  const { t } = useTranslation();
   const { players, getPlayerStats, selectedPlayerId, selectPlayer, exportCSV } = useGame();
 
   const handleExport = () => {
@@ -26,21 +28,21 @@ const DataTable = () => {
     <div className="glass-card rounded-lg p-4 space-y-3 border-t-2 border-primary/30">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-display font-bold text-foreground">
-          <span className="border-b-2 border-primary pb-0.5">📊 Player Stats</span>
+          <span className="border-b-2 border-primary pb-0.5">{t("dataTable.title")}</span>
         </h2>
         <Button size="sm" variant="outline" onClick={handleExport} className="gap-1 text-xs">
-          <Download className="w-3 h-3" /> CSV
+          <Download className="w-3 h-3" aria-hidden="true" /> CSV
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Click a player row to filter the heat map. Each zone shows makes/attempts.
+        {t("dataTable.description")}
       </p>
 
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-border text-muted-foreground">
-              <th className="text-left py-2 px-1">Player</th>
+              <th className="text-left py-2 px-1">{t("dataTable.player")}</th>
               {[1, 2, 3, 4, 5, 6].map(z => (
                 <Tooltip key={z}>
                   <TooltipTrigger asChild>
@@ -50,13 +52,17 @@ const DataTable = () => {
                     </th>
                   </TooltipTrigger>
                   <TooltipContent side="top">
-                    <p className="text-xs">{ZONE_LABELS[z]} — {ZONE_POINTS[z]} point{ZONE_POINTS[z] > 1 ? "s" : ""}</p>
+                    <p className="text-xs">
+                      {t(ZONE_POINTS[z] > 1 ? "dataTable.pointsTooltip_plural" : "dataTable.pointsTooltip", {
+                        zone: t(`zones.${z}`),
+                        points: ZONE_POINTS[z],
+                      })}
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               ))}
-              <th className="text-center py-2 px-1">Makes</th>
-              <th className="text-center py-2 px-1">Pts</th>
-              
+              <th className="text-center py-2 px-1">{t("dataTable.makes")}</th>
+              <th className="text-center py-2 px-1">{t("dataTable.points")}</th>
             </tr>
           </thead>
           <tbody>

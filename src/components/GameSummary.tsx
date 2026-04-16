@@ -9,6 +9,7 @@ import SettingsPanel from "@/components/SettingsPanel";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useMemo, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import type { TeamSelectionMode, Team, Shot, ZoneStats } from "@/context/GameContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
 import courtImage from "@/assets/court-layout.png";
@@ -593,6 +594,7 @@ const ZoneBlockingStep = ({
 type SetupStep = "team-selection" | "shot-allocation" | "zone-blocking";
 
 const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
+  const { t } = useTranslation();
   const { players, teams, shots, gameMode, getPlayerStats, resetGame, exportCSV, individualShots, teamShots, allShots } = useGame();
   const mp = useMultiplayer();
   const [showTeamSetup, setShowTeamSetup] = useState(false);
@@ -755,14 +757,14 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
         <div className="container flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
             <img src={c4kLogo} alt="C4K" className="w-8 h-8" />
-            <h1 className="text-lg font-display font-bold text-foreground">Game Summary</h1>
+            <h1 className="text-lg font-display font-bold text-foreground">{t("summary.header")}</h1>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={handleExport} className="gap-1 text-xs">
-              <Download className="w-3 h-3" aria-hidden="true" /> CSV
+              <Download className="w-3 h-3" aria-hidden="true" /> {t("summary.csv")}
             </Button>
             <Button size="sm" onClick={handleReset} className="gap-1 text-xs">
-              <RotateCcw className="w-3 h-3" aria-hidden="true" /> New Game
+              <RotateCcw className="w-3 h-3" aria-hidden="true" /> {t("summary.newGame")}
             </Button>
             <SettingsPanel />
           </div>
@@ -775,10 +777,10 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
             className="glass-card rounded-xl p-5 text-center space-y-3 border-2 border-primary/30">
             <Users className="w-8 h-8 text-primary mx-auto" />
-            <h3 className="text-lg font-display font-bold text-foreground">Ready for Team Mode?</h3>
-            <p className="text-sm text-muted-foreground">Use these same players to play a team game ({TEAM_SHOT_LIMIT} shots per team)</p>
+            <h3 className="text-lg font-display font-bold text-foreground">{t("summary.readyTeam")}</h3>
+            <p className="text-sm text-muted-foreground">{t("summary.readyTeamDesc", { limit: TEAM_SHOT_LIMIT })}</p>
             <Button className="font-bold text-lg h-12 px-8" onClick={() => { setShowTeamSetup(true); setSetupStep("team-selection"); }}>
-              👥 Play Team Mode
+              {t("summary.playTeamMode")}
             </Button>
           </motion.div>
         )}
@@ -886,9 +888,9 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
         {showTabbedSummary ? (
           <Tabs defaultValue="overall" className="w-full">
             <TabsList className="w-full">
-              <TabsTrigger value="individual" className="flex-1">🏃 Individual</TabsTrigger>
-              <TabsTrigger value="team" className="flex-1">👥 Team</TabsTrigger>
-              <TabsTrigger value="overall" className="flex-1">🏆 Overall</TabsTrigger>
+              <TabsTrigger value="individual" className="flex-1">{t("summary.tabIndividual")}</TabsTrigger>
+              <TabsTrigger value="team" className="flex-1">{t("summary.tabTeam")}</TabsTrigger>
+              <TabsTrigger value="overall" className="flex-1">{t("summary.tabOverall")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="individual" className="space-y-6 mt-4">

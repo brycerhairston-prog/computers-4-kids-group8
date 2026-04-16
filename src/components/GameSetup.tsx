@@ -4,9 +4,11 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Plus, Trash2, Users, User, Shuffle, Scale, Hand } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import c4kLogo from "@/assets/c4k-logo.png";
 
 const GameSetup = () => {
+  const { t } = useTranslation();
   const {
     players, addPlayer, removePlayer,
     gameMode, setGameMode,
@@ -68,13 +70,13 @@ const GameSetup = () => {
       >
         <header className="text-center space-y-1">
           <img src={c4kLogo} alt="C4K" className="w-10 h-10 mx-auto" />
-          <h1 className="text-2xl font-display font-bold text-foreground">Tabletop Basketball Analytics</h1>
-          <p className="text-sm text-muted-foreground">Set up your game below</p>
+          <h1 className="text-2xl font-display font-bold text-foreground">{t("setup.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("setup.subtitle")}</p>
         </header>
 
         {/* Players */}
         <div className="space-y-2">
-          <h2 className="text-sm font-display font-bold text-foreground">Players</h2>
+          <h2 className="text-sm font-display font-bold text-foreground">{t("setup.players")}</h2>
           <div className="space-y-1">
             {players.map(p => (
               <div key={p.id} className="flex items-center justify-between bg-secondary/30 rounded-md px-3 py-1.5">
@@ -85,7 +87,7 @@ const GameSetup = () => {
                     setManualTeamA(prev => prev.filter(id => id !== p.id));
                     setManualTeamB(prev => prev.filter(id => id !== p.id));
                   }}
-                  aria-label={`Remove ${p.name}`}>
+                  aria-label={t("setup.removePlayer", { name: p.name })}>
                   <Trash2 className="w-3 h-3" aria-hidden="true" />
                 </Button>
               </div>
@@ -94,20 +96,20 @@ const GameSetup = () => {
           <div className="flex gap-2">
             <Input value={newName} onChange={e => setNewName(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleAdd()}
-              placeholder="Add player..." className="h-8 text-sm bg-secondary/50" />
+              placeholder={t("setup.addPlayerPlaceholder")} className="h-8 text-sm bg-secondary/50" />
             <Button size="sm" onClick={handleAdd} className="gap-1 shrink-0">
-              <Plus className="w-3 h-3" aria-hidden="true" /> Add
+              <Plus className="w-3 h-3" aria-hidden="true" /> {t("setup.add")}
             </Button>
           </div>
         </div>
 
         {/* Game Mode */}
         <div className="space-y-2">
-          <h2 className="text-sm font-display font-bold text-foreground">Game Mode</h2>
+          <h2 className="text-sm font-display font-bold text-foreground">{t("setup.gameMode")}</h2>
           <div className="grid grid-cols-2 gap-2">
             {([
-              { mode: "individual" as GameMode, icon: User, label: "Individual", desc: "20 shots per player" },
-              { mode: "team" as GameMode, icon: Users, label: "Team", desc: "30 shots per team" },
+              { mode: "individual" as GameMode, icon: User, label: t("setup.individual"), desc: t("setup.individualDesc") },
+              { mode: "team" as GameMode, icon: Users, label: t("setup.team"), desc: t("setup.teamDesc") },
             ]).map(({ mode, icon: Icon, label, desc }) => (
               <button
                 key={mode}
@@ -129,12 +131,12 @@ const GameSetup = () => {
         {/* Team Selection Mode */}
         {gameMode === "team" && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-2">
-            <h2 className="text-sm font-display font-bold text-foreground">Team Selection</h2>
+            <h2 className="text-sm font-display font-bold text-foreground">{t("setup.teamSelection")}</h2>
             <div className="grid grid-cols-3 gap-2">
               {([
-                { mode: "random" as TeamSelectionMode, icon: Shuffle, label: "Random", desc: "Shuffle players" },
-                { mode: "manual" as TeamSelectionMode, icon: Hand, label: "Manual", desc: "Pick teams yourself" },
-                { mode: "fair" as TeamSelectionMode, icon: Scale, label: "Fair", desc: "Based on stats" },
+                { mode: "random" as TeamSelectionMode, icon: Shuffle, label: t("setup.random"), desc: t("setup.randomDesc") },
+                { mode: "manual" as TeamSelectionMode, icon: Hand, label: t("setup.manual"), desc: t("setup.manualDesc") },
+                { mode: "fair" as TeamSelectionMode, icon: Scale, label: t("setup.fair"), desc: t("setup.fairDesc") },
               ]).map(({ mode, icon: Icon, label, desc }) => (
                 <button
                   key={mode}
@@ -157,7 +159,7 @@ const GameSetup = () => {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2 pt-2">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <h3 className="text-xs font-bold text-primary">Team A</h3>
+                    <h3 className="text-xs font-bold text-primary">{t("setup.teamA")}</h3>
                     {manualTeamA.map(id => {
                       const p = players.find(pl => pl.id === id);
                       return p ? (
@@ -169,7 +171,7 @@ const GameSetup = () => {
                     })}
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-xs font-bold text-accent">Team B</h3>
+                    <h3 className="text-xs font-bold text-accent">{t("setup.teamB")}</h3>
                     {manualTeamB.map(id => {
                       const p = players.find(pl => pl.id === id);
                       return p ? (
@@ -183,7 +185,7 @@ const GameSetup = () => {
                 </div>
                 {unassignedPlayers.length > 0 && (
                   <div className="space-y-1">
-                    <h3 className="text-xs text-muted-foreground">Unassigned:</h3>
+                    <h3 className="text-xs text-muted-foreground">{t("setup.unassigned")}</h3>
                     <div className="flex flex-wrap gap-1">
                       {unassignedPlayers.map(p => (
                         <div key={p.id} className="flex gap-1">
@@ -209,9 +211,9 @@ const GameSetup = () => {
           disabled={!canStart || (needsManualTeams && !manualReady)}
           onClick={handleStart}
         >
-          🏀 Start Game
+          {t("setup.startGame")}
         </Button>
-        {!canStart && <p className="text-xs text-center text-muted-foreground">Add at least 2 players to start</p>}
+        {!canStart && <p className="text-xs text-center text-muted-foreground">{t("setup.needPlayers")}</p>}
       </motion.div>
     </main>
   );
