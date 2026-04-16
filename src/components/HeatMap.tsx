@@ -2,6 +2,7 @@ import { useMultiplayer } from "@/context/MultiplayerContext";
 import { useGame, ZONE_LABELS, ZONE_POINTS } from "@/context/GameContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import courtImage from "@/assets/court-layout.png";
 
 const getHeatColor = (fgPct: number): string => {
@@ -27,16 +28,17 @@ const CourtBackground = () => (
 );
 
 const HeatMap = () => {
+  const { t } = useTranslation();
   const { getZoneStats, selectedPlayerId } = useGame();
   const { isMultiplayer, sessionPlayers } = useMultiplayer();
 
   return (
     <div className="glass-card rounded-lg p-4 space-y-3 border-t-2 border-primary/30">
       <h2 className="text-lg font-display font-bold text-foreground">
-        <span className="border-b-2 border-primary pb-0.5">🔥 Shooting Heat Map</span>
+        <span className="border-b-2 border-primary pb-0.5">{t("heatMap.title")}</span>
       </h2>
       <p className="text-xs text-muted-foreground">
-        Colors show Field Goal % (FG%) — the percentage of shots made. Hotter = more accurate zone.
+        {t("heatMap.description")}
       </p>
 
       <svg viewBox={COURT_VIEWBOX} className="w-full rounded-md overflow-hidden" preserveAspectRatio="xMidYMid meet" style={{ background: "white" }}>
@@ -48,10 +50,8 @@ const HeatMap = () => {
           ))}
         </defs>
 
-        {/* Layer 1: Court background */}
         <CourtBackground />
 
-        {/* Layer 2: Heat map zones (clipped to exact boundaries) */}
         {[1, 2, 3, 4, 5, 6].map(zone => {
           const stats = getZoneStats(zone, selectedPlayerId || undefined);
           if (stats.attempts === 0) return null;
@@ -69,8 +69,6 @@ const HeatMap = () => {
           );
         })}
 
-
-        {/* Zone number labels */}
         {[1, 2, 3, 4, 5, 6].map(zone => {
           const pos = ZONE_LABEL_POS[zone];
           return (
@@ -82,7 +80,6 @@ const HeatMap = () => {
           );
         })}
 
-        {/* Layer 4: Zone stat labels on top */}
         {[1, 2, 3, 4, 5, 6].map(zone => {
           const stats = getZoneStats(zone, selectedPlayerId || undefined);
           const pos = ZONE_LABEL_POS[zone];
@@ -100,7 +97,6 @@ const HeatMap = () => {
         })}
       </svg>
 
-      {/* Legend */}
       <div className="flex flex-wrap gap-2 justify-center">
         {legendItems.map(item => (
           <div key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -110,10 +106,9 @@ const HeatMap = () => {
         ))}
       </div>
 
-      {/* Zone key */}
       <div className="grid grid-cols-3 gap-1 text-[10px] text-muted-foreground">
         {[1, 2, 3, 4, 5, 6].map(z => (
-          <span key={z}>Z{z}: {ZONE_LABELS[z]} ({ZONE_POINTS[z]}pt)</span>
+          <span key={z}>Z{z}: {t(`zones.${z}`)} ({ZONE_POINTS[z]}pt)</span>
         ))}
       </div>
     </div>
