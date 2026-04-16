@@ -759,10 +759,10 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={handleExport} className="gap-1 text-xs">
-              <Download className="w-3 h-3" /> CSV
+              <Download className="w-3 h-3" aria-hidden="true" /> CSV
             </Button>
             <Button size="sm" onClick={handleReset} className="gap-1 text-xs">
-              <RotateCcw className="w-3 h-3" /> New Game
+              <RotateCcw className="w-3 h-3" aria-hidden="true" /> New Game
             </Button>
             <SettingsPanel />
           </div>
