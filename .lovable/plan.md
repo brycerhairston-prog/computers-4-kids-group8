@@ -1,37 +1,18 @@
 
 
-## Plan: Fix Light Mode Contrast for WCAG AA Compliance
+## Plan: Improve Muted Text Contrast
 
 ### Issue
-Light mode uses several low-contrast tokens against the white-ish background (`0 0% 97%`):
-- `--secondary-foreground: 220 15% 25%` on `--secondary: 220 15% 92%` — borderline
-- `--border: 220 15% 85%` — too light, hard to see form/card edges
-- `--input: 220 15% 85%` — same issue, inputs blend into background
-- `--court-line: 30 30% 55%` — low contrast on court bg
-
-`--muted-foreground` and `--foreground` are already near-black (12%), so those pass. The main offenders are secondary text, borders, and inputs.
+The "Created By" credits and similar low-contrast text use `text-muted-foreground`, which is currently `215 15% 55%` in dark mode. Against the dark background (`220 20% 10%`), this gives a contrast ratio around 4:1 — borderline and hard to read.
 
 ### Fix
-Single-file update to `src/index.css` `.light` block — darken low-contrast tokens to meet WCAG AA (4.5:1 normal text, 3:1 UI/large text). Dark mode untouched.
+Single change in `src/index.css`: lighten `--muted-foreground` in dark mode so all text using this token (credits, descriptions, subtitles, hints across the app) becomes more readable.
 
-| Token | Current | New | Reason |
-|---|---|---|---|
-| `--secondary-foreground` | `220 15% 25%` | `220 20% 12%` | Match foreground for body text on secondary bg (>12:1) |
-| `--border` | `220 15% 85%` | `220 15% 70%` | UI element contrast >3:1 |
-| `--input` | `220 15% 85%` | `220 15% 65%` | Input field edges clearly visible |
-| `--muted` | `220 15% 94%` | `220 15% 90%` | Slightly more separation from bg |
-| `--court-line` | `30 30% 55%` | `30 40% 35%` | Court lines readable on tan bg |
+- **Dark mode**: `--muted-foreground: 215 15% 55%` → `215 20% 75%` (passes WCAG AA at ~7:1)
+- **Light mode**: `--muted-foreground: 215 15% 45%` → `215 20% 35%` (darker for better contrast on light bg)
 
-All other light-mode tokens (`--foreground`, `--muted-foreground`, `--card-foreground`, `--popover-foreground`, `--primary`, `--accent`, `--destructive`) already pass AA — no change.
-
-### Verification
-After the change, primary contrast ratios in light mode:
-- Foreground (12%) on background (97%) → ~17:1 ✓ AAA
-- Muted-foreground (12%) on background (97%) → ~17:1 ✓ AAA
-- Secondary-foreground (12%) on secondary (92%) → ~14:1 ✓ AAA
-- Primary-foreground (white) on primary (orange 38%) → ~5.5:1 ✓ AA
-- Border (70%) on background (97%) → ~3.2:1 ✓ AA (UI)
+This single token update cascades to every muted text usage across Lobby credits, card descriptions, stat labels, settings descriptions, and tab hints — no per-component changes needed.
 
 ### Files Modified
-- `src/index.css` — only the `.light` block
+- `src/index.css` — update `--muted-foreground` HSL values for both themes
 
