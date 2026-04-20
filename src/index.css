@@ -8,48 +8,34 @@
   :root {
     --background: 220 20% 10%;
     --foreground: 210 20% 96%;
-
     --card: 220 18% 14%;
     --card-foreground: 210 20% 96%;
-
     --popover: 220 18% 14%;
     --popover-foreground: 210 20% 96%;
-
-    /* ✅ Improved contrast */
     --primary: 25 95% 52%;
     --primary-foreground: 0 0% 100%;
-
     --secondary: 220 15% 20%;
     --secondary-foreground: 210 20% 92%;
-
     --muted: 220 15% 18%;
-    /* ✅ FIXED muted text (brighter + less blue tint) */
-    --muted-foreground: 210 10% 96%;
-
+    /* Brightened for Dark Mode visibility */
+    --muted-foreground: 210 10% 90%;
     --accent: 170 70% 50%;
     --accent-foreground: 0 0% 100%;
-
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 220 15% 24%;
     --input: 220 15% 24%;
     --ring: 25 95% 52%;
-
     --radius: 0.75rem;
 
-    /* Heat map colors */
+    /* Heat map & Court colors */
     --heat-ice: 210 80% 55%;
     --heat-cold: 195 70% 50%;
     --heat-cool: 170 60% 45%;
     --heat-warm: 40 85% 55%;
     --heat-hot: 0 80% 50%;
-
-    /* Shot colors */
     --shot-made: 145 65% 45%;
     --shot-missed: 0 75% 55%;
-
-    /* Court */
     --court-bg: 25 30% 25%;
     --court-line: 35 40% 50%;
 
@@ -63,7 +49,6 @@
     --sidebar-ring: 25 95% 52%;
   }
 
-  /* Light mode overrides */
   .light {
     --background: 0 0% 97%;
     --foreground: 220 20% 12%;
@@ -76,7 +61,8 @@
     --secondary: 220 15% 92%;
     --secondary-foreground: 220 15% 25%;
     --muted: 220 15% 94%;
-    --muted-foreground: 215 20% 40%;
+    /* Darker for Light Mode visibility */
+    --muted-foreground: 220 20% 40%;
     --accent: 170 70% 42%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 75% 50%;
@@ -95,12 +81,6 @@
     --sidebar-border: 220 15% 85%;
     --sidebar-ring: 25 95% 42%;
   }
-
-  /* Colorblind mode */
-  .colorblind {
-    --shot-made: 210 80% 55%;
-    --shot-missed: 45 95% 55%;
-  }
 }
 
 @layer base {
@@ -118,34 +98,15 @@
   h6 {
     @apply font-display;
   }
-  p,
-  span,
-  label,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  li,
-  td,
-  th,
-  a,
-  button,
-  input,
-  select,
-  textarea {
-    font-size: calc(1rem * var(--text-scale, 1));
-  }
 }
 
 @layer utilities {
   .glass-card {
     @apply bg-card/80 backdrop-blur-md border border-border/50 shadow-lg;
   }
-  .glow-primary {
-    box-shadow:
-      0 0 20px hsl(var(--primary) / 0.3),
-      0 0 60px hsl(var(--primary) / 0.1);
+
+  /* FORCE FIX FOR YOUR TEXT */
+  .footer-text {
+    color: hsl(var(--muted-foreground)) !important;
   }
 }
