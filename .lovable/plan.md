@@ -1,18 +1,18 @@
 
 
-## Plan: Improve Muted Text Contrast
+## Plan: Maximize Muted Text Contrast
 
 ### Issue
-The "Created By" credits and similar low-contrast text use `text-muted-foreground`, which is currently `215 15% 55%` in dark mode. Against the dark background (`220 20% 10%`), this gives a contrast ratio around 4:1 — borderline and hard to read.
+Despite previous lightening, muted text (credits, descriptions, hints) still reads as gray. User wants near-white in dark mode and near-black in light mode.
 
 ### Fix
-Single change in `src/index.css`: lighten `--muted-foreground` in dark mode so all text using this token (credits, descriptions, subtitles, hints across the app) becomes more readable.
+Single change in `src/index.css` to the `--muted-foreground` token, which cascades to every `text-muted-foreground` usage across the app (Lobby credits, card descriptions, stat labels, settings hints, tab subtitles, etc.).
 
-- **Dark mode**: `--muted-foreground: 215 15% 55%` → `215 20% 75%` (passes WCAG AA at ~7:1)
-- **Light mode**: `--muted-foreground: 215 15% 45%` → `215 20% 35%` (darker for better contrast on light bg)
+- **Dark mode**: `210 25% 88%` → `210 20% 96%` (near-white)
+- **Light mode**: `215 20% 35%` → `220 20% 12%` (near-black, matches `--foreground`)
 
-This single token update cascades to every muted text usage across Lobby credits, card descriptions, stat labels, settings descriptions, and tab hints — no per-component changes needed.
+No per-component changes needed — one token update affects all muted text globally.
 
 ### Files Modified
-- `src/index.css` — update `--muted-foreground` HSL values for both themes
+- `src/index.css` — update `--muted-foreground` HSL values for both `:root` (dark) and `.light` themes
 
