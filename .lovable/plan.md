@@ -1,21 +1,32 @@
 
 
-## Plan: Fix Primary Button Contrast for WCAG AA
+## Plan: Apply New CSS + Fix Faded Footer Text
 
-### Issue
-Current `--primary` in dark mode is `25 95% 45%` (orange #DC6A0E) with white text. Contrast ratio ≈ 3.1:1 — **fails WCAG AA** (needs 4.5:1 for normal text, 3:1 for large text ≥18pt bold). Large bold buttons technically pass at 3:1 but smaller primary buttons elsewhere fail.
+### Changes
 
-### Fix
-Darken the orange slightly to boost contrast with white text to ≥4.5:1 (passes AA for all text sizes).
+**1. `src/index.css`** — replace with the user-provided version:
+- Brighten dark-mode `--muted-foreground` to `210 10% 90%`
+- Darken light-mode `--muted-foreground` to `220 20% 40%`
+- Restore primary to `25 95% 52%` (dark) / `25 95% 42%` (light)
+- Add new `.footer-text` utility that force-applies `--muted-foreground` with `!important`
+- Preserves existing `font-size: calc(1rem * var(--text-scale, 1))` rule on text elements (the user's snippet drops it — I'll keep it so the accessibility text-scale setting still works)
+- Preserves the `.colorblind` block (user's snippet drops it — keeping it so colorblind mode still works)
+- Preserves `.glow-primary` utility
 
-**`src/index.css`** — single-token update:
-- **Dark mode**: `--primary: 25 95% 45%` → `25 95% 38%` (deeper orange #B8550B, ~5.2:1 with white — passes AA)
-- **Dark mode**: `--ring: 25 95% 45%` → `25 95% 38%` (keep focus ring matching)
-- **Light mode**: `--primary` is already `25 95% 38%` → lower to `25 95% 32%` (~6.8:1 with white — passes AAA)
-- **Light mode**: `--ring` matched to new primary
+**2. Apply `footer-text` class to faded credit/footer text**
 
-This cascades to every primary button, focus ring, and accent across the app — no per-component edits needed. The orange stays vibrant and on-brand, just slightly richer.
+Found via search — these use `text-muted-foreground` in a footer/credit context and look washed out:
+
+- **`src/components/Lobby.tsx`** — `<footer>` with "Created By: Bryce Hairston..." and "UVA Engineering Undergraduates" (welcome view, ~line 235)
+- Any other `<footer>` element using muted text styling
+
+Add `footer-text` class alongside existing `text-muted-foreground` so the `!important` rule guarantees the brightened color wins over any inherited opacity or cascade issue.
+
+### Notes
+- I'll merge the user's CSS into the existing file rather than blind-overwrite, so accessibility features (`--text-scale`, `.colorblind`) and the `.glow-primary` utility aren't lost.
+- Only the Lobby welcome footer currently matches the "faded credits" pattern — other muted text (descriptions, hints) will naturally brighten from the variable change alone.
 
 ### Files Modified
 - `src/index.css`
+- `src/components/Lobby.tsx`
 
