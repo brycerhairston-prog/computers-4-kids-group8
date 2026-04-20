@@ -1,18 +1,21 @@
 
 
-## Plan: Improve Muted Text Contrast
+## Plan: Fix Primary Button Contrast for WCAG AA
 
 ### Issue
-The "Created By" credits and similar low-contrast text use `text-muted-foreground`, which is currently `215 15% 55%` in dark mode. Against the dark background (`220 20% 10%`), this gives a contrast ratio around 4:1 — borderline and hard to read.
+Current `--primary` in dark mode is `25 95% 45%` (orange #DC6A0E) with white text. Contrast ratio ≈ 3.1:1 — **fails WCAG AA** (needs 4.5:1 for normal text, 3:1 for large text ≥18pt bold). Large bold buttons technically pass at 3:1 but smaller primary buttons elsewhere fail.
 
 ### Fix
-Single change in `src/index.css`: lighten `--muted-foreground` in dark mode so all text using this token (credits, descriptions, subtitles, hints across the app) becomes more readable.
+Darken the orange slightly to boost contrast with white text to ≥4.5:1 (passes AA for all text sizes).
 
-- **Dark mode**: `--muted-foreground: 215 15% 55%` → `215 20% 75%` (passes WCAG AA at ~7:1)
-- **Light mode**: `--muted-foreground: 215 15% 45%` → `215 20% 35%` (darker for better contrast on light bg)
+**`src/index.css`** — single-token update:
+- **Dark mode**: `--primary: 25 95% 45%` → `25 95% 38%` (deeper orange #B8550B, ~5.2:1 with white — passes AA)
+- **Dark mode**: `--ring: 25 95% 45%` → `25 95% 38%` (keep focus ring matching)
+- **Light mode**: `--primary` is already `25 95% 38%` → lower to `25 95% 32%` (~6.8:1 with white — passes AAA)
+- **Light mode**: `--ring` matched to new primary
 
-This single token update cascades to every muted text usage across Lobby credits, card descriptions, stat labels, settings descriptions, and tab hints — no per-component changes needed.
+This cascades to every primary button, focus ring, and accent across the app — no per-component edits needed. The orange stays vibrant and on-brand, just slightly richer.
 
 ### Files Modified
-- `src/index.css` — update `--muted-foreground` HSL values for both themes
+- `src/index.css`
 
