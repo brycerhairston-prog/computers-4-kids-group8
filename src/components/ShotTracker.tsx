@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Undo2, ChevronDown, ChevronRight, Lock, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import StreakMeter from "@/components/StreakMeter";
 
 const CourtBackground = () => (
   <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
@@ -186,6 +187,12 @@ const ShotTracker = () => {
           )}
         </div>
       </div>
+
+      {activePlayerId && (
+        <div className="flex justify-end">
+          <StreakMeter playerId={activePlayerId} />
+        </div>
+      )}
 
       {!canShoot && !isGameOver && activePlayerId && !inPractice && (
         <p className="text-xs text-primary font-semibold text-center">
