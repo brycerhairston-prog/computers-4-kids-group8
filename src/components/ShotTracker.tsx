@@ -259,10 +259,11 @@ const ShotTracker = () => {
                           <Button key={p.id} size="sm"
                             variant={activePlayerId === p.id ? "default" : "outline"}
                             onClick={() => selectPlayer(p.id)}
-                            className={`text-xs h-7 gap-1 ${!isLocal ? "opacity-70" : ""}`}
+                            className={`text-xs h-7 gap-1.5 ${!isLocal ? "opacity-70" : ""}`}
                             disabled={(teamDone || playerDone) && isLocal}>
                             {!isLocal && <Lock className="w-2.5 h-2.5" />}
                             {p.name} ({playerShots}/{playerLimit})
+                            <StreakMeter playerId={p.id} compact />
                           </Button>
                         );
                       })}
@@ -299,6 +300,7 @@ const ShotTracker = () => {
                     {!isLocal && <Lock className="w-2.5 h-2.5" />}
                     {pInPractice && "🏋️ "}
                     {p.name}
+                    <StreakMeter playerId={p.id} compact />
                   </span>
                   <span className="flex items-center gap-1 w-full">
                     <span className="text-[10px] tabular-nums opacity-80">{pCount}/{pLimit}</span>
