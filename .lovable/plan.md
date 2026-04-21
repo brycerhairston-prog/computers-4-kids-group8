@@ -1,32 +1,65 @@
 
 
-## Plan: Apply New CSS + Fix Faded Footer Text
+## Plan: Streak Meter Feature
 
-### Changes
+### Concept
+Derive each player's current streak from existing shot data — count consecutive `made: true` shots from the most recent backwards until a miss is hit. No database changes required; multiplayer sync works automatically since shots already sync in realtime.
 
-**1. `src/index.css`** — replace with the user-provided version:
-- Brighten dark-mode `--muted-foreground` to `210 10% 90%`
-- Darken light-mode `--muted-foreground` to `220 20% 40%`
-- Restore primary to `25 95% 52%` (dark) / `25 95% 42%` (light)
-- Add new `.footer-text` utility that force-applies `--muted-foreground` with `!important`
-- Preserves existing `font-size: calc(1rem * var(--text-scale, 1))` rule on text elements (the user's snippet drops it — I'll keep it so the accessibility text-scale setting still works)
-- Preserves the `.colorblind` block (user's snippet drops it — keeping it so colorblind mode still works)
-- Preserves `.glow-primary` utility
+### What Gets Built
 
-**2. Apply `footer-text` class to faded credit/footer text**
+**1. New helper in `src/context/GameContext.tsx`**
+- `getPlayerStreak(playerId)` → returns `{ current, max }`
+- Walks the player's `allShots` (excludes practice) in chronological order:
+  - Increment current on make, reset to 0 on miss
+  - Track the highest value seen as `max`
+- Exposed via context so any component can read it
 
-Found via search — these use `text-muted-foreground` in a footer/credit context and look washed out:
+**2. New component `src/components/StreakMeter.tsx`**
+- Vertical bar with 6 segments (1, 2, 3, 4, 5, 6+)
+- Fills bottom-up as streak grows
+- Color per level:
+  - 1 → red
+  - 2 → orange
+  - 3 → yellow
+  - 4 → light green
+  - 5 → bright green
+  - 6+ → blue with glow/pulse animation
+- Smooth Framer Motion fill animation when streak increases
+- Flash + shake animation when streak resets (miss)
+- Label: "Current Streak: X" + "🔥 Hot Streak!" badge when ≥3
+- Compact prop variant for inline display next to player buttons
 
-- **`src/components/Lobby.tsx`** — `<footer>` with "Created By: Bryce Hairston..." and "UVA Engineering Undergraduates" (welcome view, ~line 235)
-- Any other `<footer>` element using muted text styling
+**3. Integration into `src/components/ShotTracker.tsx`**
+- Show full StreakMeter for the **active selected player** in a small panel beside or above the court (right column on desktop, stacked on mobile)
+- Show a compact mini-meter chip beside each player's name in the player selector row (individual mode) and in the team-expanded player list (team mode)
+- No changes to scoring, heat map, or data table
 
-Add `footer-text` class alongside existing `text-muted-foreground` so the `!important` rule guarantees the brightened color wins over any inherited opacity or cascade issue.
+**4. Add longest streak column to `src/components/DataTable.tsx`**
+- New "Longest Streak" column showing `max` from `getPlayerStreak`
+- Translatable via existing i18n setup
 
-### Notes
-- I'll merge the user's CSS into the existing file rather than blind-overwrite, so accessibility features (`--text-scale`, `.colorblind`) and the `.glow-primary` utility aren't lost.
-- Only the Lobby welcome footer currently matches the "faded credits" pattern — other muted text (descriptions, hints) will naturally brighten from the variable change alone.
+**5. Translation keys**
+Add to all 8 locale files under new `streak` namespace:
+- `streak.current` → "Current Streak: {{count}}"
+- `streak.hot` → "🔥 Hot Streak!"
+- `streak.longest` → "Longest Streak"
+- `streak.label` → "Streak"
+
+### Visual Reference
+Matches the uploaded image: vertical segmented bar that fills upward with red→yellow→green color progression, with empty white segments above the current fill level.
+
+### What's NOT Touched
+- Heat map rendering
+- Existing scoring (`ZONE_POINTS`, `getPlayerStats`)
+- Database schema or RLS policies
+- Multiplayer sync logic (works automatically since streak is derived from synced shots)
 
 ### Files Modified
-- `src/index.css`
-- `src/components/Lobby.tsx`
+- `src/context/GameContext.tsx` (add `getPlayerStreak`)
+- `src/components/ShotTracker.tsx` (integrate meter)
+- `src/components/DataTable.tsx` (add longest streak column)
+- `src/i18n/locales/*.json` (8 files — streak strings)
+
+### Files Created
+- `src/components/StreakMeter.tsx`
 
