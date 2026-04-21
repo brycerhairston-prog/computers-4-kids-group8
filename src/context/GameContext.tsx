@@ -85,6 +85,7 @@ interface GameState {
   startGame: (params?: StartGameParams) => void;
   isGameOver: boolean;
   getPlayerShotCount: (playerId: string) => number;
+  getPlayerStreak: (playerId: string) => { current: number; max: number };
   getPlayerPracticeShotCount: (playerId: string) => number;
   getPlayerShotLimit: (playerId: string) => number;
   getTeamShotCount: (teamId: string) => number;
@@ -339,6 +340,22 @@ export const GameProvider: React.FC<GameProviderProps> = ({
     setSelectedPlayerId(null);
   }, [gameMode, teams.length, teamSelectionMode, players, getPlayerStats]);
 
+  const getPlayerStreak = useCallback((playerId: string) => {
+    // Walk all non-practice shots in chronological order for this player
+    const playerShots = allShots.filter(s => s.playerId === playerId);
+    let current = 0;
+    let max = 0;
+    for (const shot of playerShots) {
+      if (shot.made) {
+        current++;
+        if (current > max) max = current;
+      } else {
+        current = 0;
+      }
+    }
+    return { current, max };
+  }, [allShots]);
+
   const exportCSV = useCallback(() => {
     const header = "Player,Zone 1,Zone 2,Zone 3,Zone 4,Zone 5,Zone 6,Total Makes,Total Points\n";
     const rows = players.map(p => {
@@ -356,7 +373,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({
       addPlayer, removePlayer, selectPlayer,
       addShot, removeShot, getZoneStats, getPlayerStats, getPlayerStatsForMode, getTeamStats,
       resetGame, exportCSV, setGameMode, setTeamSelectionMode, setTeams, startGame,
-      isGameOver, getPlayerShotCount, getPlayerPracticeShotCount, getPlayerShotLimit,
+      isGameOver, getPlayerShotCount, getPlayerPracticeShotCount, getPlayerShotLimit, getPlayerStreak,
       getTeamShotCount, getPlayerTeam, isPlayerInPractice, isZoneBlockedForPlayer,
       setExternalPlayers, setExternalShots, setGamePhaseExternal,
     }}>
