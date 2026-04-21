@@ -199,5 +199,11 @@
     "startGame": "🏀 Démarrer la partie",
     "needPlayers": "Ajoutez au moins 2 joueurs",
     "removePlayer": "Supprimer {{name}}"
+  },
+  "streak": {
+    "label": "Série",
+    "current": "Série actuelle : {{count}}",
+    "hot": "🔥 Série chaude !",
+    "longest": "Plus longue série"
   }
 }
