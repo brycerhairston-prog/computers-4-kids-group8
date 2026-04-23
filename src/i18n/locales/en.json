@@ -199,11 +199,5 @@
     "startGame": "🏀 Start Game",
     "needPlayers": "Add at least 2 players to start",
     "removePlayer": "Remove {{name}}"
-  },
-  "streak": {
-    "label": "Streak",
-    "current": "Current Streak: {{count}}",
-    "hot": "🔥 Hot Streak!",
-    "longest": "Longest Streak"
   }
 }

@@ -199,11 +199,5 @@
     "startGame": "🏀 开始游戏",
     "needPlayers": "至少添加 2 名玩家",
     "removePlayer": "移除 {{name}}"
-  },
-  "streak": {
-    "label": "连续命中",
-    "current": "当前连击: {{count}}",
-    "hot": "🔥 火热连击!",
-    "longest": "最长连击"
   }
 }

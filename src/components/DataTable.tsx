@@ -11,7 +11,7 @@ import {
 
 const DataTable = () => {
   const { t } = useTranslation();
-  const { players, getPlayerStats, getPlayerStreak, selectedPlayerId, selectPlayer, exportCSV } = useGame();
+  const { players, getPlayerStats, selectedPlayerId, selectPlayer, exportCSV } = useGame();
 
   const handleExport = () => {
     const csv = exportCSV();
@@ -62,7 +62,6 @@ const DataTable = () => {
                 </Tooltip>
               ))}
               <th className="text-center py-2 px-1">{t("dataTable.makes")}</th>
-              <th className="text-center py-2 px-1">🔥</th>
               <th className="text-center py-2 px-1">{t("dataTable.points")}</th>
             </tr>
           </thead>
@@ -101,7 +100,6 @@ const DataTable = () => {
                       );
                     })}
                     <td className="text-center py-2 px-1 font-semibold text-green-500 tabular-nums">{stats.makes}</td>
-                    <td className="text-center py-2 px-1 font-bold text-orange-400 tabular-nums" title={t("streak.longest")}>{getPlayerStreak(player.id).max}</td>
                     <td className="text-center py-2 px-1 font-bold text-primary tabular-nums text-base">{stats.totalPoints}</td>
                   </motion.tr>
                 );

@@ -199,11 +199,5 @@
     "startGame": "🏀 Iniciar juego",
     "needPlayers": "Añade al menos 2 jugadores",
     "removePlayer": "Eliminar a {{name}}"
-  },
-  "streak": {
-    "label": "Racha",
-    "current": "Racha actual: {{count}}",
-    "hot": "🔥 ¡Racha caliente!",
-    "longest": "Racha más larga"
   }
 }

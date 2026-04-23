@@ -199,11 +199,5 @@
     "startGame": "🏀 Spiel starten",
     "needPlayers": "Mindestens 2 Spieler hinzufügen",
     "removePlayer": "{{name}} entfernen"
-  },
-  "streak": {
-    "label": "Serie",
-    "current": "Aktuelle Serie: {{count}}",
-    "hot": "🔥 Heiße Serie!",
-    "longest": "Längste Serie"
   }
 }

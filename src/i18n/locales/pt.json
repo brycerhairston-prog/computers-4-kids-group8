@@ -199,11 +199,5 @@
     "startGame": "🏀 Iniciar jogo",
     "needPlayers": "Adicione pelo menos 2 jogadores",
     "removePlayer": "Remover {{name}}"
-  },
-  "streak": {
-    "label": "Sequência",
-    "current": "Sequência atual: {{count}}",
-    "hot": "🔥 Sequência quente!",
-    "longest": "Maior sequência"
   }
 }

@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Undo2, ChevronDown, ChevronRight, Lock, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import StreakMeter from "@/components/StreakMeter";
 
 const CourtBackground = () => (
   <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
@@ -188,12 +187,6 @@ const ShotTracker = () => {
         </div>
       </div>
 
-      {activePlayerId && (
-        <div className="flex justify-end">
-          <StreakMeter playerId={activePlayerId} />
-        </div>
-      )}
-
       {!canShoot && !isGameOver && activePlayerId && !inPractice && (
         <p className="text-xs text-primary font-semibold text-center">
           {gameMode === "team"
@@ -259,11 +252,10 @@ const ShotTracker = () => {
                           <Button key={p.id} size="sm"
                             variant={activePlayerId === p.id ? "default" : "outline"}
                             onClick={() => selectPlayer(p.id)}
-                            className={`text-xs h-7 gap-1.5 ${!isLocal ? "opacity-70" : ""}`}
+                            className={`text-xs h-7 gap-1 ${!isLocal ? "opacity-70" : ""}`}
                             disabled={(teamDone || playerDone) && isLocal}>
                             {!isLocal && <Lock className="w-2.5 h-2.5" />}
                             {p.name} ({playerShots}/{playerLimit})
-                            <StreakMeter playerId={p.id} compact />
                           </Button>
                         );
                       })}
@@ -300,7 +292,6 @@ const ShotTracker = () => {
                     {!isLocal && <Lock className="w-2.5 h-2.5" />}
                     {pInPractice && "🏋️ "}
                     {p.name}
-                    <StreakMeter playerId={p.id} compact />
                   </span>
                   <span className="flex items-center gap-1 w-full">
                     <span className="text-[10px] tabular-nums opacity-80">{pCount}/{pLimit}</span>
