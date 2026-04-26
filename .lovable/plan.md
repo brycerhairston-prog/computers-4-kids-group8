@@ -1,57 +1,96 @@
 
 
-## Plan: Translate Remaining Game UI Components
+## Plan: Persistent Player Identity & Lookup System
 
-### Scope
-Replace hardcoded English strings with `t()` translation calls in the gameplay components that were skipped in the initial i18n pass.
+### Goal
+Add a global, persistent player database so players can be identified by a Player ID, looked up across sessions/devices, and have career stats accumulate over time — without breaking the existing game flow.
 
-### Components to Translate
+---
 
-**1. `src/components/DataTable.tsx`** — Player Stats tab
-- Title "📊 Player Stats"
-- Description "Click a player row to filter the heat map..."
-- Column headers: "Player", "Makes", "Pts", zone tooltips ("X point(s)")
-- CSV button label
+### 1. Database Schema (new tables, no changes to existing)
 
-**2. `src/components/ShotTracker.tsx`** — Shot Tracker tab
-- Title "📍 Shot Tracker"
-- "Practice", "View Only", "Undo" labels
-- Shot count display ("X/Y shots", "Practice: X/Y", team count text)
-- Limit-reached messages ("X has reached their shot limit!", etc.)
-- Locked/blocked zone notices ("Can't shoot in X twice in a row", "Blocked zones: ...")
-- Pending shot confirmation: "Made", "Missed", "Cancel"
-- Bottom status: "Placing shot for X in Y (Zpt zone)"
-- Team "Done" badge, "Blocked: ..." label
+**`players` table** (global player registry)
+- `id` (uuid, PK)
+- `player_id` (text, **unique**, case-insensitive via `citext` or normalized lowercase column)
+- `name` (text)
+- `playstyle_tag` (text, nullable — auto-derived)
+- `created_at`, `updated_at`
 
-**3. `src/components/HeatMap.tsx`** — Heat Map tab
-- Title, legend labels (0%, 1-20%, 21-40%, etc.), zone labels if any descriptive text
+**`player_career_stats` table** (rolled-up totals)
+- `player_id` (FK → players.id, PK)
+- `games_played` (int)
+- `total_makes`, `total_attempts` (int)
+- `total_points` (int)
+- `zone_makes` (jsonb: `{1: n, 2: n, ...6: n}`)
+- `zone_attempts` (jsonb: `{1: n, ...}`)
+- `best_zone` (int, nullable)
+- `last_played_at` (timestamptz)
 
-**4. `src/components/GameSummary.tsx`** — Post-game screen
-- Winner banner, tab labels (Individual/Team/Overall), stat labels, action buttons (Play Again, Export, etc.)
+**`player_game_history`** (per-game record, for trend chart)
+- `id`, `player_id` (FK), `played_at`
+- `game_mode` (individual/team)
+- `makes`, `attempts`, `points`
+- `zone_breakdown` (jsonb)
 
-**5. `src/components/GameSetup.tsx`** — Setup screen
-- Mode titles/descriptions, team config labels, Start Game button
+**RLS:** All three tables — public read + public insert/update (matches existing `game_sessions` pattern, since this is an open classroom app with no auth).
 
-### Translation Keys
-Add new keys to all 8 locale files (`en/es/fr/de/zh/hi/ar/pt.json`) under new sections:
-- `dataTable.*` — stats table strings
-- `shotTracker.*` — shot tracker strings (with interpolation: `{{playerName}}`, `{{count}}`, `{{limit}}`, `{{zone}}`)
-- `heatMap.*` — legend and labels
-- `summary.*` — extend existing summary keys
-- `setup.*` — extend existing setup keys
+---
 
-### Approach Per File
-For each component:
-1. Add `import { useTranslation } from "react-i18next"` and `const { t } = useTranslation()`
-2. Replace string literals with `t('key')` or `t('key', { interpolatedVar })`
-3. Keep dynamic content (player names, numbers, zone labels from `ZONE_LABELS`) as variables passed into translations
+### 2. New files
 
-### Notes
-- `ZONE_LABELS` from `GameContext` (e.g. "Paint", "Mid-Range") will be added as a `zones.*` translation namespace so they translate too
-- Emoji icons (📊, 📍, 🏋️, ✓, ✗) stay in keys — they're universal
-- Numbers and player-entered names are not translated
+- `src/lib/playerDatabase.ts` — CRUD helpers: `lookupPlayer(playerId)`, `createPlayer({playerId, name})`, `saveGameResult(playerId, gameStats)`, `getCareerStats(playerId)`, `getRecentGames(playerId)`, `derivePlaystyleTag(stats)`.
+- `src/components/PlayerLookupDialog.tsx` — modal with ID input, search, result card (name, games, FG%, makes/attempts, best zone, playstyle), "Load Player" + "View Full Stats" buttons, "No player found → Create new" fallback.
+- `src/components/PlayerProfileDialog.tsx` — full profile screen: overview header, FG%-per-zone bar chart (recharts), shot-distribution pie chart, best zone + playstyle highlight, recent-performance line.
+- `src/i18n/locales/*.json` — add `playerLookup.*` and `playerProfile.*` keys to all 8 locales.
 
-### Files Modified
-- `src/components/DataTable.tsx`, `src/components/ShotTracker.tsx`, `src/components/HeatMap.tsx`, `src/components/GameSummary.tsx`, `src/components/GameSetup.tsx`
-- All 8 files in `src/i18n/locales/`
+---
+
+### 3. Modified files (additive only)
+
+- **`src/components/Lobby.tsx`** — in the "Add Player" form add an optional `Player ID` input + datalist of recent IDs (from localStorage) for quick-load. Add a `🔍 Lookup Player` button next to add-player that opens `PlayerLookupDialog`. On duplicate ID detection: prompt "Player exists — load instead?".
+- **`src/context/GameContext.tsx`** — extend `Player` interface with optional `playerId?: string`. When `addPlayer` is called from lookup flow, accept the playerId. No behavior change for existing callers (default = auto-generated).
+- **`src/components/GameSummary.tsx`** — on mount when `gamePhase === "summary"`, call `saveGameResult(...)` for each player that has a `playerId` (auto-save). Idempotent via a ref guard so it only fires once per game.
+- **`src/components/SettingsPanel.tsx`** — (no change needed; lookup lives in lobby).
+
+---
+
+### 4. Playstyle auto-tagging logic
+Simple rule-based from career zone breakdown:
+- `Sharpshooter` — 3pt zones (4,5,6) ≥ 50% of attempts AND FG% ≥ 35%
+- `Paint Beast` — Zone 1 ≥ 40% of attempts AND FG% ≥ 55%
+- `Mid-Range Maestro` — Zones 2,3 ≥ 40% of attempts
+- `All-Around` — balanced distribution
+- `Developing` — < 3 games played
+
+---
+
+### 5. Multiplayer sync
+- Player IDs are global (single `players` table, no session scoping) → automatically shared across devices.
+- After game save, the `player_career_stats` row is updated; any device looking up that ID sees fresh data.
+- No realtime channel needed for the lookup itself (on-demand query is fine and avoids extra subscriptions).
+
+---
+
+### 6. Edge cases handled
+- Duplicate ID on add → toast + offer to load existing.
+- Blank ID → auto-generate (`P-XXXX` short code, checked for uniqueness).
+- Case-insensitive matching (store lowercase `player_id_normalized` column, query against it).
+- Offline / DB error → graceful toast, gameplay continues; save retried on next summary.
+- Players added without a Player ID work exactly like today (no persistence, no breakage).
+
+---
+
+### What stays untouched
+- Existing `GameContext` shot logic, game phases, multiplayer session tables, scoring, court geometry, zone rules, accessibility, i18n keys already in place.
+
+---
+
+### Order of execution
+1. Create migration (3 tables + RLS + indexes).
+2. Build `playerDatabase.ts` helpers.
+3. Build `PlayerLookupDialog` + `PlayerProfileDialog`.
+4. Wire into `Lobby` (input + lookup button + quick-load datalist).
+5. Auto-save hook in `GameSummary`.
+6. Add i18n keys for all 8 locales.
+7. Smoke-test: add player with ID → play game → end → re-lookup ID and confirm career stats updated.
 
