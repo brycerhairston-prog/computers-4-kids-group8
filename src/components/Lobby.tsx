@@ -3,13 +3,15 @@ import c4kLogo from "@/assets/c4k-logo.png";
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Users, Plus, LogIn, ArrowLeft, Loader2, Trash2, UserMinus, DoorOpen, Search } from "lucide-react";
+import { Copy, Users, Plus, LogIn, ArrowLeft, Loader2, Trash2, UserMinus, DoorOpen, Search, Database } from "lucide-react";
 import { toast } from "sonner";
 import SettingsPanel from "@/components/SettingsPanel";
 import PlayerLookupDialog from "@/components/PlayerLookupDialog";
+import PlayerBrowseTab from "@/components/PlayerBrowseTab";
 import { useTranslation } from "react-i18next";
-import { resolveOrCreatePlayer, getRecentPlayerIds, linkSessionToGlobalPlayer, type PlayerLookupResult } from "@/lib/playerDatabase";
+import { resolveOrCreatePlayer, getRecentPlayerIds, linkSessionToGlobalPlayer, type PlayerLookupResult, type BrowsePlayer } from "@/lib/playerDatabase";
 
 type LobbyView = "welcome" | "create" | "join" | "waiting";
 
