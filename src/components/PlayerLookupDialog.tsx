@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2, UserPlus, BarChart3, Trophy } from "lucide-react";
-import { lookupPlayer, type PlayerLookupResult } from "@/lib/playerDatabase";
+import { Search, Loader2, UserPlus, BarChart3, Trophy, Plus } from "lucide-react";
+import { lookupPlayer, resolveOrCreatePlayer, type PlayerLookupResult } from "@/lib/playerDatabase";
 import { ZONE_LABELS } from "@/context/GameContext";
 import { toast } from "sonner";
 import PlayerProfileDialog from "@/components/PlayerProfileDialog";
@@ -20,11 +20,14 @@ const PlayerLookupDialog = ({ open, onOpenChange, onLoad }: Props) => {
   const [searched, setSearched] = useState(false);
   const [result, setResult] = useState<PlayerLookupResult | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [registerName, setRegisterName] = useState("");
+  const [registering, setRegistering] = useState(false);
 
   const reset = () => {
     setQuery("");
     setResult(null);
     setSearched(false);
+    setRegisterName("");
   };
 
   const handleSearch = async () => {
@@ -45,6 +48,24 @@ const PlayerLookupDialog = ({ open, onOpenChange, onLoad }: Props) => {
     }
   };
 
+  const handleRegister = async () => {
+    const name = registerName.trim();
+    if (!name) { toast.error("Enter a name"); return; }
+    setRegistering(true);
+    try {
+      const player = await resolveOrCreatePlayer(query.trim(), name);
+      const r = await lookupPlayer(player.player_id);
+      if (r) {
+        setResult(r);
+        toast.success(`Registered ${player.name} (${player.player_id})`);
+      }
+    } catch (err) {
+      toast.error("Registration failed");
+    } finally {
+      setRegistering(false);
+    }
+  };
+
   const handleLoad = () => {
     if (!result) return;
     onLoad?.(result);
@@ -61,7 +82,7 @@ const PlayerLookupDialog = ({ open, onOpenChange, onLoad }: Props) => {
             <DialogTitle className="flex items-center gap-2">
               <Search className="w-5 h-5" aria-hidden="true" /> Lookup Player
             </DialogTitle>
-            <DialogDescription>Find a saved player by their Player ID.</DialogDescription>
+            <DialogDescription>Find a saved player by their Player ID, or register a new one.</DialogDescription>
           </DialogHeader>
 
           <div className="flex gap-2">
@@ -80,11 +101,24 @@ const PlayerLookupDialog = ({ open, onOpenChange, onLoad }: Props) => {
           </div>
 
           {searched && !result && (
-            <div className="rounded-lg border border-dashed border-muted-foreground/30 p-4 text-center space-y-3">
-              <p className="text-sm text-muted-foreground">No player found with this ID.</p>
-              <p className="text-xs text-muted-foreground">
-                Close this dialog and add the player normally — they'll be created automatically.
-              </p>
+            <div className="rounded-lg border border-dashed border-muted-foreground/30 p-4 space-y-3">
+              <p className="text-sm text-muted-foreground text-center">No player found with this ID.</p>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-foreground">Register new player with this ID:</p>
+                <div className="flex gap-2">
+                  <Input
+                    value={registerName}
+                    onChange={(e) => setRegisterName(e.target.value)}
+                    placeholder="Player name"
+                    className="text-sm"
+                    onKeyDown={(e) => e.key === "Enter" && handleRegister()}
+                  />
+                  <Button onClick={handleRegister} disabled={registering || !registerName.trim()} className="gap-1 shrink-0">
+                    {registering ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Plus className="w-4 h-4" aria-hidden="true" />}
+                    Register
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 
