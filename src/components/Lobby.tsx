@@ -308,6 +308,10 @@ const Lobby = () => {
             <DoorOpen className="w-4 h-4" aria-hidden="true" /> {t("lobby.leaveGame")}
           </Button>
         </motion.div>
+        <datalist id="recent-player-ids">
+          {recentIds.map(id => <option key={id} value={id} />)}
+        </datalist>
+        <PlayerLookupDialog open={lookupOpen} onOpenChange={setLookupOpen} />
       </main>
     );
   }
