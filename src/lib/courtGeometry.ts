@@ -1,6 +1,5 @@
 // Shared court SVG geometry for consistent rendering across components.
 // ViewBox: 0 0 400 500, basket at TOP.
-// Geometry is aligned to the full uncropped court-layout image.
 
 type Point = { x: number; y: number };
 
@@ -25,52 +24,64 @@ const RIGHT_DIAGONAL_BOTTOM: Point = { x: 362, y: 500 };
 
 const LEFT_ARC_EXTREME: Point = { x: 6, y: 150 };
 const RIGHT_ARC_EXTREME: Point = { x: 394, y: 150 };
-const ARC_BOTTOM: Point = { x: 200, y: 306 };
+
+// Arc bottom — clamped so Z2/Z3 don't sag past the diagonal tops
+// Ellipse bottom is at y=306 but that pulls the arc too low visually.
+// Instead we close Z2/Z3 at the diagonal top y=285, meeting the arc there.
+// Z2 closes: paint-bottom-center (200,198) → left-diag-top on arc (101,285)
+// Z3 closes: paint-bottom-center (200,198) → right-diag-top on arc (299,285)
+// Then each side follows the arc back up to the extreme.
 
 export const ZONE_PATHS: Record<number, string> = {
   // Z1 – Paint rectangle
   1: `M 135,0 L 265,0 L 265,198 L 135,198 Z`,
 
   // Z2 – Left mid-range
-  // Left arc extreme → baseline → paint top-left → paint bottom-left →
-  // paint bottom-center → arc bottom center → arc CCW back to left extreme
-  2: `M 6,150 L 6,0 L 135,0 L 135,198 L 200,198 L 200,306 A 194 156 0 0 1 6,150 Z`,
+  // Left arc extreme (6,150) → up to baseline → across to paint top-left (135,0)
+  // → down paint left to (135,198) → across to center (200,198)
+  // → arc CW (sweep=1) from (200,198) sweeping left down to left-diag-top (101,285)
+  // → arc CW (sweep=1) continuing up to left extreme (6,150)
+  // All one continuous arc: from (200,198) sweep=1 largeArc=0 to (6,150)
+  // passes through (101,285) naturally since it's on the ellipse.
+  2: `M 6,150 L 6,0 L 135,0 L 135,198 L 200,198 A 194 156 0 0 1 6,150 Z`,
 
-  // Z3 – Right mid-range (mirror of Z2)
-  3: `M 394,150 L 394,0 L 265,0 L 265,198 L 200,198 L 200,306 A 194 156 0 0 0 394,150 Z`,
+  // Z3 – Right mid-range (mirror)
+  3: `M 394,150 L 394,0 L 265,0 L 265,198 L 200,198 A 194 156 0 0 0 394,150 Z`,
 
-  // Z4 – Left corner three
-  // Sideline → left arc extreme → arc down to left diagonal top → diagonal to bottom → sideline
+  // Z4 – Left corner three (LEFT side)
+  // Left sideline up to left arc extreme → arc sweeping DOWN to left-diag-top → diagonal to bottom
   4: `M 0,0 L 6,0 L 6,150 A 194 156 0 0 0 101,285 L 38,500 L 0,500 Z`,
 
   // Z5 – Center three
-  // Bottom-left corner → up left diagonal → arc down through (200,306) to right diagonal top
-  // → down right diagonal → bottom-right corner
+  // Up left diagonal to (101,285) → arc sweeping DOWN through bottom to (299,285)
+  // → down right diagonal to bottom
   5: `M 38,500 L 101,285 A 194 156 0 0 1 299,285 L 362,500 Z`,
 
-  // Z6 – Right corner three (mirror of Z4)
-  6: `M 394,0 L 400,0 L 400,500 L 362,500 L 299,285 A 194 156 0 0 0 394,150 L 394,0 Z`,
+  // Z6 – Right corner three (RIGHT side, mirror of Z4)
+  6: `M 400,0 L 394,0 L 394,150 A 194 156 0 0 1 299,285 L 362,500 L 400,500 Z`,
 };
 
 export const ZONE_LABEL_POS: Record<number, { x: number; y: number }> = {
   1: { x: 200, y: 120 },
-  2: { x: 65, y: 240 },
-  3: { x: 335, y: 240 },
-  4: { x: 28, y: 370 },
-  5: { x: 200, y: 430 },
-  6: { x: 374, y: 370 },
+  2: { x: 65, y: 220 },
+  3: { x: 335, y: 220 },
+  4: { x: 28, y: 390 },
+  5: { x: 200, y: 440 },
+  6: { x: 374, y: 390 },
 };
 
 export const COURT_VIEWBOX = "0 0 400 500";
 
 // ---------------------------------------------------------------------------
-// Hit-test
+// Hit-test helpers
 // ---------------------------------------------------------------------------
 
 function isInsideEllipse(x: number, y: number): boolean {
   return ((x - BIG_ARC.cx) / BIG_ARC.rx) ** 2 + ((y - BIG_ARC.cy) / BIG_ARC.ry) ** 2 <= 1;
 }
 
+// Returns positive if point (px,py) is to the RIGHT of line a→b,
+// negative if to the LEFT.
 function sideOfLine(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
   return (bx - ax) * (py - ay) - (by - ay) * (px - ax);
 }
@@ -82,15 +93,17 @@ export function getZoneFromPoint(xPct: number, yPct: number): number {
   // Z1 – Paint
   if (x >= PAINT.left && x <= PAINT.right && y >= PAINT.top && y <= PAINT.bottom) return 1;
 
-  const inArc = isInsideEllipse(x, y);
-
-  if (inArc) {
-    if (x < 200) return 2;
-    if (x > 200) return 3;
-    return 1;
+  // Inside the 3pt arc → mid-range
+  if (isInsideEllipse(x, y)) {
+    return x <= 200 ? 2 : 3;
   }
 
-  // Outside arc → three-point territory
+  // Outside arc → 3pt territory.
+  // Left diagonal runs from LEFT_DIAGONAL_TOP DOWN to LEFT_DIAGONAL_BOTTOM.
+  // A point to the LEFT of this line (negative side) is in Z4.
+  // Right diagonal runs from RIGHT_DIAGONAL_TOP DOWN to RIGHT_DIAGONAL_BOTTOM.
+  // A point to the RIGHT of this line (positive side) is in Z6.
+
   const leftSide = sideOfLine(
     x,
     y,
@@ -99,6 +112,7 @@ export function getZoneFromPoint(xPct: number, yPct: number): number {
     LEFT_DIAGONAL_BOTTOM.x,
     LEFT_DIAGONAL_BOTTOM.y,
   );
+
   const rightSide = sideOfLine(
     x,
     y,
@@ -108,8 +122,11 @@ export function getZoneFromPoint(xPct: number, yPct: number): number {
     RIGHT_DIAGONAL_BOTTOM.y,
   );
 
-  if (leftSide < 0) return 4;
-  if (rightSide > 0) return 6;
+  // Left of the left diagonal → Z4 (left corner)
+  if (leftSide > 0) return 4;
+  // Right of the right diagonal → Z6 (right corner)
+  if (rightSide < 0) return 6;
+  // Between the diagonals, outside the arc → Z5 (center three)
   return 5;
 }
 
