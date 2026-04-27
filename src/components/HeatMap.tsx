@@ -1,7 +1,6 @@
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { useGame, ZONE_LABELS, ZONE_POINTS } from "@/context/GameContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
-import ZoneDebugOverlay from "@/components/ZoneDebugOverlay";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import courtImage from "@/assets/court-layout.png";
@@ -96,7 +95,6 @@ const HeatMap = () => {
             </g>
           );
         })}
-        <ZoneDebugOverlay />
       </svg>
 
       <div className="flex flex-wrap gap-2 justify-center">
