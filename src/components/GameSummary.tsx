@@ -10,7 +10,6 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { getGlobalPlayerUuid, saveGameResult } from "@/lib/playerDatabase";
-import { ZONE_POINTS as ZP } from "@/context/GameContext";
 import { useTranslation } from "react-i18next";
 import type { TeamSelectionMode, Team, Shot, ZoneStats } from "@/context/GameContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
