@@ -329,6 +329,21 @@ const ShotTracker = () => {
             );
           })}
 
+          {/* Invisible hover overlays for predictive feedback */}
+          {[1, 2, 3, 4, 5, 6].map(zone => (
+            <path
+              key={`hover-${zone}`}
+              d={ZONE_PATHS[zone]}
+              fill="transparent"
+              stroke={hoveredZone === zone ? "hsl(var(--primary))" : "transparent"}
+              strokeWidth="2"
+              strokeDasharray="4 3"
+              style={{ cursor: canShoot ? "crosshair" : "not-allowed", pointerEvents: pendingPos ? "none" : "auto" }}
+              onMouseEnter={() => setHoveredZone(zone)}
+              onMouseLeave={() => setHoveredZone(prev => (prev === zone ? null : prev))}
+            />
+          ))}
+
           {[1, 2, 3, 4, 5, 6].map(zone => {
             const pos = ZONE_LABEL_POS[zone];
             return (
