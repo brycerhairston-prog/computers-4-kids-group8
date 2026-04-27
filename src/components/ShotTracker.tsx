@@ -165,6 +165,15 @@ const ShotTracker = () => {
     return allCurrentShots.length > 0 ? allCurrentShots[allCurrentShots.length - 1] : null;
   }, [practiceShots, activeShots]);
 
+  // Predictive feedback for hovered zone
+  const hoverPrediction = useMemo(() => {
+    if (hoveredZone === null) return null;
+    const playerShots = activePlayerId
+      ? activeShots.filter(s => s.playerId === activePlayerId)
+      : [];
+    return expectedFgForZone(hoveredZone, playerShots);
+  }, [hoveredZone, activePlayerId, activeShots]);
+
   return (
     <div className="glass-card rounded-lg p-4 space-y-3 border-t-2 border-primary/30">
       <div className="flex items-center justify-between flex-wrap gap-2">
