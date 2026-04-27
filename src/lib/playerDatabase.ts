@@ -260,6 +260,77 @@ export async function saveGameResult(input: GameResultInput): Promise<void> {
   await supabase.from("players").update({ playstyle_tag: playstyle }).eq("id", input.playerUuid);
 }
 
+export interface BrowsePlayer {
+  id: string;
+  player_id: string;
+  name: string;
+  playstyle_tag: string | null;
+  games_played: number;
+  total_makes: number;
+  total_attempts: number;
+  total_points: number;
+  fg_pct: number;
+  last_played_at: string | null;
+  created_at: string;
+}
+
+export type BrowseSortBy = "recent" | "games" | "fg" | "name";
+
+export async function listAllPlayers(opts: { search?: string; sortBy?: BrowseSortBy; limit?: number } = {}): Promise<BrowsePlayer[]> {
+  const { search = "", sortBy = "recent", limit = 200 } = opts;
+
+  const { data: players } = await supabase.from("players").select("*").limit(limit * 2);
+  if (!players) return [];
+
+  const ids = players.map(p => p.id);
+  const { data: stats } = ids.length > 0
+    ? await supabase.from("player_career_stats").select("*").in("player_uuid", ids)
+    : { data: [] as never[] };
+
+  const statMap = new Map<string, typeof stats[number]>();
+  (stats || []).forEach(s => statMap.set(s.player_uuid, s));
+
+  let rows: BrowsePlayer[] = players.map(p => {
+    const s = statMap.get(p.id);
+    const total_makes = s?.total_makes || 0;
+    const total_attempts = s?.total_attempts || 0;
+    return {
+      id: p.id,
+      player_id: p.player_id,
+      name: p.name,
+      playstyle_tag: p.playstyle_tag,
+      games_played: s?.games_played || 0,
+      total_makes,
+      total_attempts,
+      total_points: s?.total_points || 0,
+      fg_pct: total_attempts > 0 ? (total_makes / total_attempts) * 100 : 0,
+      last_played_at: s?.last_played_at || null,
+      created_at: p.created_at,
+    };
+  });
+
+  if (search.trim()) {
+    const q = search.trim().toLowerCase();
+    rows = rows.filter(r => r.name.toLowerCase().includes(q) || r.player_id.toLowerCase().includes(q));
+  }
+
+  rows.sort((a, b) => {
+    switch (sortBy) {
+      case "games": return b.games_played - a.games_played;
+      case "fg": return b.fg_pct - a.fg_pct;
+      case "name": return a.name.localeCompare(b.name);
+      case "recent":
+      default: {
+        const at = a.last_played_at || a.created_at;
+        const bt = b.last_played_at || b.created_at;
+        return bt.localeCompare(at);
+      }
+    }
+  });
+
+  return rows.slice(0, limit);
+}
+
 export async function getRecentGames(playerUuid: string, limit = 10): Promise<GameHistoryRow[]> {
   const { data } = await supabase
     .from("player_game_history")

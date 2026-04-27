@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ZONE_LABELS } from "@/context/GameContext";
-import { getRecentGames, type GameHistoryRow, type PlayerLookupResult } from "@/lib/playerDatabase";
+import { getRecentGames, lookupPlayer, type GameHistoryRow, type PlayerLookupResult } from "@/lib/playerDatabase";
+import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, LineChart, Line, CartesianGrid } from "recharts";
 import { Trophy, TrendingUp, Loader2 } from "lucide-react";
 
@@ -9,28 +10,38 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   playerUuid: string;
-  initial: PlayerLookupResult;
+  initial?: PlayerLookupResult;
 }
 
 const ZONE_COLORS = ["#f97316", "#14b8a6", "#a855f7", "#3b82f6", "#eab308", "#ec4899"];
 
-const PlayerProfileDialog = ({ open, onOpenChange, playerUuid, initial }: Props) => {
+const PlayerProfileDialog = ({ open, onOpenChange, playerUuid, initial: initialProp }: Props) => {
   const [history, setHistory] = useState<GameHistoryRow[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initial, setInitial] = useState<PlayerLookupResult | null>(initialProp ?? null);
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
+    const ensureInitial = async () => {
+      if (initial) return;
+      const { data: p } = await supabase.from("players").select("player_id").eq("id", playerUuid).maybeSingle();
+      if (p?.player_id) {
+        const r = await lookupPlayer(p.player_id);
+        if (r) setInitial(r);
+      }
+    };
+    ensureInitial();
     getRecentGames(playerUuid, 10)
       .then(setHistory)
       .finally(() => setLoading(false));
-  }, [open, playerUuid]);
+  }, [open, playerUuid, initial]);
 
   const zoneFgData = useMemo(
     () =>
       [1, 2, 3, 4, 5, 6].map((z) => {
-        const att = initial.career.zone_attempts[String(z)] || 0;
-        const mk = initial.career.zone_makes[String(z)] || 0;
+        const att = initial?.career.zone_attempts[String(z)] || 0;
+        const mk = initial?.career.zone_makes[String(z)] || 0;
         return {
           zone: `Z${z}`,
           fgPct: att > 0 ? Math.round((mk / att) * 100) : 0,
@@ -43,7 +54,7 @@ const PlayerProfileDialog = ({ open, onOpenChange, playerUuid, initial }: Props)
   const distributionData = useMemo(
     () =>
       [1, 2, 3, 4, 5, 6]
-        .map((z) => ({ name: `Z${z}`, value: initial.career.zone_attempts[String(z)] || 0 }))
+        .map((z) => ({ name: `Z${z}`, value: initial?.career.zone_attempts[String(z)] || 0 }))
         .filter((d) => d.value > 0),
     [initial],
   );
@@ -59,6 +70,22 @@ const PlayerProfileDialog = ({ open, onOpenChange, playerUuid, initial }: Props)
         })),
     [history],
   );
+
+  if (!initial) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Loading profile...</DialogTitle>
+            <DialogDescription>Fetching career stats.</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" aria-hidden="true" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

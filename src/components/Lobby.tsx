@@ -3,13 +3,15 @@ import c4kLogo from "@/assets/c4k-logo.png";
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Users, Plus, LogIn, ArrowLeft, Loader2, Trash2, UserMinus, DoorOpen, Search } from "lucide-react";
+import { Copy, Users, Plus, LogIn, ArrowLeft, Loader2, Trash2, UserMinus, DoorOpen, Search, Database } from "lucide-react";
 import { toast } from "sonner";
 import SettingsPanel from "@/components/SettingsPanel";
 import PlayerLookupDialog from "@/components/PlayerLookupDialog";
+import PlayerBrowseTab from "@/components/PlayerBrowseTab";
 import { useTranslation } from "react-i18next";
-import { resolveOrCreatePlayer, getRecentPlayerIds, linkSessionToGlobalPlayer, type PlayerLookupResult } from "@/lib/playerDatabase";
+import { resolveOrCreatePlayer, getRecentPlayerIds, linkSessionToGlobalPlayer, type PlayerLookupResult, type BrowsePlayer } from "@/lib/playerDatabase";
 
 type LobbyView = "welcome" | "create" | "join" | "waiting";
 
@@ -134,26 +136,35 @@ const Lobby = () => {
   };
 
   const handleLookupLoad = (result: PlayerLookupResult) => {
-    // Drop the loaded player into the first empty name slot (or append).
+    addLoadedPlayerToList(result.player.name, result.player.player_id);
+  };
+
+  const handleBrowseLoad = (p: BrowsePlayer) => {
+    addLoadedPlayerToList(p.name, p.player_id);
+    toast.success(`${p.name} added to game`);
+  };
+
+  const addLoadedPlayerToList = (name: string, externalId: string) => {
     setPlayerNames(prev => {
       const idx = prev.findIndex(n => !n.trim());
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = result.player.name;
+        next[idx] = name;
         return next;
       }
       if (prev.length >= 8) { toast.error("Max 8 players per device"); return prev; }
-      return [...prev, result.player.name];
+      return [...prev, name];
     });
     setPlayerIds(prev => {
       const idx = playerNames.findIndex(n => !n.trim());
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = result.player.player_id;
+        next[idx] = externalId;
         return next;
       }
-      return [...prev, result.player.player_id];
+      return [...prev, externalId];
     });
+    if (view === "welcome") setView("create");
   };
 
   const handleRemovePlayer = async (playerId: string, playerName: string) => {
@@ -376,7 +387,7 @@ const Lobby = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="glass-card rounded-xl p-8 max-w-md w-full space-y-8"
+            className="glass-card rounded-xl p-8 max-w-md w-full space-y-6"
           >
             <header className="text-center space-y-2 relative">
               <div className="absolute top-0 right-0"><SettingsPanel /></div>
@@ -385,21 +396,43 @@ const Lobby = () => {
               <p className="text-sm text-muted-foreground">{t("lobby.subtitle")}</p>
             </header>
 
-            <div className="space-y-3">
-              <Button
-                className="w-full h-14 text-lg font-bold gap-3"
-                onClick={() => setView("create")}
-              >
-                <Plus className="w-5 h-5" aria-hidden="true" /> {t("lobby.createGame")}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full h-14 text-lg font-bold gap-3"
-                onClick={() => setView("join")}
-              >
-                <LogIn className="w-5 h-5" aria-hidden="true" /> {t("lobby.joinGame")}
-              </Button>
-            </div>
+            <Tabs defaultValue="game" className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="game" className="flex-1 gap-1">
+                  <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Current Game
+                </TabsTrigger>
+                <TabsTrigger value="players" className="flex-1 gap-1">
+                  <Database className="w-3.5 h-3.5" aria-hidden="true" /> Players
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="game" className="space-y-3 mt-4">
+                <Button
+                  className="w-full h-14 text-lg font-bold gap-3"
+                  onClick={() => setView("create")}
+                >
+                  <Plus className="w-5 h-5" aria-hidden="true" /> {t("lobby.createGame")}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-14 text-lg font-bold gap-3"
+                  onClick={() => setView("join")}
+                >
+                  <LogIn className="w-5 h-5" aria-hidden="true" /> {t("lobby.joinGame")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full gap-2 text-sm"
+                  onClick={() => setLookupOpen(true)}
+                >
+                  <Search className="w-4 h-4" aria-hidden="true" /> Lookup Player by ID
+                </Button>
+              </TabsContent>
+
+              <TabsContent value="players" className="mt-4">
+                <PlayerBrowseTab onLoad={handleBrowseLoad} />
+              </TabsContent>
+            </Tabs>
 
             <footer className="text-[10px] text-muted-foreground/70 text-center">
               {t("lobby.createdBy")}
