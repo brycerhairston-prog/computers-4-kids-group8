@@ -37,11 +37,13 @@ const HeatMap = () => {
       <h2 className="text-lg font-display font-bold text-foreground">
         <span className="border-b-2 border-primary pb-0.5">{t("heatMap.title")}</span>
       </h2>
-      <p className="text-xs text-muted-foreground">{t("heatMap.description")}</p>
+      <p className="text-xs text-muted-foreground">
+        {t("heatMap.description")}
+      </p>
 
-      <svg viewBox={COURT_VIEWBOX} className="w-full rounded-md overflow-hidden" style={{ background: "white" }}>
+      <svg viewBox={COURT_VIEWBOX} className="w-full rounded-md overflow-hidden" preserveAspectRatio="xMidYMid meet" style={{ background: "white" }}>
         <defs>
-          {[1, 2, 3, 4, 5, 6].map((zone) => (
+          {[1, 2, 3, 4, 5, 6].map(zone => (
             <clipPath key={`clip-${zone}`} id={`zone-clip-${zone}`}>
               <path d={ZONE_PATHS[zone]} />
             </clipPath>
@@ -50,44 +52,35 @@ const HeatMap = () => {
 
         <CourtBackground />
 
-        {[1, 2, 3, 4, 5, 6].map((zone) => {
+        {[1, 2, 3, 4, 5, 6].map(zone => {
           const stats = getZoneStats(zone, selectedPlayerId || undefined);
           if (stats.attempts === 0) return null;
+          const color = getHeatColor(stats.fgPct);
           return (
             <motion.rect
               key={`heat-${zone}`}
-              x="0"
-              y="0"
-              width="400"
-              height="500"
-              fill={getHeatColor(stats.fgPct)}
+              x="0" y="0" width="400" height="500"
+              fill={color}
               clipPath={`url(#zone-clip-${zone})`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.55 }}
+              transition={{ duration: 0.5 }}
             />
           );
         })}
 
-        {[1, 2, 3, 4, 5, 6].map((zone) => {
+        {[1, 2, 3, 4, 5, 6].map(zone => {
           const pos = ZONE_LABEL_POS[zone];
           return (
-            <text
-              key={`zone-num-${zone}`}
-              x={pos.x}
-              y={pos.y + 22}
-              textAnchor="middle"
-              fill="black"
-              fontSize="11"
-              fontWeight="700"
-              opacity="0.5"
-              style={{ pointerEvents: "none" }}
-            >
+            <text key={`zone-num-${zone}`} x={pos.x} y={pos.y + 22}
+              textAnchor="middle" fill="black" fontSize="11"
+              fontWeight="700" opacity="0.5" style={{ pointerEvents: "none" }}>
               Z{zone}
             </text>
           );
         })}
 
-        {[1, 2, 3, 4, 5, 6].map((zone) => {
+        {[1, 2, 3, 4, 5, 6].map(zone => {
           const stats = getZoneStats(zone, selectedPlayerId || undefined);
           const pos = ZONE_LABEL_POS[zone];
           return (
@@ -105,7 +98,7 @@ const HeatMap = () => {
       </svg>
 
       <div className="flex flex-wrap gap-2 justify-center">
-        {legendItems.map((item) => (
+        {legendItems.map(item => (
           <div key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className={`w-4 h-4 rounded-md ${item.color} shadow-sm`} />
             {item.label}
@@ -114,10 +107,8 @@ const HeatMap = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-1 text-[10px] text-muted-foreground">
-        {[1, 2, 3, 4, 5, 6].map((z) => (
-          <span key={z}>
-            Z{z}: {t(`zones.${z}`)} ({ZONE_POINTS[z]}pt)
-          </span>
+        {[1, 2, 3, 4, 5, 6].map(z => (
+          <span key={z}>Z{z}: {t(`zones.${z}`)} ({ZONE_POINTS[z]}pt)</span>
         ))}
       </div>
     </div>
