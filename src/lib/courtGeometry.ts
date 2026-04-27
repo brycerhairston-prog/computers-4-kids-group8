@@ -1,35 +1,33 @@
 // Shared court SVG geometry for consistent rendering across components.
-// ViewBox: 0 0 962 1202, basket at TOP.
-// Geometry remade to match the attached screenshot proportions as closely as possible.
+// ViewBox: 0 0 400 500, basket at TOP.
+// Geometry is aligned to the full uncropped court-layout image.
 
 type Point = { x: number; y: number };
 
-const COURT_WIDTH = 962;
-const COURT_HEIGHT = 1202;
+const BIG_ARC = {
+  cx: 200,
+  cy: 150,
+  rx: 194,
+  ry: 156,
+};
 
 const PAINT = {
-  left: 320,
-  right: 641,
+  left: 135,
+  right: 265,
   top: 0,
-  bottom: 480,
+  bottom: 198,
 };
 
-const BIG_ARC = {
-  cx: 481,
-  cy: 320,
-  rx: 449,
-  ry: 430,
-};
+const LEFT_DIAGONAL_TOP: Point = { x: 101, y: 285 };
+const RIGHT_DIAGONAL_TOP: Point = { x: 299, y: 285 };
+const LEFT_DIAGONAL_BOTTOM: Point = { x: 38, y: 500 };
+const RIGHT_DIAGONAL_BOTTOM: Point = { x: 362, y: 500 };
 
-const LEFT_ARC_EXTREME: Point = { x: 32, y: BIG_ARC.cy };
-const RIGHT_ARC_EXTREME: Point = { x: 930, y: BIG_ARC.cy };
+const LEFT_ARC_EXTREME: Point = { x: BIG_ARC.cx - BIG_ARC.rx, y: BIG_ARC.cy };
+const RIGHT_ARC_EXTREME: Point = { x: BIG_ARC.cx + BIG_ARC.rx, y: BIG_ARC.cy };
+const ARC_BOTTOM: Point = { x: BIG_ARC.cx, y: BIG_ARC.cy + BIG_ARC.ry };
 
-const LEFT_DIAGONAL_TOP: Point = { x: 259, y: 705 };
-const RIGHT_DIAGONAL_TOP: Point = { x: 703, y: 705 };
-const LEFT_DIAGONAL_BOTTOM: Point = { x: 98, y: 1202 };
-const RIGHT_DIAGONAL_BOTTOM: Point = { x: 832, y: 1202 };
-
-const ARC_SAMPLES = 48;
+const ARC_SAMPLES = 36;
 const LEFT_DIAGONAL_ANGLE = Math.acos((LEFT_DIAGONAL_TOP.x - BIG_ARC.cx) / BIG_ARC.rx);
 const RIGHT_DIAGONAL_ANGLE = Math.acos((RIGHT_DIAGONAL_TOP.x - BIG_ARC.cx) / BIG_ARC.rx);
 
@@ -73,7 +71,8 @@ function isPointInPolygon(point: Point, polygon: Point[]): boolean {
     const xj = polygon[j].x;
     const yj = polygon[j].y;
 
-    const intersects = yi > point.y !== yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
+    const intersects = ((yi > point.y) !== (yj > point.y))
+      && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
 
     if (intersects) inside = !inside;
   }
@@ -81,6 +80,9 @@ function isPointInPolygon(point: Point, polygon: Point[]): boolean {
   return inside;
 }
 
+const leftArcToBottom = sampleEllipseArc(Math.PI, Math.PI / 2);
+const bottomToRightArc = sampleEllipseArc(Math.PI / 2, 0);
+const rightArcToBottom = sampleEllipseArc(0, Math.PI / 2);
 const leftOuterArc = sampleEllipseArc(Math.PI, LEFT_DIAGONAL_ANGLE);
 const centerOuterArc = sampleEllipseArc(LEFT_DIAGONAL_ANGLE, RIGHT_DIAGONAL_ANGLE);
 const rightOuterArc = sampleEllipseArc(RIGHT_DIAGONAL_ANGLE, 0);
@@ -96,17 +98,16 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: LEFT_ARC_EXTREME.x, y: 0 },
     { x: PAINT.left, y: 0 },
     { x: PAINT.left, y: PAINT.bottom },
-    { x: LEFT_DIAGONAL_TOP.x, y: PAINT.bottom },
-    LEFT_DIAGONAL_TOP,
-    ...leftOuterArc.slice(0, -1).reverse(),
+    { x: ARC_BOTTOM.x, y: PAINT.bottom },
+    ARC_BOTTOM,
+    ...leftArcToBottom.slice(0, -1).reverse(),
   ],
   3: [
     { x: PAINT.right, y: 0 },
     { x: RIGHT_ARC_EXTREME.x, y: 0 },
     RIGHT_ARC_EXTREME,
-    ...rightOuterArc.slice(1),
-    RIGHT_DIAGONAL_TOP,
-    { x: RIGHT_DIAGONAL_TOP.x, y: PAINT.bottom },
+    ...rightArcToBottom.slice(1),
+    { x: ARC_BOTTOM.x, y: PAINT.bottom },
     { x: PAINT.right, y: PAINT.bottom },
   ],
   4: [
@@ -115,56 +116,59 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     LEFT_ARC_EXTREME,
     ...leftOuterArc.slice(1),
     LEFT_DIAGONAL_BOTTOM,
-    { x: 0, y: COURT_HEIGHT },
+    { x: 0, y: 500 },
   ],
   5: [
     LEFT_DIAGONAL_BOTTOM,
     LEFT_DIAGONAL_TOP,
-    ...centerOuterArc.slice(1, -1),
-    RIGHT_DIAGONAL_TOP,
+    ...centerOuterArc.slice(1),
     RIGHT_DIAGONAL_BOTTOM,
   ],
   6: [
     { x: RIGHT_ARC_EXTREME.x, y: 0 },
-    { x: COURT_WIDTH, y: 0 },
-    { x: COURT_WIDTH, y: COURT_HEIGHT },
+    { x: 400, y: 0 },
+    { x: 400, y: 500 },
     RIGHT_DIAGONAL_BOTTOM,
-    ...rightOuterArc.slice(0, -1).reverse(),
+    ...rightOuterArc,
   ],
 };
 
+// Zone SVG paths
 export const ZONE_PATHS: Record<number, string> = Object.fromEntries(
   Object.entries(ZONE_POLYGONS).map(([zone, polygon]) => [Number(zone), pathFromPolygon(polygon)]),
 ) as Record<number, string>;
 
+// Label positions for zone stats
 export const ZONE_LABEL_POS: Record<number, { x: number; y: number }> = {
-  1: { x: 481, y: 265 },
-  2: { x: 180, y: 250 },
-  3: { x: 782, y: 250 },
-  4: { x: 58, y: 760 },
-  5: { x: 481, y: 875 },
-  6: { x: 904, y: 760 },
+  1: { x: 200, y: 120 },
+  2: { x: 75, y: 105 },
+  3: { x: 325, y: 105 },
+  4: { x: 25, y: 310 },
+  5: { x: 200, y: 365 },
+  6: { x: 375, y: 310 },
 };
 
-export const COURT_VIEWBOX = `0 0 ${COURT_WIDTH} ${COURT_HEIGHT}`;
+export const COURT_VIEWBOX = "0 0 400 500";
 
+// Determine which zone a point (in percentage coords) falls into
 export function getZoneFromPoint(xPct: number, yPct: number): number {
   const point = {
-    x: (xPct / 100) * COURT_WIDTH,
-    y: (yPct / 100) * COURT_HEIGHT,
+    x: (xPct / 100) * 400,
+    y: (yPct / 100) * 500,
   };
 
   for (const zone of [1, 2, 3, 4, 5, 6]) {
     if (isPointInPolygon(point, ZONE_POLYGONS[zone])) return zone;
   }
 
-  if (point.y <= LEFT_DIAGONAL_TOP.y) {
-    return point.x < BIG_ARC.cx ? 2 : 3;
+  if (point.y <= BIG_ARC.cy + BIG_ARC.ry) {
+    return point.x < 200 ? 2 : 3;
   }
 
-  if (point.x < BIG_ARC.cx) return 4;
-  if (point.x > BIG_ARC.cx) return 6;
+  if (point.x < 200) return 4;
+  if (point.x > 200) return 6;
   return 5;
 }
 
+// Court line color
 export const courtLineColor = "hsl(var(--court-line))";
