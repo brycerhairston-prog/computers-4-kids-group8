@@ -27,6 +27,7 @@ const ShotTracker = () => {
   const mp = useMultiplayer();
   const courtRef = useRef<SVGSVGElement>(null);
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
+  const [hoveredZone, setHoveredZone] = useState<number | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
 
   // Active shots for current mode (for display on court)
