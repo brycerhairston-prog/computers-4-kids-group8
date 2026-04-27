@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Undo2, ChevronDown, ChevronRight, Lock, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { expectedFgForZone } from "@/lib/smartCoach";
 
 const CourtBackground = () => (
   <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
@@ -26,6 +27,7 @@ const ShotTracker = () => {
   const mp = useMultiplayer();
   const courtRef = useRef<SVGSVGElement>(null);
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
+  const [hoveredZone, setHoveredZone] = useState<number | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
 
   // Active shots for current mode (for display on court)
@@ -162,6 +164,15 @@ const ShotTracker = () => {
     const allCurrentShots = [...practiceShots, ...activeShots];
     return allCurrentShots.length > 0 ? allCurrentShots[allCurrentShots.length - 1] : null;
   }, [practiceShots, activeShots]);
+
+  // Predictive feedback for hovered zone
+  const hoverPrediction = useMemo(() => {
+    if (hoveredZone === null) return null;
+    const playerShots = activePlayerId
+      ? activeShots.filter(s => s.playerId === activePlayerId)
+      : [];
+    return expectedFgForZone(hoveredZone, playerShots);
+  }, [hoveredZone, activePlayerId, activeShots]);
 
   return (
     <div className="glass-card rounded-lg p-4 space-y-3 border-t-2 border-primary/30">
@@ -327,6 +338,21 @@ const ShotTracker = () => {
             );
           })}
 
+          {/* Invisible hover overlays for predictive feedback */}
+          {[1, 2, 3, 4, 5, 6].map(zone => (
+            <path
+              key={`hover-${zone}`}
+              d={ZONE_PATHS[zone]}
+              fill="transparent"
+              stroke={hoveredZone === zone ? "hsl(var(--primary))" : "transparent"}
+              strokeWidth="2"
+              strokeDasharray="4 3"
+              style={{ cursor: canShoot ? "crosshair" : "not-allowed", pointerEvents: pendingPos ? "none" : "auto" }}
+              onMouseEnter={() => setHoveredZone(zone)}
+              onMouseLeave={() => setHoveredZone(prev => (prev === zone ? null : prev))}
+            />
+          ))}
+
           {[1, 2, 3, 4, 5, 6].map(zone => {
             const pos = ZONE_LABEL_POS[zone];
             return (
@@ -359,6 +385,40 @@ const ShotTracker = () => {
               className="animate-pulse-glow" initial={{ scale: 0 }} animate={{ scale: 1 }} />
           )}
         </svg>
+
+        {/* Predictive shot feedback tooltip */}
+        <AnimatePresence>
+          {hoveredZone !== null && hoverPrediction && !pendingPos && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className="absolute top-2 right-2 glass-card rounded-md px-3 py-2 text-xs space-y-1 pointer-events-none border border-primary/40 shadow-lg max-w-[180px]"
+            >
+              <div className="font-bold text-primary flex items-center gap-1">
+                🧠 Zone {hoveredZone}
+              </div>
+              <div className="text-muted-foreground">
+                League FG%: <span className="text-foreground font-semibold tabular-nums">{Math.round(hoverPrediction.baseline * 100)}%</span>
+              </div>
+              {hoverPrediction.personal !== null && hoverPrediction.attempts > 0 ? (
+                <>
+                  <div className="text-muted-foreground">
+                    You: <span className="text-foreground font-semibold tabular-nums">{Math.round(hoverPrediction.personal * 100)}%</span>
+                    <span className="opacity-60"> ({hoverPrediction.attempts})</span>
+                  </div>
+                  {hoverPrediction.delta !== null && Math.abs(hoverPrediction.delta) >= 0.05 && (
+                    <div className={`font-semibold ${hoverPrediction.delta > 0 ? "text-green-400" : "text-red-400"}`}>
+                      {hoverPrediction.delta > 0 ? "▲" : "▼"} {Math.abs(Math.round(hoverPrediction.delta * 100))}% vs avg
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-muted-foreground italic">No data yet</div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {pendingPos && (
