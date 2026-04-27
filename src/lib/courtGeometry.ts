@@ -115,16 +115,15 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: PAINT.right, y: PAINT.bottom },
     { x: PAINT.left, y: PAINT.bottom },
   ],
-  // Zone 2 — Left mid-range. Strictly INSIDE the arc.
-  //   top:    baseline (LEFT_ARC_EXTREME.x, 0) → (PAINT.left, 0)
-  //   right:  paint left edge down to (PAINT.left, PAINT.bottom)
-  //   bottom: arc curve from paint corner sweeping out and up to LEFT_ARC_EXTREME
-  //           (no flat extension past the arc — the arc IS the bottom edge)
+  // Zone 2 — Left mid-range. Strictly INSIDE the arc, LEFT of court centerline, OUTSIDE the paint.
+  //   Bounded by: baseline (top), paint-left edge, half-court centerline below paint, and the arc.
   2: [
     { x: LEFT_ARC_EXTREME.x, y: 0 },
     { x: PAINT.left, y: 0 },
     { x: PAINT.left, y: PAINT.bottom },
-    // Walk the arc from ARC_BOTTOM area back to LEFT_ARC_EXTREME (reversed inner-down).
+    { x: BIG_ARC.cx, y: PAINT.bottom },
+    { x: BIG_ARC.cx, y: ARC_BOTTOM.y },
+    // arc from ARC_BOTTOM back up to LEFT_ARC_EXTREME (reverse of left-inner-down)
     ...leftInnerArcDown.slice().reverse().slice(1),
   ],
   // Zone 3 — Right mid-range. Mirror of zone 2.
@@ -132,6 +131,8 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: PAINT.right, y: 0 },
     { x: RIGHT_ARC_EXTREME.x, y: 0 },
     ...rightInnerArcDown.slice(0, -1),
+    { x: BIG_ARC.cx, y: ARC_BOTTOM.y },
+    { x: BIG_ARC.cx, y: PAINT.bottom },
     { x: PAINT.right, y: PAINT.bottom },
   ],
   // Zone 4 — Left corner-3. Outside the arc on the left.
