@@ -386,6 +386,40 @@ const ShotTracker = () => {
           )}
         </svg>
 
+        {/* Predictive shot feedback tooltip */}
+        <AnimatePresence>
+          {hoveredZone !== null && hoverPrediction && !pendingPos && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className="absolute top-2 right-2 glass-card rounded-md px-3 py-2 text-xs space-y-1 pointer-events-none border border-primary/40 shadow-lg max-w-[180px]"
+            >
+              <div className="font-bold text-primary flex items-center gap-1">
+                🧠 Zone {hoveredZone}
+              </div>
+              <div className="text-muted-foreground">
+                League FG%: <span className="text-foreground font-semibold tabular-nums">{Math.round(hoverPrediction.baseline * 100)}%</span>
+              </div>
+              {hoverPrediction.personal !== null && hoverPrediction.attempts > 0 ? (
+                <>
+                  <div className="text-muted-foreground">
+                    You: <span className="text-foreground font-semibold tabular-nums">{Math.round(hoverPrediction.personal * 100)}%</span>
+                    <span className="opacity-60"> ({hoverPrediction.attempts})</span>
+                  </div>
+                  {hoverPrediction.delta !== null && Math.abs(hoverPrediction.delta) >= 0.05 && (
+                    <div className={`font-semibold ${hoverPrediction.delta > 0 ? "text-green-400" : "text-red-400"}`}>
+                      {hoverPrediction.delta > 0 ? "▲" : "▼"} {Math.abs(Math.round(hoverPrediction.delta * 100))}% vs avg
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-muted-foreground italic">No data yet</div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {pendingPos && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
