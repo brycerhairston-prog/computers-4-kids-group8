@@ -316,30 +316,51 @@ const Lobby = () => {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-foreground">{t("lobby.playersAtStation")}</label>
-        <Button size="sm" variant="ghost" onClick={addNameField} className="text-xs gap-1 h-7">
-          <Plus className="w-3 h-3" aria-hidden="true" /> {t("lobby.addPlayer")}
-        </Button>
+        <div className="flex gap-1">
+          <Button size="sm" variant="ghost" onClick={() => setLookupOpen(true)} className="text-xs gap-1 h-7">
+            <Search className="w-3 h-3" aria-hidden="true" /> Lookup
+          </Button>
+          <Button size="sm" variant="ghost" onClick={addNameField} className="text-xs gap-1 h-7">
+            <Plus className="w-3 h-3" aria-hidden="true" /> {t("lobby.addPlayer")}
+          </Button>
+        </div>
       </div>
       <div className="space-y-2">
         {playerNames.map((name, idx) => (
-          <div key={idx} className="flex gap-2">
+          <div key={idx} className="space-y-1">
+            <div className="flex gap-2">
+              <Input
+                value={name}
+                onChange={e => updateName(idx, e.target.value)}
+                placeholder={t("lobby.playerPlaceholder", { n: idx + 1 })}
+                className="h-10 text-sm"
+                maxLength={20}
+              />
+              {playerNames.length > 1 && (
+                <Button size="icon" variant="ghost" onClick={() => removeNameField(idx)} className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive" aria-label={t("lobby.removePlayerField")}>
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
+                </Button>
+              )}
+            </div>
             <Input
-              value={name}
-              onChange={e => updateName(idx, e.target.value)}
-              placeholder={t("lobby.playerPlaceholder", { n: idx + 1 })}
-              className="h-10 text-sm"
-              maxLength={20}
+              value={playerIds[idx] || ""}
+              onChange={e => updateId(idx, e.target.value)}
+              placeholder="Player ID (optional — auto-generated if blank)"
+              className="h-8 text-xs font-mono"
+              maxLength={32}
+              list="recent-player-ids"
             />
-            {playerNames.length > 1 && (
-              <Button size="icon" variant="ghost" onClick={() => removeNameField(idx)} className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive" aria-label={t("lobby.removePlayerField")}>
-                <Trash2 className="w-4 h-4" aria-hidden="true" />
-              </Button>
-            )}
           </div>
         ))}
       </div>
       <p className="text-[10px] text-muted-foreground">{t("lobby.addAllPlayers")}</p>
     </div>
+  );
+
+  const recentIdsDatalist = (
+    <datalist id="recent-player-ids">
+      {recentIds.map(id => <option key={id} value={id} />)}
+    </datalist>
   );
 
   return (
