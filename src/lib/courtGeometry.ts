@@ -3,12 +3,11 @@
 
 type Point = { x: number; y: number };
 
-// Adjusted to sit higher and be tighter to prevent bleeding into lower zones
 const BIG_ARC = {
   cx: 200,
-  cy: 140, // Raised from 150
+  cy: 145, // Slightly lower than before to ground the arc
   rx: 194,
-  ry: 145, // Reduced from 156 to shallow the arc
+  ry: 140, // More shallow to match the black line exactly
 };
 
 const PAINT = {
@@ -18,19 +17,17 @@ const PAINT = {
   bottom: 198,
 };
 
-// Squeezed Zone 5 from left/right and extended slightly upward
-const LEFT_DIAGONAL_TOP: Point = { x: 120, y: 275 }; // Narrower and higher
-const RIGHT_DIAGONAL_TOP: Point = { x: 280, y: 275 };
-const LEFT_DIAGONAL_BOTTOM: Point = { x: 50, y: 500 }; // Squeezed in from 38
-const RIGHT_DIAGONAL_BOTTOM: Point = { x: 350, y: 500 }; // Squeezed in from 362
+// Adjusted to prevent narrowness in Zone 5 and fix bleeding
+const LEFT_DIAGONAL_TOP: Point = { x: 105, y: 282 };
+const RIGHT_DIAGONAL_TOP: Point = { x: 295, y: 282 };
+const LEFT_DIAGONAL_BOTTOM: Point = { x: 40, y: 500 };
+const RIGHT_DIAGONAL_BOTTOM: Point = { x: 360, y: 500 };
 
 const LEFT_ARC_EXTREME: Point = { x: BIG_ARC.cx - BIG_ARC.rx, y: BIG_ARC.cy };
 const RIGHT_ARC_EXTREME: Point = { x: BIG_ARC.cx + BIG_ARC.rx, y: BIG_ARC.cy };
-const ARC_BOTTOM: Point = { x: BIG_ARC.cx, y: BIG_ARC.cy + BIG_ARC.ry };
 
-const ARC_SAMPLES = 36;
+const ARC_SAMPLES = 40;
 
-// Helper to create smooth arc paths
 function sampleEllipseArc(startAngle: number, endAngle: number, steps = ARC_SAMPLES): Point[] {
   const points: Point[] = [];
   for (let i = 0; i <= steps; i += 1) {
@@ -47,7 +44,6 @@ function pathFromPolygon(points: Point[]): string {
   return `M ${points.map((p) => `${p.x},${p.y}`).join(" L ")} Z`;
 }
 
-// Polygon inclusion check for getZoneFromPoint
 function isPointInPolygon(point: Point, polygon: Point[]): boolean {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -61,8 +57,9 @@ function isPointInPolygon(point: Point, polygon: Point[]): boolean {
   return inside;
 }
 
-const leftArcToBottom = sampleEllipseArc(Math.PI, Math.PI / 2);
-const rightArcToBottom = sampleEllipseArc(0, Math.PI / 2);
+// Calculate precise angles where diagonal lines hit the arc
+const leftDiagAngle = Math.atan2(LEFT_DIAGONAL_TOP.y - BIG_ARC.cy, LEFT_DIAGONAL_TOP.x - BIG_ARC.cx);
+const rightDiagAngle = Math.atan2(RIGHT_DIAGONAL_TOP.y - BIG_ARC.cy, RIGHT_DIAGONAL_TOP.x - BIG_ARC.cx);
 
 const ZONE_POLYGONS: Record<number, Point[]> = {
   1: [
@@ -72,30 +69,23 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: PAINT.left, y: PAINT.bottom },
   ],
   2: [
-    { x: LEFT_ARC_EXTREME.x, y: 0 },
+    { x: 3, y: 0 }, // Extend slightly to boundary
     { x: PAINT.left, y: 0 },
     { x: PAINT.left, y: PAINT.bottom },
     { x: 200, y: PAINT.bottom },
-    { x: 200, y: BIG_ARC.cy + BIG_ARC.ry },
-    ...leftArcToBottom.slice(0, -1).reverse(),
+    ...sampleEllipseArc(Math.PI / 2, Math.PI).reverse(),
   ],
   3: [
     { x: PAINT.right, y: 0 },
-    { x: RIGHT_ARC_EXTREME.x, y: 0 },
-    RIGHT_ARC_EXTREME,
-    ...rightArcToBottom.slice(1),
-    { x: 200, y: BIG_ARC.cy + BIG_ARC.ry },
+    { x: 397, y: 0 },
+    ...sampleEllipseArc(0, Math.PI / 2),
     { x: 200, y: PAINT.bottom },
     { x: PAINT.right, y: PAINT.bottom },
   ],
   4: [
     { x: 0, y: 0 },
-    { x: LEFT_ARC_EXTREME.x, y: 0 },
-    LEFT_ARC_EXTREME,
-    ...sampleEllipseArc(
-      Math.PI,
-      Math.atan2(LEFT_DIAGONAL_TOP.y - BIG_ARC.cy, (LEFT_DIAGONAL_TOP.x - BIG_ARC.cx) * (BIG_ARC.ry / BIG_ARC.rx)),
-    ).slice(1),
+    { x: 3, y: 0 },
+    ...sampleEllipseArc(Math.PI, leftDiagAngle),
     LEFT_DIAGONAL_TOP,
     LEFT_DIAGONAL_BOTTOM,
     { x: 0, y: 500 },
@@ -103,23 +93,17 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
   5: [
     LEFT_DIAGONAL_BOTTOM,
     LEFT_DIAGONAL_TOP,
-    ...sampleEllipseArc(
-      Math.atan2(LEFT_DIAGONAL_TOP.y - BIG_ARC.cy, (LEFT_DIAGONAL_TOP.x - BIG_ARC.cx) * (BIG_ARC.ry / BIG_ARC.rx)),
-      Math.atan2(RIGHT_DIAGONAL_TOP.y - BIG_ARC.cy, (RIGHT_DIAGONAL_TOP.x - BIG_ARC.cx) * (BIG_ARC.ry / BIG_ARC.rx)),
-    ).slice(1),
+    ...sampleEllipseArc(leftDiagAngle, rightDiagAngle),
     RIGHT_DIAGONAL_TOP,
     RIGHT_DIAGONAL_BOTTOM,
   ],
   6: [
-    { x: RIGHT_ARC_EXTREME.x, y: 0 },
+    { x: 397, y: 0 },
     { x: 400, y: 0 },
     { x: 400, y: 500 },
     RIGHT_DIAGONAL_BOTTOM,
     RIGHT_DIAGONAL_TOP,
-    ...sampleEllipseArc(
-      Math.atan2(RIGHT_DIAGONAL_TOP.y - BIG_ARC.cy, (RIGHT_DIAGONAL_TOP.x - BIG_ARC.cx) * (BIG_ARC.ry / BIG_ARC.rx)),
-      0,
-    ).slice(1),
+    ...sampleEllipseArc(rightDiagAngle, 0),
   ],
 };
 
@@ -129,11 +113,11 @@ export const ZONE_PATHS: Record<number, string> = Object.fromEntries(
 
 export const ZONE_LABEL_POS: Record<number, { x: number; y: number }> = {
   1: { x: 200, y: 100 },
-  2: { x: 80, y: 110 },
-  3: { x: 320, y: 110 },
-  4: { x: 45, y: 350 },
-  5: { x: 200, y: 400 },
-  6: { x: 355, y: 350 },
+  2: { x: 75, y: 110 },
+  3: { x: 325, y: 110 },
+  4: { x: 45, y: 380 }, // Lowered to fit center of larger Zone 4
+  5: { x: 200, y: 410 },
+  6: { x: 355, y: 380 },
 };
 
 export const COURT_VIEWBOX = "0 0 400 500";
@@ -143,5 +127,5 @@ export function getZoneFromPoint(xPct: number, yPct: number): number {
   for (const zone of [1, 2, 3, 4, 5, 6]) {
     if (isPointInPolygon(point, ZONE_POLYGONS[zone])) return zone;
   }
-  return 5; // Default fallback
+  return 5;
 }
