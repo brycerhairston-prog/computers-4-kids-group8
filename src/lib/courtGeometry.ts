@@ -206,3 +206,23 @@ export function getZoneFromPoint(xPct: number, yPct: number): number {
 
 // Court line color
 export const courtLineColor = "hsl(var(--court-line))";
+
+// Debug palette — semi-transparent fills + bold outlines used by ZoneDebugOverlay.
+// Toggle the overlay by setting localStorage.c4k_debug_zones = "1" and reloading.
+export const ZONE_DEBUG_COLORS: Record<number, string> = {
+  1: "rgba(239, 68, 68, 0.35)",   // red    — paint
+  2: "rgba(59, 130, 246, 0.35)",  // blue   — left mid
+  3: "rgba(34, 197, 94, 0.35)",   // green  — right mid
+  4: "rgba(234, 179, 8, 0.35)",   // amber  — left corner-3
+  5: "rgba(168, 85, 247, 0.35)",  // purple — center-3
+  6: "rgba(236, 72, 153, 0.35)",  // pink   — right corner-3
+};
+
+export function isZoneDebugEnabled(): boolean {
+  try {
+    return typeof window !== "undefined" && window.localStorage.getItem("c4k_debug_zones") === "1";
+  } catch {
+    return false;
+  }
+}
+
