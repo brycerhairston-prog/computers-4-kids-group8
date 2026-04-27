@@ -71,7 +71,8 @@ function isPointInPolygon(point: Point, polygon: Point[]): boolean {
     const xj = polygon[j].x;
     const yj = polygon[j].y;
 
-    const intersects = yi > point.y !== yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
+    const intersects = ((yi > point.y) !== (yj > point.y))
+      && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
 
     if (intersects) inside = !inside;
   }
@@ -85,8 +86,6 @@ const rightArcToBottom = sampleEllipseArc(0, Math.PI / 2);
 const leftOuterArc = sampleEllipseArc(Math.PI, LEFT_DIAGONAL_ANGLE);
 const centerOuterArc = sampleEllipseArc(LEFT_DIAGONAL_ANGLE, RIGHT_DIAGONAL_ANGLE);
 const rightOuterArc = sampleEllipseArc(RIGHT_DIAGONAL_ANGLE, 0);
-// rightArcToRightDiag: arc from right extreme down to the right diagonal intersection
-const rightArcToRightDiag = sampleEllipseArc(0, RIGHT_DIAGONAL_ANGLE);
 
 const ZONE_POLYGONS: Record<number, Point[]> = {
   1: [
@@ -99,15 +98,16 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: LEFT_ARC_EXTREME.x, y: 0 },
     { x: PAINT.left, y: 0 },
     { x: PAINT.left, y: PAINT.bottom },
-    LEFT_DIAGONAL_TOP,
-    ...leftOuterArc.slice(0, -1).reverse(),
+    { x: ARC_BOTTOM.x, y: PAINT.bottom },
+    ARC_BOTTOM,
+    ...leftArcToBottom.slice(0, -1).reverse(),
   ],
   3: [
     { x: PAINT.right, y: 0 },
     { x: RIGHT_ARC_EXTREME.x, y: 0 },
     RIGHT_ARC_EXTREME,
-    ...rightArcToRightDiag.slice(1),
-    RIGHT_DIAGONAL_TOP,
+    ...rightArcToBottom.slice(1),
+    { x: ARC_BOTTOM.x, y: PAINT.bottom },
     { x: PAINT.right, y: PAINT.bottom },
   ],
   4: [
@@ -121,12 +121,16 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
   5: [
     LEFT_DIAGONAL_BOTTOM,
     LEFT_DIAGONAL_TOP,
-    { x: PAINT.left, y: PAINT.bottom },
-    { x: PAINT.right, y: PAINT.bottom },
-    RIGHT_DIAGONAL_TOP,
+    ...centerOuterArc.slice(1),
     RIGHT_DIAGONAL_BOTTOM,
   ],
-  6: [{ x: RIGHT_ARC_EXTREME.x, y: 0 }, { x: 400, y: 0 }, { x: 400, y: 500 }, RIGHT_DIAGONAL_BOTTOM, ...rightOuterArc],
+  6: [
+    { x: RIGHT_ARC_EXTREME.x, y: 0 },
+    { x: 400, y: 0 },
+    { x: 400, y: 500 },
+    RIGHT_DIAGONAL_BOTTOM,
+    ...rightOuterArc,
+  ],
 };
 
 // Zone SVG paths
