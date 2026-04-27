@@ -9,7 +9,7 @@ import SettingsPanel from "@/components/SettingsPanel";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { getGlobalPlayerUuid, saveGameResult } from "@/lib/playerDatabase";
+import { getGlobalPlayerUuid, saveGameResult, resolveOrCreatePlayer, linkSessionToGlobalPlayer } from "@/lib/playerDatabase";
 import { useTranslation } from "react-i18next";
 import type { TeamSelectionMode, Team, Shot, ZoneStats } from "@/context/GameContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX } from "@/lib/courtGeometry";
@@ -613,11 +613,21 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
     if (individualShots.length === 0 && teamShots.length === 0) return;
     savedRef.current = true;
 
-    const savePlayer = (playerId: string, mode: "individual" | "team", source: typeof individualShots) => {
-      const globalUuid = getGlobalPlayerUuid(playerId);
-      if (!globalUuid) return;
+    const savePlayer = async (playerId: string, name: string, mode: "individual" | "team", source: typeof individualShots) => {
       const playerShots = source.filter(s => s.playerId === playerId);
       if (playerShots.length === 0) return;
+      // Auto-create a global player if this session player isn't linked yet
+      let globalUuid = getGlobalPlayerUuid(playerId);
+      if (!globalUuid) {
+        try {
+          const created = await resolveOrCreatePlayer(undefined, name);
+          linkSessionToGlobalPlayer(playerId, created.id);
+          globalUuid = created.id;
+        } catch (err) {
+          console.warn("auto-create global player failed", err);
+          return;
+        }
+      }
       const makes = playerShots.filter(s => s.made).length;
       const points = playerShots.filter(s => s.made).reduce((sum, s) => sum + ZONE_POINTS[s.zone], 0);
       const zoneBreakdown: Record<number, { makes: number; attempts: number }> = {};
@@ -635,10 +645,12 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
       }).catch(err => console.warn("saveGameResult failed", err));
     };
 
-    for (const p of players) {
-      if (individualShots.some(s => s.playerId === p.id)) savePlayer(p.id, "individual", individualShots);
-      if (teamShots.some(s => s.playerId === p.id)) savePlayer(p.id, "team", teamShots);
-    }
+    (async () => {
+      for (const p of players) {
+        if (individualShots.some(s => s.playerId === p.id)) await savePlayer(p.id, p.name, "individual", individualShots);
+        if (teamShots.some(s => s.playerId === p.id)) await savePlayer(p.id, p.name, "team", teamShots);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
