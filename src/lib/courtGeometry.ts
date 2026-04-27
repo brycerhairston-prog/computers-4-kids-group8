@@ -5,9 +5,9 @@ type Point = { x: number; y: number };
 
 const BIG_ARC = {
   cx: 200,
-  cy: 145, // Slightly lower than before to ground the arc
+  cy: 145, // Anchored to match the top of the paint circle
   rx: 194,
-  ry: 140, // More shallow to match the black line exactly
+  ry: 138, // Shallowed to keep Z2/Z3 from bleeding down
 };
 
 const PAINT = {
@@ -17,16 +17,13 @@ const PAINT = {
   bottom: 198,
 };
 
-// Adjusted to prevent narrowness in Zone 5 and fix bleeding
-const LEFT_DIAGONAL_TOP: Point = { x: 105, y: 282 };
-const RIGHT_DIAGONAL_TOP: Point = { x: 295, y: 282 };
-const LEFT_DIAGONAL_BOTTOM: Point = { x: 40, y: 500 };
-const RIGHT_DIAGONAL_BOTTOM: Point = { x: 360, y: 500 };
+// Precise intersection points for the diagonal lines
+const LEFT_DIAGONAL_TOP: Point = { x: 108, y: 280 };
+const RIGHT_DIAGONAL_TOP: Point = { x: 292, y: 280 };
+const LEFT_DIAGONAL_BOTTOM: Point = { x: 45, y: 500 };
+const RIGHT_DIAGONAL_BOTTOM: Point = { x: 355, y: 500 };
 
-const LEFT_ARC_EXTREME: Point = { x: BIG_ARC.cx - BIG_ARC.rx, y: BIG_ARC.cy };
-const RIGHT_ARC_EXTREME: Point = { x: BIG_ARC.cx + BIG_ARC.rx, y: BIG_ARC.cy };
-
-const ARC_SAMPLES = 40;
+const ARC_SAMPLES = 45; // Higher resolution for smoother boundaries
 
 function sampleEllipseArc(startAngle: number, endAngle: number, steps = ARC_SAMPLES): Point[] {
   const points: Point[] = [];
@@ -57,9 +54,15 @@ function isPointInPolygon(point: Point, polygon: Point[]): boolean {
   return inside;
 }
 
-// Calculate precise angles where diagonal lines hit the arc
-const leftDiagAngle = Math.atan2(LEFT_DIAGONAL_TOP.y - BIG_ARC.cy, LEFT_DIAGONAL_TOP.x - BIG_ARC.cx);
-const rightDiagAngle = Math.atan2(RIGHT_DIAGONAL_TOP.y - BIG_ARC.cy, RIGHT_DIAGONAL_TOP.x - BIG_ARC.cx);
+// Calculate precise angles for the 3pt line intersections
+const leftDiagAngle = Math.atan2(
+  LEFT_DIAGONAL_TOP.y - BIG_ARC.cy,
+  (LEFT_DIAGONAL_TOP.x - BIG_ARC.cx) * (BIG_ARC.ry / BIG_ARC.rx),
+);
+const rightDiagAngle = Math.atan2(
+  RIGHT_DIAGONAL_TOP.y - BIG_ARC.cy,
+  (RIGHT_DIAGONAL_TOP.x - BIG_ARC.cx) * (BIG_ARC.ry / BIG_ARC.rx),
+);
 
 const ZONE_POLYGONS: Record<number, Point[]> = {
   1: [
@@ -69,22 +72,22 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: PAINT.left, y: PAINT.bottom },
   ],
   2: [
-    { x: 3, y: 0 }, // Extend slightly to boundary
     { x: PAINT.left, y: 0 },
-    { x: PAINT.left, y: PAINT.bottom },
+    { x: 5, y: 0 }, // Left edge of court
+    ...sampleEllipseArc(Math.PI, Math.PI / 2).reverse(),
     { x: 200, y: PAINT.bottom },
-    ...sampleEllipseArc(Math.PI / 2, Math.PI).reverse(),
+    { x: PAINT.left, y: PAINT.bottom },
   ],
   3: [
     { x: PAINT.right, y: 0 },
-    { x: 397, y: 0 },
+    { x: 395, y: 0 }, // Right edge of court
     ...sampleEllipseArc(0, Math.PI / 2),
     { x: 200, y: PAINT.bottom },
     { x: PAINT.right, y: PAINT.bottom },
   ],
   4: [
     { x: 0, y: 0 },
-    { x: 3, y: 0 },
+    { x: 5, y: 0 },
     ...sampleEllipseArc(Math.PI, leftDiagAngle),
     LEFT_DIAGONAL_TOP,
     LEFT_DIAGONAL_BOTTOM,
@@ -98,7 +101,7 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     RIGHT_DIAGONAL_BOTTOM,
   ],
   6: [
-    { x: 397, y: 0 },
+    { x: 395, y: 0 },
     { x: 400, y: 0 },
     { x: 400, y: 500 },
     RIGHT_DIAGONAL_BOTTOM,
@@ -115,7 +118,7 @@ export const ZONE_LABEL_POS: Record<number, { x: number; y: number }> = {
   1: { x: 200, y: 100 },
   2: { x: 75, y: 110 },
   3: { x: 325, y: 110 },
-  4: { x: 45, y: 380 }, // Lowered to fit center of larger Zone 4
+  4: { x: 45, y: 380 },
   5: { x: 200, y: 410 },
   6: { x: 355, y: 380 },
 };
