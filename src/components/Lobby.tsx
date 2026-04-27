@@ -21,29 +21,77 @@ const Lobby = () => {
   } = useMultiplayer();
   const [view, setView] = useState<LobbyView>("welcome");
   const [playerNames, setPlayerNames] = useState<string[]>([""]);
+  const [playerIds, setPlayerIds] = useState<string[]>([""]);
   const [gameCode, setGameCode] = useState("");
   const [newPlayerName, setNewPlayerName] = useState("");
+  const [newPlayerExternalId, setNewPlayerExternalId] = useState("");
   const [addingPlayer, setAddingPlayer] = useState(false);
+  const [lookupOpen, setLookupOpen] = useState(false);
+  const recentIds = getRecentPlayerIds();
 
   const addNameField = () => {
     if (playerNames.length >= 8) { toast.error("Max 8 players per device"); return; }
     setPlayerNames(prev => [...prev, ""]);
+    setPlayerIds(prev => [...prev, ""]);
   };
 
   const removeNameField = (idx: number) => {
     if (playerNames.length <= 1) return;
     setPlayerNames(prev => prev.filter((_, i) => i !== idx));
+    setPlayerIds(prev => prev.filter((_, i) => i !== idx));
   };
 
   const updateName = (idx: number, value: string) => {
     setPlayerNames(prev => prev.map((n, i) => i === idx ? value : n));
   };
 
+  const updateId = (idx: number, value: string) => {
+    setPlayerIds(prev => prev.map((n, i) => i === idx ? value : n));
+  };
+
   const validNames = playerNames.map(n => n.trim()).filter(Boolean);
+
+  /** After session players are created, resolve/create global player records and link them. */
+  const persistPlayerLinks = async () => {
+    // Read latest session players from store-of-truth via a small delay-free approach:
+    // We rely on the createGame/joinGame having set sessionPlayers via state; but here we
+    // can't read the freshly-set value synchronously. Use a microtask wait then react closure.
+    // Simpler: re-query via supabase client is overkill; instead derive from the fact that
+    // names map 1:1 to indices in the order we passed them.
+    // We'll match by name + device order.
+    setTimeout(async () => {
+      try {
+        const fresh = sessionPlayersRef.current;
+        for (let i = 0; i < playerNames.length; i++) {
+          const name = playerNames[i].trim();
+          if (!name) continue;
+          const id = (playerIds[i] || "").trim();
+          // Find the matching session player (most recently added with this name on our device)
+          const match = fresh.find(p => p.name === name && localPlayerIdsRef.current.includes(p.id));
+          if (!match) continue;
+          try {
+            const player = await resolveOrCreatePlayer(id || undefined, name);
+            linkSessionToGlobalPlayer(match.id, player.id);
+          } catch (err) {
+            console.warn("Failed to link player", name, err);
+          }
+        }
+      } catch (err) {
+        console.warn("persistPlayerLinks failed", err);
+      }
+    }, 200);
+  };
+
+  // Refs to read latest values inside setTimeout
+  const sessionPlayersRef = { current: sessionPlayers };
+  sessionPlayersRef.current = sessionPlayers;
+  const localPlayerIdsRef = { current: localPlayerIds };
+  localPlayerIdsRef.current = localPlayerIds;
 
   const handleCreate = async () => {
     if (validNames.length === 0) { toast.error("Add at least one player name"); return; }
     await createGame(validNames);
+    persistPlayerLinks();
     setView("waiting");
   };
 
@@ -51,6 +99,7 @@ const Lobby = () => {
     if (validNames.length === 0) { toast.error("Add at least one player name"); return; }
     if (!gameCode.trim()) { toast.error("Enter a game code"); return; }
     await joinGame(gameCode, validNames);
+    persistPlayerLinks();
     setView("waiting");
   };
 
@@ -66,8 +115,45 @@ const Lobby = () => {
     if (!name) { toast.error("Enter a player name"); return; }
     setAddingPlayer(true);
     await addPlayerToStation(name);
+    const idInput = newPlayerExternalId.trim();
     setNewPlayerName("");
+    setNewPlayerExternalId("");
     setAddingPlayer(false);
+    // Link after the session player row is in state
+    setTimeout(async () => {
+      const fresh = sessionPlayersRef.current;
+      const match = [...fresh].reverse().find(p => p.name === name && localPlayerIdsRef.current.includes(p.id));
+      if (!match) return;
+      try {
+        const player = await resolveOrCreatePlayer(idInput || undefined, name);
+        linkSessionToGlobalPlayer(match.id, player.id);
+      } catch (err) {
+        console.warn("link station player failed", err);
+      }
+    }, 250);
+  };
+
+  const handleLookupLoad = (result: PlayerLookupResult) => {
+    // Drop the loaded player into the first empty name slot (or append).
+    setPlayerNames(prev => {
+      const idx = prev.findIndex(n => !n.trim());
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = result.player.name;
+        return next;
+      }
+      if (prev.length >= 8) { toast.error("Max 8 players per device"); return prev; }
+      return [...prev, result.player.name];
+    });
+    setPlayerIds(prev => {
+      const idx = playerNames.findIndex(n => !n.trim());
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = result.player.player_id;
+        return next;
+      }
+      return [...prev, result.player.player_id];
+    });
   };
 
   const handleRemovePlayer = async (playerId: string, playerName: string) => {
@@ -79,6 +165,7 @@ const Lobby = () => {
     await leaveSession();
     setView("welcome");
     setPlayerNames([""]);
+    setPlayerIds([""]);
     setGameCode("");
   };
 
