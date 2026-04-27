@@ -6,6 +6,7 @@ import ShotTracker from "@/components/ShotTracker";
 import GameSetup from "@/components/GameSetup";
 import GameSummary from "@/components/GameSummary";
 import Lobby from "@/components/Lobby";
+import SmartCoachPanel from "@/components/SmartCoachPanel";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RotateCcw, ChevronDown } from "lucide-react";
