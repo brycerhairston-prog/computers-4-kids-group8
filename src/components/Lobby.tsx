@@ -387,7 +387,7 @@ const Lobby = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="glass-card rounded-xl p-8 max-w-md w-full space-y-8"
+            className="glass-card rounded-xl p-8 max-w-md w-full space-y-6"
           >
             <header className="text-center space-y-2 relative">
               <div className="absolute top-0 right-0"><SettingsPanel /></div>
@@ -396,21 +396,43 @@ const Lobby = () => {
               <p className="text-sm text-muted-foreground">{t("lobby.subtitle")}</p>
             </header>
 
-            <div className="space-y-3">
-              <Button
-                className="w-full h-14 text-lg font-bold gap-3"
-                onClick={() => setView("create")}
-              >
-                <Plus className="w-5 h-5" aria-hidden="true" /> {t("lobby.createGame")}
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full h-14 text-lg font-bold gap-3"
-                onClick={() => setView("join")}
-              >
-                <LogIn className="w-5 h-5" aria-hidden="true" /> {t("lobby.joinGame")}
-              </Button>
-            </div>
+            <Tabs defaultValue="game" className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="game" className="flex-1 gap-1">
+                  <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Current Game
+                </TabsTrigger>
+                <TabsTrigger value="players" className="flex-1 gap-1">
+                  <Database className="w-3.5 h-3.5" aria-hidden="true" /> Players
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="game" className="space-y-3 mt-4">
+                <Button
+                  className="w-full h-14 text-lg font-bold gap-3"
+                  onClick={() => setView("create")}
+                >
+                  <Plus className="w-5 h-5" aria-hidden="true" /> {t("lobby.createGame")}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-14 text-lg font-bold gap-3"
+                  onClick={() => setView("join")}
+                >
+                  <LogIn className="w-5 h-5" aria-hidden="true" /> {t("lobby.joinGame")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full gap-2 text-sm"
+                  onClick={() => setLookupOpen(true)}
+                >
+                  <Search className="w-4 h-4" aria-hidden="true" /> Lookup Player by ID
+                </Button>
+              </TabsContent>
+
+              <TabsContent value="players" className="mt-4">
+                <PlayerBrowseTab onLoad={handleBrowseLoad} />
+              </TabsContent>
+            </Tabs>
 
             <footer className="text-[10px] text-muted-foreground/70 text-center">
               {t("lobby.createdBy")}
