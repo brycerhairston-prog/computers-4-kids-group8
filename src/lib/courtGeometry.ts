@@ -1,6 +1,3 @@
-Here's the full code:
-
-```typescript
 // Shared court SVG geometry for consistent rendering across components.
 // ViewBox: 0 0 400 500, basket at TOP.
 // Geometry is aligned to the full uncropped court-layout image.
@@ -24,9 +21,9 @@ const PAINT = {
   bottom: 198,
 };
 
-const LEFT_DIAGONAL_TOP: Point  = { x: 101, y: 285 };
+const LEFT_DIAGONAL_TOP: Point = { x: 101, y: 285 };
 const RIGHT_DIAGONAL_TOP: Point = { x: 299, y: 285 };
-const LEFT_DIAGONAL_BOTTOM: Point  = { x: 38,  y: 500 };
+const LEFT_DIAGONAL_BOTTOM: Point = { x: 38, y: 500 };
 const RIGHT_DIAGONAL_BOTTOM: Point = { x: 362, y: 500 };
 
 // ---------------------------------------------------------------------------
@@ -54,11 +51,11 @@ function pathFromPolygon(points: Point[]): string {
 // Key derived points
 // ---------------------------------------------------------------------------
 
-const LEFT_ARC_EXTREME:  Point = { x: BIG_ARC.cx - BIG_ARC.rx, y: BIG_ARC.cy };
+const LEFT_ARC_EXTREME: Point = { x: BIG_ARC.cx - BIG_ARC.rx, y: BIG_ARC.cy };
 const RIGHT_ARC_EXTREME: Point = { x: BIG_ARC.cx + BIG_ARC.rx, y: BIG_ARC.cy };
 
 const ftSinVal = (PAINT.bottom - BIG_ARC.cy) / BIG_ARC.ry;
-const ftAngle  = Math.asin(ftSinVal);
+const ftAngle = Math.asin(ftSinVal);
 
 const LEFT_ARC_AT_FT: Point = {
   x: BIG_ARC.cx + BIG_ARC.rx * Math.cos(Math.PI - ftAngle),
@@ -71,8 +68,8 @@ const RIGHT_ARC_AT_FT: Point = {
 };
 
 const LEFT_DIAG_ARC_ANGLE = Math.atan2(
-  (LEFT_DIAGONAL_TOP.y  - BIG_ARC.cy) / BIG_ARC.ry,
-  (LEFT_DIAGONAL_TOP.x  - BIG_ARC.cx) / BIG_ARC.rx,
+  (LEFT_DIAGONAL_TOP.y - BIG_ARC.cy) / BIG_ARC.ry,
+  (LEFT_DIAGONAL_TOP.x - BIG_ARC.cx) / BIG_ARC.rx,
 );
 
 const RIGHT_DIAG_ARC_ANGLE = Math.atan2(
@@ -84,30 +81,29 @@ const RIGHT_DIAG_ARC_ANGLE = Math.atan2(
 // Pre-sampled arc segments
 // ---------------------------------------------------------------------------
 
-const arcLeftExtremeToLeftDiag   = sampleEllipseArc(Math.PI, LEFT_DIAG_ARC_ANGLE);
-const arcLeftDiagToFT            = sampleEllipseArc(LEFT_DIAG_ARC_ANGLE, Math.PI - ftAngle);
-const arcLeftDiagToRightDiag     = sampleEllipseArc(LEFT_DIAG_ARC_ANGLE, RIGHT_DIAG_ARC_ANGLE);
-const arcRightDiagToFT           = sampleEllipseArc(RIGHT_DIAG_ARC_ANGLE, ftAngle);
+const arcLeftExtremeToLeftDiag = sampleEllipseArc(Math.PI, LEFT_DIAG_ARC_ANGLE);
+const arcLeftDiagToFT = sampleEllipseArc(LEFT_DIAG_ARC_ANGLE, Math.PI - ftAngle);
+const arcLeftDiagToRightDiag = sampleEllipseArc(LEFT_DIAG_ARC_ANGLE, RIGHT_DIAG_ARC_ANGLE);
+const arcRightDiagToFT = sampleEllipseArc(RIGHT_DIAG_ARC_ANGLE, ftAngle);
 const arcRightDiagToRightExtreme = sampleEllipseArc(RIGHT_DIAG_ARC_ANGLE, 0);
 
 // ---------------------------------------------------------------------------
 // Zone polygons
 // ---------------------------------------------------------------------------
 const ZONE_POLYGONS: Record<number, Point[]> = {
-
   // Z1 – Paint (key rectangle)
   1: [
-    { x: PAINT.left,  y: PAINT.top    },
-    { x: PAINT.right, y: PAINT.top    },
+    { x: PAINT.left, y: PAINT.top },
+    { x: PAINT.right, y: PAINT.top },
     { x: PAINT.right, y: PAINT.bottom },
-    { x: PAINT.left,  y: PAINT.bottom },
+    { x: PAINT.left, y: PAINT.bottom },
   ],
 
   // Z2 – Left Mid-Range
   2: [
     { x: LEFT_ARC_EXTREME.x, y: 0 },
-    { x: PAINT.left,          y: 0 },
-    { x: PAINT.left,          y: PAINT.bottom },
+    { x: PAINT.left, y: 0 },
+    { x: PAINT.left, y: PAINT.bottom },
     LEFT_ARC_AT_FT,
     ...arcLeftDiagToFT.slice(1).reverse(),
     LEFT_DIAGONAL_TOP,
@@ -117,7 +113,7 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
 
   // Z3 – Right Mid-Range
   3: [
-    { x: PAINT.right,         y: 0 },
+    { x: PAINT.right, y: 0 },
     { x: RIGHT_ARC_EXTREME.x, y: 0 },
     RIGHT_ARC_EXTREME,
     ...arcRightDiagToRightExtreme.slice(1).reverse(),
@@ -150,8 +146,8 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
   // Z6 – Right Corner Three
   6: [
     { x: RIGHT_ARC_EXTREME.x, y: 0 },
-    { x: 400,                  y: 0 },
-    { x: 400,                  y: 500 },
+    { x: 400, y: 0 },
+    { x: 400, y: 500 },
     RIGHT_DIAGONAL_BOTTOM,
     RIGHT_DIAGONAL_TOP,
     ...arcRightDiagToRightExtreme.slice(1).reverse(),
@@ -164,17 +160,14 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
 // ---------------------------------------------------------------------------
 
 export const ZONE_PATHS: Record<number, string> = Object.fromEntries(
-  Object.entries(ZONE_POLYGONS).map(([zone, polygon]) => [
-    Number(zone),
-    pathFromPolygon(polygon),
-  ]),
+  Object.entries(ZONE_POLYGONS).map(([zone, polygon]) => [Number(zone), pathFromPolygon(polygon)]),
 ) as Record<number, string>;
 
 export const ZONE_LABEL_POS: Record<number, { x: number; y: number }> = {
   1: { x: 200, y: 120 },
-  2: { x: 75,  y: 105 },
+  2: { x: 75, y: 105 },
   3: { x: 325, y: 105 },
-  4: { x: 25,  y: 310 },
+  4: { x: 25, y: 310 },
   5: { x: 200, y: 365 },
   6: { x: 375, y: 310 },
 };
@@ -202,9 +195,7 @@ function isPointInPolygon(point: Point, polygon: Point[]): boolean {
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
     const { x: xi, y: yi } = polygon[i];
     const { x: xj, y: yj } = polygon[j];
-    const intersects =
-      (yi > point.y) !== (yj > point.y) &&
-      point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
+    const intersects = yi > point.y !== yj > point.y && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
     if (intersects) inside = !inside;
   }
   return inside;
@@ -218,13 +209,10 @@ export function getZoneFromPoint(xPct: number, yPct: number): number {
   }
 
   // Fallback for edge cases
-  const inArc =
-    ((point.x - BIG_ARC.cx) / BIG_ARC.rx) ** 2 +
-    ((point.y - BIG_ARC.cy) / BIG_ARC.ry) ** 2 <= 1;
+  const inArc = ((point.x - BIG_ARC.cx) / BIG_ARC.rx) ** 2 + ((point.y - BIG_ARC.cy) / BIG_ARC.ry) ** 2 <= 1;
 
   if (inArc) return point.x < 200 ? 2 : 3;
   return point.x < 200 ? 4 : 6;
 }
 
 export const courtLineColor = "hsl(var(--court-line))";
-```
