@@ -481,6 +481,8 @@ const Lobby = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      {recentIdsDatalist}
+      <PlayerLookupDialog open={lookupOpen} onOpenChange={setLookupOpen} onLoad={handleLookupLoad} />
     </main>
   );
 };
