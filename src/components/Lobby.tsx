@@ -251,19 +251,29 @@ const Lobby = () => {
             )}
 
             {/* Add player to station */}
-            <div className="flex gap-2">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  value={newPlayerName}
+                  onChange={e => setNewPlayerName(e.target.value)}
+                  placeholder={t("lobby.addToStation")}
+                  className="h-9 text-sm"
+                  maxLength={20}
+                  onKeyDown={e => e.key === "Enter" && handleAddPlayerToStation()}
+                />
+                <Button size="sm" className="h-9 gap-1 shrink-0" onClick={handleAddPlayerToStation} disabled={addingPlayer || !newPlayerName.trim()}>
+                  {addingPlayer ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Plus className="w-3 h-3" aria-hidden="true" />}
+                  {t("common.add")}
+                </Button>
+              </div>
               <Input
-                value={newPlayerName}
-                onChange={e => setNewPlayerName(e.target.value)}
-                placeholder={t("lobby.addToStation")}
-                className="h-9 text-sm"
-                maxLength={20}
-                onKeyDown={e => e.key === "Enter" && handleAddPlayerToStation()}
+                value={newPlayerExternalId}
+                onChange={e => setNewPlayerExternalId(e.target.value)}
+                placeholder="Player ID (optional)"
+                className="h-8 text-xs font-mono"
+                maxLength={32}
+                list="recent-player-ids"
               />
-              <Button size="sm" className="h-9 gap-1 shrink-0" onClick={handleAddPlayerToStation} disabled={addingPlayer || !newPlayerName.trim()}>
-                {addingPlayer ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Plus className="w-3 h-3" aria-hidden="true" />}
-                {t("common.add")}
-              </Button>
             </div>
 
             <p className="text-xs text-muted-foreground text-center">
