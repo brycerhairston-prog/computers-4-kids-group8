@@ -606,6 +606,8 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
   const [pendingTeams, setPendingTeams] = useState<Team[]>([]);
   const [shotAllocations, setShotAllocations] = useState<Record<string, Record<string, number>>>({});
   const [blockedZones, setBlockedZones] = useState<Record<string, number[]>>({});
+  const [showReplay, setShowReplay] = useState(false);
+  const replayShots = useMemo(() => allShots.filter(s => s.mode !== "practice"), [allShots]);
 
   // Auto-save career stats once per game-end
   const savedRef = useRef(false);
