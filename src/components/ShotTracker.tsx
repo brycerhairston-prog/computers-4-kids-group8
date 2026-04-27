@@ -309,8 +309,7 @@ const ShotTracker = () => {
       {/* Court */}
       <div className="relative">
         <svg ref={courtRef} viewBox={COURT_VIEWBOX}
-          preserveAspectRatio="none"
-          className={`w-full aspect-[4/5] block rounded-md ${canShoot ? "cursor-crosshair" : "cursor-not-allowed opacity-70"}`}
+          className={`w-full rounded-md ${canShoot ? "cursor-crosshair" : "cursor-not-allowed opacity-70"}`}
           style={{ background: "hsl(var(--court-bg))" }}
           onClick={handleCourtClick}>
           <CourtBackground />

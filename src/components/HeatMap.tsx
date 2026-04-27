@@ -41,8 +41,7 @@ const HeatMap = () => {
         {t("heatMap.description")}
       </p>
 
-      <div className="w-full aspect-[4/5] rounded-md overflow-hidden" style={{ background: "white" }}>
-      <svg viewBox={COURT_VIEWBOX} className="w-full h-full block" preserveAspectRatio="none">
+      <svg viewBox={COURT_VIEWBOX} className="w-full rounded-md overflow-hidden" preserveAspectRatio="xMidYMid meet" style={{ background: "white" }}>
         <defs>
           {[1, 2, 3, 4, 5, 6].map(zone => (
             <clipPath key={`clip-${zone}`} id={`zone-clip-${zone}`}>
@@ -97,7 +96,6 @@ const HeatMap = () => {
           );
         })}
       </svg>
-      </div>
 
       <div className="flex flex-wrap gap-2 justify-center">
         {legendItems.map(item => (
