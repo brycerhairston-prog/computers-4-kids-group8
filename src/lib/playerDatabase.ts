@@ -190,14 +190,14 @@ export async function saveGameResult(input: GameResultInput): Promise<void> {
   if (input.attempts === 0) return; // skip players who didn't shoot
 
   // Insert game history row
-  await supabase.from("player_game_history").insert({
+  await supabase.from("player_game_history").insert([{
     player_uuid: input.playerUuid,
     game_mode: input.gameMode,
     makes: input.makes,
     attempts: input.attempts,
     points: input.points,
-    zone_breakdown: input.zoneBreakdown as unknown as Record<string, unknown>,
-  });
+    zone_breakdown: input.zoneBreakdown as never,
+  }]);
 
   // Fetch current career
   const { data: existing } = await supabase
