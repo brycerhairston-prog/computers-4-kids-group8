@@ -813,6 +813,9 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
             <h1 className="text-lg font-display font-bold text-foreground">{t("summary.header")}</h1>
           </div>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setShowReplay(true)} disabled={replayShots.length === 0} className="gap-1 text-xs">
+              <Film className="w-3 h-3" aria-hidden="true" /> Replay
+            </Button>
             <Button size="sm" variant="outline" onClick={handleExport} className="gap-1 text-xs">
               <Download className="w-3 h-3" aria-hidden="true" /> {t("summary.csv")}
             </Button>
