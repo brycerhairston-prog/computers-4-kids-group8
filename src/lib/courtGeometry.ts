@@ -144,8 +144,10 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: PAINT.right, y: 0 },
     { x: RIGHT_ARC_EXTREME.x, y: 0 },
     RIGHT_ARC_EXTREME,
-    // Arc from right extreme (θ=0) down to bottom (θ=π/2).
-    ...bottomToRightArc.slice(1).reverse().reverse(), // keep order θ=0 → π/2
+    // Arc from right extreme (θ=0) down to bottom (θ=π/2). bottomToRightArc goes
+    // bottom→right, so reverse to walk right→bottom along the boundary.
+    ...bottomToRightArc.slice(0, -1).reverse(),
+    ARC_BOTTOM,
     { x: ARC_BOTTOM.x, y: PAINT.bottom },
     { x: PAINT.right, y: PAINT.bottom },
   ],
