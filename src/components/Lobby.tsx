@@ -136,26 +136,35 @@ const Lobby = () => {
   };
 
   const handleLookupLoad = (result: PlayerLookupResult) => {
-    // Drop the loaded player into the first empty name slot (or append).
+    addLoadedPlayerToList(result.player.name, result.player.player_id);
+  };
+
+  const handleBrowseLoad = (p: BrowsePlayer) => {
+    addLoadedPlayerToList(p.name, p.player_id);
+    toast.success(`${p.name} added to game`);
+  };
+
+  const addLoadedPlayerToList = (name: string, externalId: string) => {
     setPlayerNames(prev => {
       const idx = prev.findIndex(n => !n.trim());
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = result.player.name;
+        next[idx] = name;
         return next;
       }
       if (prev.length >= 8) { toast.error("Max 8 players per device"); return prev; }
-      return [...prev, result.player.name];
+      return [...prev, name];
     });
     setPlayerIds(prev => {
       const idx = playerNames.findIndex(n => !n.trim());
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = result.player.player_id;
+        next[idx] = externalId;
         return next;
       }
-      return [...prev, result.player.player_id];
+      return [...prev, externalId];
     });
+    if (view === "welcome") setView("create");
   };
 
   const handleRemovePlayer = async (playerId: string, playerName: string) => {
