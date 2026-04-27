@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import c4kLogo from "@/assets/c4k-logo.png";
-import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale, Minus, Plus, Ban } from "lucide-react";
+import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale, Minus, Plus, Ban, Film } from "lucide-react";
+import GameReplay from "@/components/GameReplay";
 import SettingsPanel from "@/components/SettingsPanel";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
@@ -605,6 +606,8 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
   const [pendingTeams, setPendingTeams] = useState<Team[]>([]);
   const [shotAllocations, setShotAllocations] = useState<Record<string, Record<string, number>>>({});
   const [blockedZones, setBlockedZones] = useState<Record<string, number[]>>({});
+  const [showReplay, setShowReplay] = useState(false);
+  const replayShots = useMemo(() => allShots.filter(s => s.mode !== "practice"), [allShots]);
 
   // Auto-save career stats once per game-end
   const savedRef = useRef(false);
@@ -810,6 +813,9 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
             <h1 className="text-lg font-display font-bold text-foreground">{t("summary.header")}</h1>
           </div>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setShowReplay(true)} disabled={replayShots.length === 0} className="gap-1 text-xs">
+              <Film className="w-3 h-3" aria-hidden="true" /> Replay
+            </Button>
             <Button size="sm" variant="outline" onClick={handleExport} className="gap-1 text-xs">
               <Download className="w-3 h-3" aria-hidden="true" /> {t("summary.csv")}
             </Button>
@@ -1071,6 +1077,7 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
           </>
         )}
       </main>
+      <GameReplay open={showReplay} onOpenChange={setShowReplay} shots={replayShots} players={players} />
     </div>
   );
 };
