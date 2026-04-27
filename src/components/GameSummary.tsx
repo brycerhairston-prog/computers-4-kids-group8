@@ -1077,6 +1077,7 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
           </>
         )}
       </main>
+      <GameReplay open={showReplay} onOpenChange={setShowReplay} shots={replayShots} players={players} />
     </div>
   );
 };
