@@ -1,4 +1,3 @@
-```typescript
 // Shared court SVG geometry for consistent rendering across components.
 // ViewBox: 0 0 500 470, basket at TOP.
 //
@@ -15,20 +14,19 @@
 type Point = { x: number; y: number };
 
 const BASKET: Point = { x: 250, y: 52 };
-const ARC_RADIUS    = 237.5;
-const PAINT         = { left: 170, right: 330, top: 0, bottom: 190 };
+const ARC_RADIUS = 237.5;
+const PAINT = { left: 170, right: 330, top: 0, bottom: 190 };
 
-const LEFT_CORNER_ARC: Point   = { x: 30,  y: 142 };
-const RIGHT_CORNER_ARC: Point  = { x: 470, y: 142 };
-const LEFT_ARC_DIAG: Point     = { x: 152, y: 248 };
-const RIGHT_ARC_DIAG: Point    = { x: 348, y: 248 };
-const LEFT_DIAG_TOP: Point     = { x: 170, y: 190 };
-const LEFT_DIAG_BOTTOM: Point  = { x: 95,  y: 470 };
-const RIGHT_DIAG_TOP: Point    = { x: 330, y: 190 };
+const LEFT_CORNER_ARC: Point = { x: 30, y: 142 };
+const RIGHT_CORNER_ARC: Point = { x: 470, y: 142 };
+const LEFT_ARC_DIAG: Point = { x: 152, y: 248 };
+const RIGHT_ARC_DIAG: Point = { x: 348, y: 248 };
+const LEFT_DIAG_TOP: Point = { x: 170, y: 190 };
+const LEFT_DIAG_BOTTOM: Point = { x: 95, y: 470 };
+const RIGHT_DIAG_TOP: Point = { x: 330, y: 190 };
 const RIGHT_DIAG_BOTTOM: Point = { x: 405, y: 470 };
 
 export const ZONE_PATHS: Record<number, string> = {
-
   // Z1 – Paint rectangle
   1: `M 170,0 L 330,0 L 330,190 L 170,190 Z`,
 
@@ -52,9 +50,9 @@ export const ZONE_PATHS: Record<number, string> = {
 
 export const ZONE_LABEL_POS: Record<number, { x: number; y: number }> = {
   1: { x: 250, y: 100 },
-  2: { x: 80,  y: 120 },
+  2: { x: 80, y: 120 },
   3: { x: 420, y: 120 },
-  4: { x: 18,  y: 350 },
+  4: { x: 18, y: 350 },
   5: { x: 250, y: 400 },
   6: { x: 482, y: 350 },
 };
@@ -69,11 +67,7 @@ function isInsideArc(x: number, y: number): boolean {
   return (x - BASKET.x) ** 2 + (y - BASKET.y) ** 2 <= ARC_RADIUS ** 2;
 }
 
-function sideOfLine(
-  px: number, py: number,
-  ax: number, ay: number,
-  bx: number, by: number,
-): number {
+function sideOfLine(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
   return (bx - ax) * (py - ay) - (by - ay) * (px - ax);
 }
 
@@ -91,13 +85,12 @@ export function getZoneFromPoint(xPct: number, yPct: number): number {
   if (y < LEFT_CORNER_ARC.y) return x <= 250 ? 4 : 6;
 
   // Outside arc below → split by diagonal lane lines
-  const leftSide  = sideOfLine(x, y, LEFT_DIAG_TOP.x,  LEFT_DIAG_TOP.y,  LEFT_DIAG_BOTTOM.x,  LEFT_DIAG_BOTTOM.y);
+  const leftSide = sideOfLine(x, y, LEFT_DIAG_TOP.x, LEFT_DIAG_TOP.y, LEFT_DIAG_BOTTOM.x, LEFT_DIAG_BOTTOM.y);
   const rightSide = sideOfLine(x, y, RIGHT_DIAG_TOP.x, RIGHT_DIAG_TOP.y, RIGHT_DIAG_BOTTOM.x, RIGHT_DIAG_BOTTOM.y);
 
-  if (leftSide  > 0) return 4;
+  if (leftSide > 0) return 4;
   if (rightSide < 0) return 6;
   return 5;
 }
 
 export const courtLineColor = "hsl(var(--court-line))";
-```
