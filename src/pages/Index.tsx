@@ -92,6 +92,7 @@ const PlayingDashboard = () => {
           className="grid grid-cols-1 lg:grid-cols-2 gap-4"
         >
           <div className="space-y-4">
+            <SmartCoachPanel />
             <Tabs defaultValue="tracker" className="w-full">
               <TabsList className="w-full">
                 <TabsTrigger value="tracker" className="flex-1">{t("game.shotTracker")}</TabsTrigger>
