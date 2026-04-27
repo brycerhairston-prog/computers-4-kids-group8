@@ -1,6 +1,7 @@
 import { useGame, ZONE_LABELS, ZONE_POINTS, INDIVIDUAL_SHOT_LIMIT, TEAM_SHOT_LIMIT, PRACTICE_SHOT_LIMIT } from "@/context/GameContext";
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, getZoneFromPoint } from "@/lib/courtGeometry";
+import ZoneDebugOverlay from "@/components/ZoneDebugOverlay";
 import courtImage from "@/assets/court-layout.png";
 import { useState, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -358,6 +359,7 @@ const ShotTracker = () => {
               fill="hsl(var(--primary))" stroke="white" strokeWidth="2"
               className="animate-pulse-glow" initial={{ scale: 0 }} animate={{ scale: 1 }} />
           )}
+          <ZoneDebugOverlay />
         </svg>
 
         <AnimatePresence>
