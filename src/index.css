@@ -53,12 +53,12 @@
 
     --sidebar-background: 220 18% 12%;
     --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 25 95% 45%;
+    --sidebar-primary: 25 95% 38%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 18%;
     --sidebar-accent-foreground: 210 20% 90%;
     --sidebar-border: 220 15% 22%;
-    --sidebar-ring: 25 95% 45%;
+    --sidebar-ring: 25 95% 38%;
   }
 
   /* Light mode overrides */
