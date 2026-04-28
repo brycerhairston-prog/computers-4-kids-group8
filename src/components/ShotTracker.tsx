@@ -380,7 +380,7 @@ const ShotTracker = () => {
           </AnimatePresence>
           {pendingPos && (
             <motion.circle
-              cx={(pendingPos.x / 100) * 400} cy={(pendingPos.y / 100) * 500} r="9"
+              cx={(pendingPos.x / 100) * 400} cy={(pendingPos.y / 100) * 400} r="9"
               fill="hsl(var(--primary))" stroke="white" strokeWidth="2"
               className="animate-pulse-glow" initial={{ scale: 0 }} animate={{ scale: 1 }} />
           )}
