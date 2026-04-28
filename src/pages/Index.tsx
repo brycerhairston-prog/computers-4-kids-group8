@@ -104,7 +104,9 @@ const PlayingDashboard = () => {
                 <ShotTracker />
               </TabsContent>
               <TabsContent value="heatmap">
-                <HeatMap />
+                <Suspense fallback={<div className="glass-card rounded-lg p-8 text-center text-xs text-muted-foreground">Loading heat map…</div>}>
+                  <HeatMap />
+                </Suspense>
               </TabsContent>
             </Tabs>
             <Collapsible defaultOpen className="glass-card rounded-lg p-4 space-y-2">
