@@ -1,6 +1,7 @@
 import { GameProvider, useGame, type Player, type Shot, type GamePhase, type GameMode, type Team, type TeamSelectionMode } from "@/context/GameContext";
 import { MultiplayerProvider, useMultiplayer } from "@/context/MultiplayerContext";
-import HeatMap from "@/components/HeatMap";
+import { lazy, Suspense } from "react";
+const HeatMap = lazy(() => import("@/components/HeatMap"));
 import DataTable from "@/components/DataTable";
 import ShotTracker from "@/components/ShotTracker";
 import GameSetup from "@/components/GameSetup";
