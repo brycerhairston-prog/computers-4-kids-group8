@@ -102,13 +102,21 @@ const ShotTracker = () => {
     }
   })();
 
-  const handleCourtClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!activePlayerId || !canShoot) return;
+  const handleCourtClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     const svg = courtRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
     const xPct = ((e.clientX - rect.left) / rect.width) * 100;
     const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+
+    // Fire ripple immediately for tactile feedback (GPU: transform/opacity only)
+    const rid = ++rippleIdRef.current;
+    setRipples(prev => [...prev, { id: rid, x: xPct, y: yPct }]);
+    window.setTimeout(() => {
+      setRipples(prev => prev.filter(r => r.id !== rid));
+    }, 600);
+
+    if (!activePlayerId || !canShoot) return;
     const zone = getZoneFromPoint(xPct, yPct);
 
     // Same-zone restriction (individual, non-practice)
@@ -124,7 +132,7 @@ const ShotTracker = () => {
     }
 
     setPendingPos({ x: xPct, y: yPct, zone });
-  };
+  }, [activePlayerId, canShoot, lockedZone, blockedZones, t]);
 
   const confirmShot = (made: boolean) => {
     if (!pendingPos || !activePlayerId) return;
