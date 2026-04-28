@@ -3,7 +3,7 @@ import { useMemo, useState, useEffect } from "react";
 import { buildCoachInsights, type CoachInsight } from "@/lib/smartCoach";
 import { Brain, ChevronDown, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
+
 
 const severityClass: Record<CoachInsight["severity"], string> = {
   hot: "border-l-orange-500 bg-orange-500/10 text-orange-100",
