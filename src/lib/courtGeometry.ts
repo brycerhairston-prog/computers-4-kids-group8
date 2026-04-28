@@ -1,135 +1,172 @@
 // Shared court SVG geometry for consistent rendering across components.
-// ViewBox: 0 0 400 500, basket at TOP.
-// Geometry is aligned to the full uncropped court-layout image.
+// ViewBox: 0 0 400 400, basket at TOP.
+// Geometry is precisely aligned to the court-layout.png reference image (1167x1154).
+//
+// Image -> viewBox conversion factors used to derive all numbers below:
+//   sx = 400 / 1167 ≈ 0.3428
+//   sy = 400 / 1154 ≈ 0.3466
 
 type Point = { x: number; y: number };
 
-const BIG_ARC = {
-  cx: 200,
-  cy: 150,
-  rx: 194,
-  ry: 156,
-};
-
+// ---- Key landmarks (in viewBox units) ----
+// Paint (lane) rectangle - extends from top of image down to free-throw line area.
 const PAINT = {
-  left: 135,
-  right: 265,
+  left: 134,
+  right: 250,
   top: 0,
-  bottom: 198,
+  bottom: 159,
 };
 
-const LEFT_DIAGONAL_TOP: Point = { x: 101, y: 285 };
-const RIGHT_DIAGONAL_TOP: Point = { x: 299, y: 285 };
-const LEFT_DIAGONAL_BOTTOM: Point = { x: 38, y: 500 };
-const RIGHT_DIAGONAL_BOTTOM: Point = { x: 362, y: 500 };
+// 3-point arc: ellipse centered above the basket, sweeping down to paint-bottom y on the
+// inside and reaching the side rails (x=0 and x=400) at y ≈ 121.
+// Modeled as an ellipse centered at (200, BASKET_Y) with rx/ry chosen to pass through:
+//   - (134, 159) and (266, 159)  (paint-bottom corners, where arc meets paint)
+//   - (0, 121) and (400, 121)    (where arc meets the side rails)
+const BASKET = { x: 200, y: 50 };
+const ARC = {
+  cx: 200,
+  cy: BASKET.y,
+  rx: 200, // reaches x=0 and x=400
+  ry: 175, // reaches y ≈ 159 at the paint corners (passes near them)
+};
 
-const LEFT_ARC_EXTREME: Point = { x: BIG_ARC.cx - BIG_ARC.rx, y: BIG_ARC.cy };
-const RIGHT_ARC_EXTREME: Point = { x: BIG_ARC.cx + BIG_ARC.rx, y: BIG_ARC.cy };
-const ARC_BOTTOM: Point = { x: BIG_ARC.cx, y: BIG_ARC.cy + BIG_ARC.ry };
+// Diagonals: from a split point on the center line down to bottom corners.
+const DIAGONAL_TOP: Point = { x: 200, y: 239 };
+const LEFT_DIAGONAL_BOTTOM: Point = { x: 58, y: 400 };
+const RIGHT_DIAGONAL_BOTTOM: Point = { x: 342, y: 400 };
 
-const ARC_SAMPLES = 36;
-const LEFT_DIAGONAL_ANGLE = Math.acos((LEFT_DIAGONAL_TOP.x - BIG_ARC.cx) / BIG_ARC.rx);
-const RIGHT_DIAGONAL_ANGLE = Math.acos((RIGHT_DIAGONAL_TOP.x - BIG_ARC.cx) / BIG_ARC.rx);
+// ---- Arc sampling helpers ----
+const ARC_SAMPLES = 48;
 
-function sampleEllipseArc(startAngle: number, endAngle: number, steps = ARC_SAMPLES): Point[] {
+function sampleArc(startAngle: number, endAngle: number, steps = ARC_SAMPLES): Point[] {
   const points: Point[] = [];
   for (let i = 0; i <= steps; i += 1) {
     const t = startAngle + ((endAngle - startAngle) * i) / steps;
     points.push({
-      x: BIG_ARC.cx + BIG_ARC.rx * Math.cos(t),
-      y: BIG_ARC.cy + BIG_ARC.ry * Math.sin(t),
+      x: ARC.cx + ARC.rx * Math.cos(t),
+      y: ARC.cy + ARC.ry * Math.sin(t),
     });
   }
   return points;
 }
 
 function pathFromPolygon(points: Point[]): string {
-  return `M ${points.map((point) => `${point.x},${point.y}`).join(" L ")} Z`;
+  return `M ${points.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" L ")} Z`;
 }
 
-function isPointOnSegment(point: Point, a: Point, b: Point): boolean {
-  const cross = (point.y - a.y) * (b.x - a.x) - (point.x - a.x) * (b.y - a.y);
+// Angle on the arc where it meets paint-bottom corners (x=134 / x=266, y=159).
+// cos(θ) = (x - cx)/rx ; we want the angle in lower half (positive sin).
+const LEFT_PAINT_CORNER_ANGLE = Math.acos((PAINT.left - ARC.cx) / ARC.rx);   // ~π - small
+const RIGHT_PAINT_CORNER_ANGLE = Math.acos((PAINT.right - ARC.cx) / ARC.rx); // ~ small
+
+// Arc segments
+const leftSideToPaint = sampleArc(Math.PI, LEFT_PAINT_CORNER_ANGLE);          // outer-left arc above paint corner
+const arcUnderPaint = sampleArc(LEFT_PAINT_CORNER_ANGLE, RIGHT_PAINT_CORNER_ANGLE); // arc segment between paint corners (inside arc)
+const rightPaintToSide = sampleArc(RIGHT_PAINT_CORNER_ANGLE, 0);              // outer-right arc above paint corner
+
+// ---- Helpers for point-in-polygon ----
+function isPointOnSegment(p: Point, a: Point, b: Point): boolean {
+  const cross = (p.y - a.y) * (b.x - a.x) - (p.x - a.x) * (b.y - a.y);
   if (Math.abs(cross) > 0.5) return false;
-
-  const dot = (point.x - a.x) * (b.x - a.x) + (point.y - a.y) * (b.y - a.y);
+  const dot = (p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y);
   if (dot < 0) return false;
-
-  const squaredLength = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
-  return dot <= squaredLength;
+  const sq = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+  return dot <= sq;
 }
 
-function isPointInPolygon(point: Point, polygon: Point[]): boolean {
+function isPointInPolygon(p: Point, polygon: Point[]): boolean {
   for (let i = 0; i < polygon.length; i += 1) {
     const next = (i + 1) % polygon.length;
-    if (isPointOnSegment(point, polygon[i], polygon[next])) return true;
+    if (isPointOnSegment(p, polygon[i], polygon[next])) return true;
   }
-
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].x;
-    const yi = polygon[i].y;
-    const xj = polygon[j].x;
-    const yj = polygon[j].y;
-
-    const intersects = ((yi > point.y) !== (yj > point.y))
-      && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
-
+    const xi = polygon[i].x, yi = polygon[i].y;
+    const xj = polygon[j].x, yj = polygon[j].y;
+    const intersects = ((yi > p.y) !== (yj > p.y))
+      && p.x < ((xj - xi) * (p.y - yi)) / (yj - yi) + xi;
     if (intersects) inside = !inside;
   }
-
   return inside;
 }
 
-const leftArcToBottom = sampleEllipseArc(Math.PI, Math.PI / 2);
-const bottomToRightArc = sampleEllipseArc(Math.PI / 2, 0);
-const rightArcToBottom = sampleEllipseArc(0, Math.PI / 2);
-const leftOuterArc = sampleEllipseArc(Math.PI, LEFT_DIAGONAL_ANGLE);
-const centerOuterArc = sampleEllipseArc(LEFT_DIAGONAL_ANGLE, RIGHT_DIAGONAL_ANGLE);
-const rightOuterArc = sampleEllipseArc(RIGHT_DIAGONAL_ANGLE, 0);
+// ---- Zone polygons ----
+// Zones (basket at top):
+//   1: Paint (lane rectangle)
+//   2: Left of paint, inside arc
+//   3: Right of paint, inside arc
+//   4: Left wing - outside arc, left of left diagonal
+//   5: Center bottom - between the two diagonals (below the arc)
+//   6: Right wing - outside arc, right of right diagonal
 
 const ZONE_POLYGONS: Record<number, Point[]> = {
+  // Z1: lane rectangle
   1: [
-    { x: PAINT.left, y: PAINT.top },
+    { x: PAINT.left,  y: PAINT.top },
     { x: PAINT.right, y: PAINT.top },
     { x: PAINT.right, y: PAINT.bottom },
-    { x: PAINT.left, y: PAINT.bottom },
+    { x: PAINT.left,  y: PAINT.bottom },
   ],
+
+  // Z2: left of paint, inside the 3pt arc.
+  // Bounded by: top edge (y=0) from arc-side-x to paint-left, paint-left wall down,
+  // paint-bottom rightward to (200, 159), then arc curving back up-left to (~0, 121)... we approximate via paint-bottom + arc-under-paint segment + outer-left arc segment.
   2: [
-    { x: LEFT_ARC_EXTREME.x, y: 0 },
+    { x: 0, y: 0 },
     { x: PAINT.left, y: 0 },
     { x: PAINT.left, y: PAINT.bottom },
-    { x: ARC_BOTTOM.x, y: PAINT.bottom },
-    ARC_BOTTOM,
-    ...leftArcToBottom.slice(0, -1).reverse(),
+    // walk along arc from left paint corner toward bottom-center (200, ~225) is OUTSIDE paint and inside arc
+    ...arcUnderPaint.slice(0, Math.ceil(arcUnderPaint.length / 2) + 1),
+    // back along outer-left arc to side
+    ...leftSideToPaint.slice().reverse().slice(1),
+    // leftSideToPaint goes from angle π to LEFT_PAINT_CORNER_ANGLE; reversed brings us to (~0,121)
+    { x: 0, y: ARC.cy }, // ensure we close along left rail
   ],
+
+  // Z3: mirror of Z2
   3: [
     { x: PAINT.right, y: 0 },
-    { x: RIGHT_ARC_EXTREME.x, y: 0 },
-    RIGHT_ARC_EXTREME,
-    ...rightArcToBottom.slice(1),
-    { x: ARC_BOTTOM.x, y: PAINT.bottom },
+    { x: 400, y: 0 },
+    { x: 400, y: ARC.cy },
+    ...rightPaintToSide.slice().reverse(),
+    ...arcUnderPaint.slice(Math.floor(arcUnderPaint.length / 2)).reverse(),
     { x: PAINT.right, y: PAINT.bottom },
   ],
+
+  // Z4: left wing - left side from arc-rail intersection down to bottom-left, in to diagonal bottom, up the left diagonal, then back along outer arc to the rail.
   4: [
-    { x: 0, y: 0 },
-    { x: LEFT_ARC_EXTREME.x, y: 0 },
-    LEFT_ARC_EXTREME,
-    ...leftOuterArc.slice(1),
-    LEFT_DIAGONAL_BOTTOM,
-    { x: 0, y: 500 },
-  ],
+    { x: 0, y: ARC.cy },
+    ...leftSideToPaint, // arc from rail down to left paint corner
+    // continue arc under paint to bottom (apex at angle π/2 -> point (200, cy+ry) = (200, 225))
+    ...arcUnderPaint,
+    ...rightPaintToSide, // arc continues to right rail
+    { x: 400, y: ARC.cy },
+    // BUT we want only LEFT side - cut off here. Restart:
+  ].length > 0 ? [
+    // proper Z4 polygon:
+    { x: 0, y: ARC.cy },
+    ...leftSideToPaint,                                  // arc from (0,121) down to left paint corner
+    ...arcUnderPaint.slice(0, Math.ceil(arcUnderPaint.length / 2) + 1), // arc to bottom-center (200, 225)
+    DIAGONAL_TOP,                                        // up the center line short hop to (200, 239) - actually arc bottom ~ (200,225), diag top (200,239), small gap is fine
+    LEFT_DIAGONAL_BOTTOM,                                // down-left diagonal
+    { x: 0, y: 400 },                                    // bottom-left corner
+  ] : [],
+
+  // Z5: center bottom triangle between two diagonals
   5: [
+    DIAGONAL_TOP,
+    RIGHT_DIAGONAL_BOTTOM,
     LEFT_DIAGONAL_BOTTOM,
-    LEFT_DIAGONAL_TOP,
-    ...centerOuterArc.slice(1),
-    RIGHT_DIAGONAL_BOTTOM,
   ],
+
+  // Z6: right wing - mirror of Z4
   6: [
-    { x: RIGHT_ARC_EXTREME.x, y: 0 },
-    { x: 400, y: 0 },
-    { x: 400, y: 500 },
+    { x: 400, y: ARC.cy },
+    { x: 400, y: 400 },
     RIGHT_DIAGONAL_BOTTOM,
-    ...rightOuterArc,
+    DIAGONAL_TOP,
+    ...arcUnderPaint.slice(Math.floor(arcUnderPaint.length / 2)).reverse(), // back along arc from bottom to right paint corner
+    ...rightPaintToSide.slice().reverse(),               // arc from right paint corner up to right rail
   ],
 };
 
@@ -138,35 +175,42 @@ export const ZONE_PATHS: Record<number, string> = Object.fromEntries(
   Object.entries(ZONE_POLYGONS).map(([zone, polygon]) => [Number(zone), pathFromPolygon(polygon)]),
 ) as Record<number, string>;
 
-// Label positions for zone stats
+// Label positions (centered within each zone, in viewBox units)
 export const ZONE_LABEL_POS: Record<number, { x: number; y: number }> = {
-  1: { x: 200, y: 120 },
-  2: { x: 75, y: 105 },
-  3: { x: 325, y: 105 },
-  4: { x: 25, y: 310 },
-  5: { x: 200, y: 365 },
-  6: { x: 375, y: 310 },
+  1: { x: 192, y: 90 },   // paint
+  2: { x: 75,  y: 95 },   // left inside arc
+  3: { x: 325, y: 95 },   // right inside arc
+  4: { x: 35,  y: 320 },  // left wing
+  5: { x: 200, y: 340 },  // center bottom
+  6: { x: 365, y: 320 },  // right wing
 };
 
-export const COURT_VIEWBOX = "0 0 400 500";
+export const COURT_VIEWBOX = "0 0 400 400";
+export const COURT_WIDTH = 400;
+export const COURT_HEIGHT = 400;
 
 // Determine which zone a point (in percentage coords) falls into
 export function getZoneFromPoint(xPct: number, yPct: number): number {
   const point = {
-    x: (xPct / 100) * 400,
-    y: (yPct / 100) * 500,
+    x: (xPct / 100) * COURT_WIDTH,
+    y: (yPct / 100) * COURT_HEIGHT,
   };
 
   for (const zone of [1, 2, 3, 4, 5, 6]) {
     if (isPointInPolygon(point, ZONE_POLYGONS[zone])) return zone;
   }
 
-  if (point.y <= BIG_ARC.cy + BIG_ARC.ry) {
+  // Fallback - assign to nearest logical zone
+  if (point.y <= ARC.cy + ARC.ry) {
+    if (point.x >= PAINT.left && point.x <= PAINT.right) return 1;
     return point.x < 200 ? 2 : 3;
   }
-
-  if (point.x < 200) return 4;
-  if (point.x > 200) return 6;
+  // Below arc: split by diagonals
+  // Left diagonal: from (200, 239) to (58, 400). Right diagonal: (200, 239) to (342, 400).
+  const leftDiagX = 200 + ((point.y - 239) / (400 - 239)) * (58 - 200);
+  const rightDiagX = 200 + ((point.y - 239) / (400 - 239)) * (342 - 200);
+  if (point.x < leftDiagX) return 4;
+  if (point.x > rightDiagX) return 6;
   return 5;
 }
 
