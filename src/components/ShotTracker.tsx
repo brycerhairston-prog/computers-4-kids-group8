@@ -29,10 +29,17 @@ const ShotTracker = () => {
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
   const [hoveredZone, setHoveredZone] = useState<number | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
-  // Synchronous guards to prevent rapid-fire double clicks beating React state updates
-  const lastClickTimeRef = useRef<number>(0);
+  // Synchronous integrity guard: tracks the last shot's zone per player so rapid same-zone
+  // clicks are blocked even before React/multiplayer state propagates. NOT a rate limit.
   const lastShotZoneRef = useRef<{ playerId: string; zone: number } | null>(null);
-  const CLICK_THROTTLE_MS = 350;
+  // Synchronous shot counter (per playerId) used to enforce hard caps optimistically.
+  const optimisticCountsRef = useRef<Record<string, number>>({});
+  // Brief visual "click pulse" on the court (non-blocking) to show feedback after each placement.
+  const [clickPulse, setClickPulse] = useState<{ x: number; y: number; id: number } | null>(null);
+  // Background queue for multiplayer sync — drains every 150ms so taps feel instant
+  // but we don't flood the network on rapid input.
+  const syncQueueRef = useRef<Array<Parameters<typeof mp.addMultiplayerShot>[0]>>([]);
+  const syncTimerRef = useRef<number | null>(null);
 
   // Active shots for current mode (for display on court)
   const activeShots = useMemo(() => {
