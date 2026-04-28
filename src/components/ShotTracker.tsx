@@ -369,7 +369,7 @@ const ShotTracker = () => {
           <AnimatePresence>
             {courtShots.map(shot => (
               <motion.circle key={shot.id}
-                cx={(shot.x / 100) * 400} cy={(shot.y / 100) * 500} r={shot.isPractice ? 5 : 6}
+                cx={(shot.x / 100) * 400} cy={(shot.y / 100) * 400} r={shot.isPractice ? 5 : 6}
                 fill={shot.isPractice ? "hsl(var(--muted-foreground))" : (shot.made ? "hsl(var(--shot-made))" : "hsl(var(--shot-missed))")}
                 stroke="white" strokeWidth={shot.isPractice ? 1 : 1.5}
                 strokeDasharray={shot.isPractice ? "3 2" : undefined}
