@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { expectedFgForZone } from "@/lib/smartCoach";
 
 const CourtBackground = () => (
-  <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
+  <image href={courtImage} x="0" y="0" width="400" height="400" preserveAspectRatio="none" />
 );
 
 const ShotTracker = () => {
