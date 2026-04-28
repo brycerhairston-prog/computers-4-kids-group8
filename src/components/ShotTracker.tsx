@@ -111,6 +111,54 @@ const ShotTracker = () => {
     }
   })();
 
+  // ===== Background sync queue (multiplayer) =====
+  // Drains pending inserts in small batches every 150ms so taps feel instant
+  // locally but we don't fire one network call per click.
+  const flushSyncQueue = useCallback(() => {
+    syncTimerRef.current = null;
+    const batch = syncQueueRef.current;
+    if (batch.length === 0) return;
+    syncQueueRef.current = [];
+    for (const s of batch) {
+      mp.addMultiplayerShot(s).catch(() => {
+        // Realtime subscription will reconcile if the insert eventually fails.
+      });
+    }
+  }, [mp]);
+
+  const queueSync = useCallback((shotData: Parameters<typeof mp.addMultiplayerShot>[0]) => {
+    syncQueueRef.current.push(shotData);
+    if (syncTimerRef.current == null) {
+      syncTimerRef.current = window.setTimeout(flushSyncQueue, 150);
+    }
+  }, [flushSyncQueue, mp]);
+
+  // Flush + cleanup on unmount
+  useEffect(() => () => {
+    if (syncTimerRef.current != null) {
+      window.clearTimeout(syncTimerRef.current);
+      flushSyncQueue();
+    }
+  }, [flushSyncQueue]);
+
+  // Optimistic count helper — combines committed shots + in-flight queued shots
+  // so cap enforcement stays correct during the realtime echo lag.
+  const getOptimisticCount = useCallback((playerId: string) => {
+    return getPlayerShotCount(playerId) + (optimisticCountsRef.current[playerId] || 0);
+  }, [getPlayerShotCount]);
+
+  // Reset optimistic counter once context state catches up to it.
+  useEffect(() => {
+    optimisticCountsRef.current = {};
+  }, [individualShots.length, teamShots.length]);
+
+  // Auto-clear the click pulse after its animation
+  useEffect(() => {
+    if (!clickPulse) return;
+    const tid = window.setTimeout(() => setClickPulse(null), 400);
+    return () => window.clearTimeout(tid);
+  }, [clickPulse]);
+
   const handleCourtClick = (e: React.MouseEvent<SVGSVGElement>) => {
     if (!activePlayerId || !canShoot) return;
     // Block if a shot is currently pending confirmation
