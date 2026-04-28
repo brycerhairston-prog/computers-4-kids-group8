@@ -15,7 +15,9 @@ import SettingsPanel from "@/components/SettingsPanel";
 import FeedbackDialog from "@/components/FeedbackDialog";
 import { motion } from "framer-motion";
 import c4kLogo from "@/assets/c4k-logo.png";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+
+const HeatMap = lazy(() => import("@/components/HeatMap"));
 import { useTranslation } from "react-i18next";
 
 let idCounter = 0;
