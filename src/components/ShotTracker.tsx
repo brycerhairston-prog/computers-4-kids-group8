@@ -170,10 +170,12 @@ const ShotTracker = () => {
   }, [selectedPlayerId, activePlayerId, activeShots, gameMode, practiceShots]);
 
   const lastShot = useMemo(() => {
-    // For undo: consider practice + active shots
-    const allCurrentShots = [...practiceShots, ...activeShots];
-    return allCurrentShots.length > 0 ? allCurrentShots[allCurrentShots.length - 1] : null;
-  }, [practiceShots, activeShots]);
+    // For undo: target the active player's most recent shot (practice + active).
+    // This lets you undo a finished player's last shot from their station.
+    if (!activePlayerId) return null;
+    const playerShots = [...practiceShots, ...activeShots].filter(s => s.playerId === activePlayerId);
+    return playerShots.length > 0 ? playerShots[playerShots.length - 1] : null;
+  }, [activePlayerId, practiceShots, activeShots]);
 
   // Predictive feedback for hovered zone
   const hoverPrediction = useMemo(() => {
