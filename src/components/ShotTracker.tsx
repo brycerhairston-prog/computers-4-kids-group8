@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { expectedFgForZone } from "@/lib/smartCoach";
 
 const CourtBackground = () => (
-  <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
+  <image href={courtImage} x="0" y="0" width="400" height="400" preserveAspectRatio="none" />
 );
 
 const ShotTracker = () => {
@@ -369,7 +369,7 @@ const ShotTracker = () => {
           <AnimatePresence>
             {courtShots.map(shot => (
               <motion.circle key={shot.id}
-                cx={(shot.x / 100) * 400} cy={(shot.y / 100) * 500} r={shot.isPractice ? 5 : 6}
+                cx={(shot.x / 100) * 400} cy={(shot.y / 100) * 400} r={shot.isPractice ? 5 : 6}
                 fill={shot.isPractice ? "hsl(var(--muted-foreground))" : (shot.made ? "hsl(var(--shot-made))" : "hsl(var(--shot-missed))")}
                 stroke="white" strokeWidth={shot.isPractice ? 1 : 1.5}
                 strokeDasharray={shot.isPractice ? "3 2" : undefined}
@@ -380,7 +380,7 @@ const ShotTracker = () => {
           </AnimatePresence>
           {pendingPos && (
             <motion.circle
-              cx={(pendingPos.x / 100) * 400} cy={(pendingPos.y / 100) * 500} r="9"
+              cx={(pendingPos.x / 100) * 400} cy={(pendingPos.y / 100) * 400} r="9"
               fill="hsl(var(--primary))" stroke="white" strokeWidth="2"
               className="animate-pulse-glow" initial={{ scale: 0 }} animate={{ scale: 1 }} />
           )}
