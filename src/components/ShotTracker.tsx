@@ -29,6 +29,8 @@ const ShotTracker = () => {
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
   const [hoveredZone, setHoveredZone] = useState<number | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
+  const rippleIdRef = useRef(0);
 
   // Active shots for current mode (for display on court)
   const activeShots = useMemo(() => {
