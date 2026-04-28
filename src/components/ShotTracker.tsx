@@ -481,6 +481,18 @@ const ShotTracker = () => {
               fill="hsl(var(--primary))" stroke="white" strokeWidth="2"
               className="animate-pulse-glow" initial={{ scale: 0 }} animate={{ scale: 1 }} />
           )}
+          {/* Instant click ripple — non-blocking visual cooldown indicator */}
+          {clickPulse && (
+            <motion.circle
+              key={clickPulse.id}
+              cx={(clickPulse.x / 100) * 400} cy={(clickPulse.y / 100) * 500}
+              fill="none" stroke="hsl(var(--primary))" strokeWidth="2"
+              initial={{ r: 4, opacity: 0.9 }}
+              animate={{ r: 28, opacity: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              style={{ pointerEvents: "none" }}
+            />
+          )}
         </svg>
 
         {/* Predictive shot feedback tooltip */}
