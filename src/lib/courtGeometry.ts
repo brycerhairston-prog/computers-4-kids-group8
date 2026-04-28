@@ -178,15 +178,15 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
   ],
 };
 
-// Z6 was constructed with mistakes above; rebuild it correctly:
+// Z6: right side outside arc + under-paint bulge right half
 ZONE_POLYGONS[6] = [
   { x: 400, y: ARC.cy },                       // (400, 50)
   { x: 400, y: 400 },                          // bottom-right
   RIGHT_DIAGONAL_BOTTOM,                       // (342, 400)
   DIAGONAL_TOP,                                // (200, 239)
-  { x: ARC_BOTTOM_X, y: ARC_BOTTOM_Y },        // (200, 225) close the small gap to arc apex
-  ...arcUnderRight,                            // (200,225) -> (266,159)
-  ...arcRightOuter,                            // (266,159) -> (400,50)
+  { x: ARC_BOTTOM_X, y: PAINT.bottom },        // up paint-right wall extension to paint-bottom
+  { x: PAINT.right, y: PAINT.bottom },         // across to paint-right-bottom (top of bulge segment)
+  ...arcRightOuter,                            // (266,159) -> (400,50) along arc
 ];
 
 // Z3: inside arc, right of paint - bounded by arc on outside, paint-right wall on inside,
