@@ -217,8 +217,16 @@ ZONE_POLYGONS[2] = [
 // That's what we already have, but it includes the small region between paint-left-extended-down and arc curve.
 // Z4 boundary uses arcUnderLeft as TOP boundary, so Z4 starts BELOW that arc. Good - no overlap actually.
 
-// Re-do Z4 to NOT include the under-paint bulge (start from arc-under-paint as top edge):
+// Z4: left side outside arc + under-paint bulge left half
 ZONE_POLYGONS[4] = [
+  { x: 0, y: ARC.cy },                         // (0, 50)
+  ...arcLeftOuter,                             // (0,50) -> (134,159)
+  { x: PAINT.left, y: PAINT.bottom },          // (134,159)
+  { x: ARC_BOTTOM_X, y: PAINT.bottom },        // across to (200,159)
+  DIAGONAL_TOP,                                // down to diagonal split (200,239)
+  LEFT_DIAGONAL_BOTTOM,                        // (58,400)
+  { x: 0, y: 400 },
+];
   { x: 0, y: ARC.cy },
   ...arcLeftOuter,                             // (0,50) -> (134,159)
   ...arcUnderLeft,                             // (134,159) -> (200,225)
