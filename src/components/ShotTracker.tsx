@@ -158,7 +158,8 @@ const ShotTracker = () => {
       return;
     }
 
-    lastClickTimeRef.current = now;
+    // INSTANT visual feedback — pulse the click point immediately. No throttle.
+    setClickPulse({ x: xPct, y: yPct, id: Date.now() });
     setPendingPos({ x: xPct, y: yPct, zone });
   };
 
@@ -173,17 +174,21 @@ const ShotTracker = () => {
       y: pendingPos.y,
       mode: shotMode,
     };
+    // Optimistic local commit + background batched sync.
     if (mp.isMultiplayer) {
-      mp.addMultiplayerShot(shotData);
+      // Bump optimistic counter so cap enforcement holds during realtime echo lag.
+      if (!inPractice) {
+        optimisticCountsRef.current[activePlayerId] =
+          (optimisticCountsRef.current[activePlayerId] || 0) + 1;
+      }
+      queueSync(shotData);
     } else {
       addShot(shotData);
     }
-    // Track last shot synchronously so rapid same-zone clicks are blocked
-    // even before context state propagates (esp. in multiplayer).
+    // Track last shot zone synchronously so rapid same-zone clicks are blocked.
     if (gameMode === "individual" && !inPractice) {
       lastShotZoneRef.current = { playerId: activePlayerId, zone: pendingPos.zone };
     }
-    lastClickTimeRef.current = Date.now();
     setPendingPos(null);
 
     // Toast when practice ends
