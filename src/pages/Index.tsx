@@ -159,7 +159,7 @@ const PlayingDashboard = () => {
               </CollapsibleContent>
             </Collapsible>
           </div>
-        </motion.div>
+        </div>
       </main>
     </div>
   );
