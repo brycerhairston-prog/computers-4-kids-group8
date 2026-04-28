@@ -188,7 +188,7 @@ export default function GameReplay({ open, onOpenChange, shots, players }: GameR
                     const isCurrent = idx === visibleShots.length - 1;
                     const color = playerColor[shot.playerId] || "hsl(var(--primary))";
                     const cx = (shot.x / 100) * 400;
-                    const cy = (shot.y / 100) * 400;
+                    const cy = (shot.y / 100) * 500;
 
                     if (shot.made) {
                       return (

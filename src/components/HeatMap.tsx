@@ -24,7 +24,7 @@ const legendItems = [
 ];
 
 const CourtBackground = () => (
-  <image href={courtImage} x="0" y="0" width="400" height="400" preserveAspectRatio="none" />
+  <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
 );
 
 const HeatMap = () => {
@@ -59,7 +59,7 @@ const HeatMap = () => {
           return (
             <motion.rect
               key={`heat-${zone}`}
-              x="0" y="0" width="400" height="400"
+              x="0" y="0" width="400" height="500"
               fill={color}
               clipPath={`url(#zone-clip-${zone})`}
               initial={{ opacity: 0 }}
