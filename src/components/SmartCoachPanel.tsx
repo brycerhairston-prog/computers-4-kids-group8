@@ -3,7 +3,7 @@ import { useMemo, useState, useEffect } from "react";
 import { buildCoachInsights, type CoachInsight } from "@/lib/smartCoach";
 import { Brain, ChevronDown, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
+import { motion, AnimatePresence } from "framer-motion";
 
 const severityClass: Record<CoachInsight["severity"], string> = {
   hot: "border-l-orange-500 bg-orange-500/10 text-orange-100",
@@ -63,36 +63,47 @@ const SmartCoachPanel = () => {
         )}
       </button>
 
-      {expanded && (
-        <div className="space-y-1.5">
-          {visible.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic px-1">
-              No tactical alerts right now. Keep shooting!
-            </p>
-          ) : (
-            visible.map((insight) => (
-              <div
-                key={insight.id}
-                className={`flex items-start gap-2 text-xs rounded-md border-l-2 px-2 py-1.5 ${severityClass[insight.severity]}`}
-              >
-                <span className="text-base leading-none mt-0.5" aria-hidden="true">
-                  {insight.icon}
-                </span>
-                <span className="flex-1 text-foreground/90">{insight.message}</span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-5 w-5 p-0 shrink-0 opacity-50 hover:opacity-100"
-                  onClick={() => setDismissed((s) => new Set(s).add(insight.id))}
-                  aria-label="Dismiss"
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="space-y-1.5 overflow-hidden"
+          >
+            {visible.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic px-1">
+                No tactical alerts right now. Keep shooting!
+              </p>
+            ) : (
+              visible.map((insight) => (
+                <motion.div
+                  key={insight.id}
+                  layout
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 8 }}
+                  className={`flex items-start gap-2 text-xs rounded-md border-l-2 px-2 py-1.5 ${severityClass[insight.severity]}`}
                 >
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            ))
-          )}
-        </div>
-      )}
+                  <span className="text-base leading-none mt-0.5" aria-hidden="true">
+                    {insight.icon}
+                  </span>
+                  <span className="flex-1 text-foreground/90">{insight.message}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-5 w-5 p-0 shrink-0 opacity-50 hover:opacity-100"
+                    onClick={() => setDismissed((s) => new Set(s).add(insight.id))}
+                    aria-label="Dismiss"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </motion.div>
+              ))
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
