@@ -77,12 +77,8 @@ const SmartCoachPanel = () => {
               </p>
             ) : (
               visible.map((insight) => (
-                <motion.div
+                <div
                   key={insight.id}
-                  layout
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 8 }}
                   className={`flex items-start gap-2 text-xs rounded-md border-l-2 px-2 py-1.5 ${severityClass[insight.severity]}`}
                 >
                   <span className="text-base leading-none mt-0.5" aria-hidden="true">
@@ -98,7 +94,7 @@ const SmartCoachPanel = () => {
                   >
                     <X className="w-3 h-3" />
                   </Button>
-                </motion.div>
+                </div>
               ))
             )}
           </motion.div>
