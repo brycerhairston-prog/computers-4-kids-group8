@@ -176,6 +176,12 @@ const ShotTracker = () => {
     } else {
       addShot(shotData);
     }
+    // Track last shot synchronously so rapid same-zone clicks are blocked
+    // even before context state propagates (esp. in multiplayer).
+    if (gameMode === "individual" && !inPractice) {
+      lastShotZoneRef.current = { playerId: activePlayerId, zone: pendingPos.zone };
+    }
+    lastClickTimeRef.current = Date.now();
     setPendingPos(null);
 
     // Toast when practice ends
