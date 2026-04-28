@@ -2,7 +2,7 @@ import { useGame, ZONE_LABELS, ZONE_POINTS, INDIVIDUAL_SHOT_LIMIT, TEAM_SHOT_LIM
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, getZoneFromPoint } from "@/lib/courtGeometry";
 import courtImage from "@/assets/court-layout.png";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Undo2, ChevronDown, ChevronRight, Lock, Ban } from "lucide-react";
@@ -29,6 +29,8 @@ const ShotTracker = () => {
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
   const [hoveredZone, setHoveredZone] = useState<number | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
+  const rippleIdRef = useRef(0);
 
   // Active shots for current mode (for display on court)
   const activeShots = useMemo(() => {
@@ -100,13 +102,21 @@ const ShotTracker = () => {
     }
   })();
 
-  const handleCourtClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!activePlayerId || !canShoot) return;
+  const handleCourtClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     const svg = courtRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
     const xPct = ((e.clientX - rect.left) / rect.width) * 100;
     const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+
+    // Fire ripple immediately for tactile feedback (GPU: transform/opacity only)
+    const rid = ++rippleIdRef.current;
+    setRipples(prev => [...prev, { id: rid, x: xPct, y: yPct }]);
+    window.setTimeout(() => {
+      setRipples(prev => prev.filter(r => r.id !== rid));
+    }, 600);
+
+    if (!activePlayerId || !canShoot) return;
     const zone = getZoneFromPoint(xPct, yPct);
 
     // Same-zone restriction (individual, non-practice)
@@ -122,7 +132,7 @@ const ShotTracker = () => {
     }
 
     setPendingPos({ x: xPct, y: yPct, zone });
-  };
+  }, [activePlayerId, canShoot, lockedZone, blockedZones, t]);
 
   const confirmShot = (made: boolean) => {
     if (!pendingPos || !activePlayerId) return;
@@ -160,10 +170,12 @@ const ShotTracker = () => {
   }, [selectedPlayerId, activePlayerId, activeShots, gameMode, practiceShots]);
 
   const lastShot = useMemo(() => {
-    // For undo: consider practice + active shots
-    const allCurrentShots = [...practiceShots, ...activeShots];
-    return allCurrentShots.length > 0 ? allCurrentShots[allCurrentShots.length - 1] : null;
-  }, [practiceShots, activeShots]);
+    // For undo: target the active player's most recent shot (practice + active).
+    // This lets you undo a finished player's last shot from their station.
+    if (!activePlayerId) return null;
+    const playerShots = [...practiceShots, ...activeShots].filter(s => s.playerId === activePlayerId);
+    return playerShots.length > 0 ? playerShots[playerShots.length - 1] : null;
+  }, [activePlayerId, practiceShots, activeShots]);
 
   // Predictive feedback for hovered zone
   const hoverPrediction = useMemo(() => {
@@ -263,8 +275,8 @@ const ShotTracker = () => {
                           <Button key={p.id} size="sm"
                             variant={activePlayerId === p.id ? "default" : "outline"}
                             onClick={() => selectPlayer(p.id)}
-                            className={`text-xs h-7 gap-1 ${!isLocal ? "opacity-70" : ""}`}
-                            disabled={(teamDone || playerDone) && isLocal}>
+                            className={`text-xs h-7 gap-1 ${!isLocal ? "opacity-70" : ""} ${(teamDone || playerDone) ? "opacity-60" : ""}`}>
+
                             {!isLocal && <Lock className="w-2.5 h-2.5" />}
                             {p.name} ({playerShots}/{playerLimit})
                           </Button>
@@ -296,8 +308,8 @@ const ShotTracker = () => {
                 <Button key={p.id} size="sm"
                   variant={activePlayerId === p.id ? "default" : "outline"}
                   onClick={() => selectPlayer(p.id)}
-                  className={`text-xs h-auto py-1 px-2 gap-1.5 flex-col items-start relative overflow-hidden ${done && isLocal ? "opacity-50" : ""} ${!isLocal ? "opacity-70" : ""}`}
-                  disabled={done && isLocal}>
+                  className={`text-xs h-auto py-1 px-2 gap-1.5 flex-col items-start relative overflow-hidden ${done ? "opacity-60" : ""} ${!isLocal ? "opacity-70" : ""}`}>
+
                   <span className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/30" style={{ background: p.color || "hsl(var(--primary))" }} />
                     {!isLocal && <Lock className="w-2.5 h-2.5" />}
@@ -384,7 +396,25 @@ const ShotTracker = () => {
               fill="hsl(var(--primary))" stroke="white" strokeWidth="2"
               className="animate-pulse-glow" initial={{ scale: 0 }} animate={{ scale: 1 }} />
           )}
+
+          {/* GPU-friendly ripple effect (transform + opacity only) */}
+          {ripples.map(r => (
+            <motion.circle
+              key={r.id}
+              cx={(r.x / 100) * 400}
+              cy={(r.y / 100) * 500}
+              r={10}
+              fill="none"
+              stroke="hsl(var(--primary))"
+              strokeWidth={2}
+              style={{ pointerEvents: "none", willChange: "transform, opacity" }}
+              initial={{ scale: 0.2, opacity: 0.7 }}
+              animate={{ scale: 4, opacity: 0 }}
+              transition={{ duration: 0.55, ease: "easeOut" }}
+            />
+          ))}
         </svg>
+
 
         {/* Predictive shot feedback tooltip */}
         <AnimatePresence>
