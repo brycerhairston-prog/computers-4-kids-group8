@@ -396,7 +396,25 @@ const ShotTracker = () => {
               fill="hsl(var(--primary))" stroke="white" strokeWidth="2"
               className="animate-pulse-glow" initial={{ scale: 0 }} animate={{ scale: 1 }} />
           )}
+
+          {/* GPU-friendly ripple effect (transform + opacity only) */}
+          {ripples.map(r => (
+            <motion.circle
+              key={r.id}
+              cx={(r.x / 100) * 400}
+              cy={(r.y / 100) * 500}
+              r={10}
+              fill="none"
+              stroke="hsl(var(--primary))"
+              strokeWidth={2}
+              style={{ pointerEvents: "none", willChange: "transform, opacity" }}
+              initial={{ scale: 0.2, opacity: 0.7 }}
+              animate={{ scale: 4, opacity: 0 }}
+              transition={{ duration: 0.55, ease: "easeOut" }}
+            />
+          ))}
         </svg>
+
 
         {/* Predictive shot feedback tooltip */}
         <AnimatePresence>
