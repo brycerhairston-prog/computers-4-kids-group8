@@ -1029,7 +1029,11 @@ const GameSummary = ({ onStartTeamMode }: GameSummaryProps) => {
           </>
         )}
       </main>
-      <GameReplay open={showReplay} onOpenChange={setShowReplay} shots={replayShots} players={players} />
+      {showReplay && (
+        <Suspense fallback={null}>
+          <GameReplay open={showReplay} onOpenChange={setShowReplay} shots={replayShots} players={players} />
+        </Suspense>
+      )}
     </div>
   );
 };
