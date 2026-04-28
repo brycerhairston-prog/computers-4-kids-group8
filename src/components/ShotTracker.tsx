@@ -275,8 +275,8 @@ const ShotTracker = () => {
                           <Button key={p.id} size="sm"
                             variant={activePlayerId === p.id ? "default" : "outline"}
                             onClick={() => selectPlayer(p.id)}
-                            className={`text-xs h-7 gap-1 ${!isLocal ? "opacity-70" : ""}`}
-                            disabled={(teamDone || playerDone) && isLocal}>
+                            className={`text-xs h-7 gap-1 ${!isLocal ? "opacity-70" : ""} ${(teamDone || playerDone) ? "opacity-60" : ""}`}>
+
                             {!isLocal && <Lock className="w-2.5 h-2.5" />}
                             {p.name} ({playerShots}/{playerLimit})
                           </Button>
