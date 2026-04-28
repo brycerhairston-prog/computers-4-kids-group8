@@ -308,8 +308,8 @@ const ShotTracker = () => {
                 <Button key={p.id} size="sm"
                   variant={activePlayerId === p.id ? "default" : "outline"}
                   onClick={() => selectPlayer(p.id)}
-                  className={`text-xs h-auto py-1 px-2 gap-1.5 flex-col items-start relative overflow-hidden ${done && isLocal ? "opacity-50" : ""} ${!isLocal ? "opacity-70" : ""}`}
-                  disabled={done && isLocal}>
+                  className={`text-xs h-auto py-1 px-2 gap-1.5 flex-col items-start relative overflow-hidden ${done ? "opacity-60" : ""} ${!isLocal ? "opacity-70" : ""}`}>
+
                   <span className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/30" style={{ background: p.color || "hsl(var(--primary))" }} />
                     {!isLocal && <Lock className="w-2.5 h-2.5" />}
