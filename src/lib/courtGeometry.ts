@@ -189,25 +189,21 @@ ZONE_POLYGONS[6] = [
   ...arcRightOuter,                            // (266,159) -> (400,50)
 ];
 
-// And rebuild Z3 cleanly without dup points:
+// Z3: inside arc, right of paint - bounded by arc on outside, paint-right wall on inside,
+// stops at paint-bottom level (the under-paint bulge belongs to Z6).
 ZONE_POLYGONS[3] = [
   { x: PAINT.right, y: 0 },
   { x: 400, y: 0 },
   { x: 400, y: ARC.cy },
   ...arcRightOuter.slice().reverse(),          // (400,50) -> (266,159)
-  ...arcUnderRight.slice().reverse(),          // (266,159) -> (200,225)
-  { x: ARC_BOTTOM_X, y: PAINT.bottom },        // up the center line to paint-bottom level
-  { x: PAINT.right, y: PAINT.bottom },         // across to paint-right-bottom
+  { x: PAINT.right, y: PAINT.bottom },         // straight across to paint-right-bottom
 ];
 
-// And rebuild Z2 cleanly:
+// Z2: mirror of Z3 on left side
 ZONE_POLYGONS[2] = [
   { x: 0, y: 0 },
   { x: PAINT.left, y: 0 },
   { x: PAINT.left, y: PAINT.bottom },
-  ...arcUnderLeft,                             // (134,159) -> (200,225)
-  { x: ARC_BOTTOM_X, y: PAINT.bottom },        // up center line to paint-bottom
-  { x: PAINT.left, y: PAINT.bottom },          // back to paint-left-bottom (closes bulge inclusion)
   ...arcLeftOuter.slice().reverse(),           // (134,159) -> (0,50)
   { x: 0, y: ARC.cy },
 ];
