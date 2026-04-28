@@ -116,16 +116,11 @@ const ShotTracker = () => {
     // Block if a shot is currently pending confirmation
     if (pendingPos) return;
 
-    // Rate limit: ignore clicks faster than throttle window
-    const now = Date.now();
-    if (now - lastClickTimeRef.current < CLICK_THROTTLE_MS) {
-      return;
-    }
-
-    // Hard cap enforcement (synchronous) — prevents exceeding limits via rapid clicks
+    // Hard cap enforcement (synchronous + optimistic) — never exceed limits even
+    // under rapid-fire clicks. This is INTEGRITY, not rate limiting (no time delay).
     if (!inPractice) {
       if (gameMode === "individual") {
-        if (getPlayerShotCount(activePlayerId) >= INDIVIDUAL_SHOT_LIMIT) {
+        if (getOptimisticCount(activePlayerId) >= INDIVIDUAL_SHOT_LIMIT) {
           toast.error(t("shotTracker.individualLimitReached", { name: activePlayer?.name }));
           return;
         }
@@ -133,7 +128,7 @@ const ShotTracker = () => {
         const team = getPlayerTeam(activePlayerId);
         if (team && getTeamShotCount(team.id) >= TEAM_SHOT_LIMIT) return;
         const playerLimit = getPlayerShotLimit(activePlayerId);
-        if (getPlayerShotCount(activePlayerId) >= playerLimit) return;
+        if (getOptimisticCount(activePlayerId) >= playerLimit) return;
       }
     }
 
