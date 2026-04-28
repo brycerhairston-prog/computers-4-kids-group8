@@ -133,24 +133,15 @@ const ZONE_POLYGONS: Record<number, Point[]> = {
     { x: PAINT.right, y: PAINT.bottom },
   ],
 
-  // Z4: left wing - left side from arc-rail intersection down to bottom-left, in to diagonal bottom, up the left diagonal, then back along outer arc to the rail.
+  // Z4: left wing - bounded by left rail, outer-left arc, arc-under-paint half, left diagonal, bottom rail
   4: [
-    { x: 0, y: ARC.cy },
-    ...leftSideToPaint, // arc from rail down to left paint corner
-    // continue arc under paint to bottom (apex at angle π/2 -> point (200, cy+ry) = (200, 225))
-    ...arcUnderPaint,
-    ...rightPaintToSide, // arc continues to right rail
-    { x: 400, y: ARC.cy },
-    // BUT we want only LEFT side - cut off here. Restart:
-  ].length > 0 ? [
-    // proper Z4 polygon:
-    { x: 0, y: ARC.cy },
-    ...leftSideToPaint,                                  // arc from (0,121) down to left paint corner
-    ...arcUnderPaint.slice(0, Math.ceil(arcUnderPaint.length / 2) + 1), // arc to bottom-center (200, 225)
-    DIAGONAL_TOP,                                        // up the center line short hop to (200, 239) - actually arc bottom ~ (200,225), diag top (200,239), small gap is fine
-    LEFT_DIAGONAL_BOTTOM,                                // down-left diagonal
-    { x: 0, y: 400 },                                    // bottom-left corner
-  ] : [],
+    { x: 0, y: ARC.cy },                                                 // arc-rail intersection on left
+    ...leftSideToPaint,                                                  // arc from rail down to left paint corner
+    ...arcUnderPaint.slice(0, Math.ceil(arcUnderPaint.length / 2) + 1),  // arc under paint to bottom-center
+    DIAGONAL_TOP,                                                        // jump to diagonal split point
+    LEFT_DIAGONAL_BOTTOM,                                                // down the left diagonal
+    { x: 0, y: 400 },                                                    // bottom-left corner
+  ],
 
   // Z5: center bottom triangle between two diagonals
   5: [
