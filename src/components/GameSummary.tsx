@@ -322,7 +322,7 @@ const PlayerHeatMaps = ({ players, shotSource, teams }: { players: { id: string;
                       </clipPath>
                     ))}
                   </defs>
-                  <image href={courtImage} x="0" y="0" width="400" height="500" preserveAspectRatio="none" />
+                  <image href={courtImage} x="0" y="0" width="400" height="400" preserveAspectRatio="none" />
                   {[1, 2, 3, 4, 5, 6].map(zone => {
                     const zs = stats.zones[zone];
                     if (zs.attempts === 0) return null;
