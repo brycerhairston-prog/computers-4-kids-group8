@@ -3,7 +3,7 @@ import { useMultiplayer } from "@/context/MultiplayerContext";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import c4kLogo from "@/assets/c4k-logo.png";
+import c4kLogo from "@/assets/c4k-logo.webp";
 import { RotateCcw, Trophy, Download, Users, Shuffle, Hand, Scale, Minus, Plus, Ban, Film } from "lucide-react";
 import { lazy, Suspense } from "react";
 const GameReplay = lazy(() => import("@/components/GameReplay"));
