@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Plus, Trash2, Users, User, Shuffle, Scale, Hand } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import c4kLogo from "@/assets/c4k-logo.png";
+import c4kLogo from "@/assets/c4k-logo.webp";
 
 const GameSetup = () => {
   const { t } = useTranslation();

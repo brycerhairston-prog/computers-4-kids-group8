@@ -1,5 +1,5 @@
 import { useState } from "react";
-import c4kLogo from "@/assets/c4k-logo.png";
+import c4kLogo from "@/assets/c4k-logo.webp";
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

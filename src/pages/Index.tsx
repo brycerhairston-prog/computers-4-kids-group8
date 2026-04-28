@@ -14,7 +14,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/component
 import SettingsPanel from "@/components/SettingsPanel";
 import FeedbackDialog from "@/components/FeedbackDialog";
 import { motion } from "framer-motion";
-import c4kLogo from "@/assets/c4k-logo.png";
+import c4kLogo from "@/assets/c4k-logo.webp";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 const HeatMap = lazy(() => import("@/components/HeatMap"));
