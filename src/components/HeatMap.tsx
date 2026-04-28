@@ -59,7 +59,7 @@ const HeatMap = () => {
           return (
             <motion.rect
               key={`heat-${zone}`}
-              x="0" y="0" width="400" height="500"
+              x="0" y="0" width="400" height="400"
               fill={color}
               clipPath={`url(#zone-clip-${zone})`}
               initial={{ opacity: 0 }}
