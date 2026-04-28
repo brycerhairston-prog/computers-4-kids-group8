@@ -29,6 +29,10 @@ const ShotTracker = () => {
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
   const [hoveredZone, setHoveredZone] = useState<number | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  // Synchronous guards to prevent rapid-fire double clicks beating React state updates
+  const lastClickTimeRef = useRef<number>(0);
+  const lastShotZoneRef = useRef<{ playerId: string; zone: number } | null>(null);
+  const CLICK_THROTTLE_MS = 350;
 
   // Active shots for current mode (for display on court)
   const activeShots = useMemo(() => {
