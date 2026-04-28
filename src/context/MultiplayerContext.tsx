@@ -270,7 +270,8 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         const { data: shots } = await supabase
           .from("session_shots")
           .select()
-          .eq("session_id", sessionData.id);
+          .eq("session_id", sessionData.id)
+          .order("created_at", { ascending: true });
         setSessionShots(shots || []);
 
         saveSessionToStorage(sessionData.id, existingFromDevice.map(p => p.id), sessionData.host_device_id === deviceId);
