@@ -1,6 +1,6 @@
 import { GameProvider, useGame, type Player, type Shot, type GamePhase, type GameMode, type Team, type TeamSelectionMode } from "@/context/GameContext";
 import { MultiplayerProvider, useMultiplayer } from "@/context/MultiplayerContext";
-import HeatMap from "@/components/HeatMap";
+import { lazy, Suspense } from "react";
 import DataTable from "@/components/DataTable";
 import ShotTracker from "@/components/ShotTracker";
 import GameSetup from "@/components/GameSetup";
@@ -15,7 +15,9 @@ import SettingsPanel from "@/components/SettingsPanel";
 import FeedbackDialog from "@/components/FeedbackDialog";
 import { motion } from "framer-motion";
 import c4kLogo from "@/assets/c4k-logo.png";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+
+const HeatMap = lazy(() => import("@/components/HeatMap"));
 import { useTranslation } from "react-i18next";
 
 let idCounter = 0;
@@ -102,7 +104,9 @@ const PlayingDashboard = () => {
                 <ShotTracker />
               </TabsContent>
               <TabsContent value="heatmap">
-                <HeatMap />
+                <Suspense fallback={<div className="glass-card rounded-lg p-8 text-center text-xs text-muted-foreground">Loading heat map…</div>}>
+                  <HeatMap />
+                </Suspense>
               </TabsContent>
             </Tabs>
             <Collapsible defaultOpen className="glass-card rounded-lg p-4 space-y-2">
