@@ -3,15 +3,11 @@ import c4kLogo from "@/assets/c4k-logo.png";
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Users, Plus, LogIn, ArrowLeft, Loader2, Trash2, UserMinus, DoorOpen, Search, Database } from "lucide-react";
+import { Copy, Users, Plus, LogIn, ArrowLeft, Loader2, Trash2, UserMinus, DoorOpen } from "lucide-react";
 import { toast } from "sonner";
 import SettingsPanel from "@/components/SettingsPanel";
-import PlayerLookupDialog from "@/components/PlayerLookupDialog";
-import PlayerBrowseTab from "@/components/PlayerBrowseTab";
 import { useTranslation } from "react-i18next";
-import { resolveOrCreatePlayer, getRecentPlayerIds, linkSessionToGlobalPlayer, type PlayerLookupResult, type BrowsePlayer } from "@/lib/playerDatabase";
 
 type LobbyView = "welcome" | "create" | "join" | "waiting";
 
@@ -23,77 +19,29 @@ const Lobby = () => {
   } = useMultiplayer();
   const [view, setView] = useState<LobbyView>("welcome");
   const [playerNames, setPlayerNames] = useState<string[]>([""]);
-  const [playerIds, setPlayerIds] = useState<string[]>([""]);
   const [gameCode, setGameCode] = useState("");
   const [newPlayerName, setNewPlayerName] = useState("");
-  const [newPlayerExternalId, setNewPlayerExternalId] = useState("");
   const [addingPlayer, setAddingPlayer] = useState(false);
-  const [lookupOpen, setLookupOpen] = useState(false);
-  const recentIds = getRecentPlayerIds();
 
   const addNameField = () => {
     if (playerNames.length >= 8) { toast.error("Max 8 players per device"); return; }
     setPlayerNames(prev => [...prev, ""]);
-    setPlayerIds(prev => [...prev, ""]);
   };
 
   const removeNameField = (idx: number) => {
     if (playerNames.length <= 1) return;
     setPlayerNames(prev => prev.filter((_, i) => i !== idx));
-    setPlayerIds(prev => prev.filter((_, i) => i !== idx));
   };
 
   const updateName = (idx: number, value: string) => {
     setPlayerNames(prev => prev.map((n, i) => i === idx ? value : n));
   };
 
-  const updateId = (idx: number, value: string) => {
-    setPlayerIds(prev => prev.map((n, i) => i === idx ? value : n));
-  };
-
   const validNames = playerNames.map(n => n.trim()).filter(Boolean);
-
-  /** After session players are created, resolve/create global player records and link them. */
-  const persistPlayerLinks = async () => {
-    // Read latest session players from store-of-truth via a small delay-free approach:
-    // We rely on the createGame/joinGame having set sessionPlayers via state; but here we
-    // can't read the freshly-set value synchronously. Use a microtask wait then react closure.
-    // Simpler: re-query via supabase client is overkill; instead derive from the fact that
-    // names map 1:1 to indices in the order we passed them.
-    // We'll match by name + device order.
-    setTimeout(async () => {
-      try {
-        const fresh = sessionPlayersRef.current;
-        for (let i = 0; i < playerNames.length; i++) {
-          const name = playerNames[i].trim();
-          if (!name) continue;
-          const id = (playerIds[i] || "").trim();
-          // Find the matching session player (most recently added with this name on our device)
-          const match = fresh.find(p => p.name === name && localPlayerIdsRef.current.includes(p.id));
-          if (!match) continue;
-          try {
-            const player = await resolveOrCreatePlayer(id || undefined, name);
-            linkSessionToGlobalPlayer(match.id, player.id);
-          } catch (err) {
-            console.warn("Failed to link player", name, err);
-          }
-        }
-      } catch (err) {
-        console.warn("persistPlayerLinks failed", err);
-      }
-    }, 200);
-  };
-
-  // Refs to read latest values inside setTimeout
-  const sessionPlayersRef = { current: sessionPlayers };
-  sessionPlayersRef.current = sessionPlayers;
-  const localPlayerIdsRef = { current: localPlayerIds };
-  localPlayerIdsRef.current = localPlayerIds;
 
   const handleCreate = async () => {
     if (validNames.length === 0) { toast.error("Add at least one player name"); return; }
     await createGame(validNames);
-    persistPlayerLinks();
     setView("waiting");
   };
 
@@ -101,7 +49,6 @@ const Lobby = () => {
     if (validNames.length === 0) { toast.error("Add at least one player name"); return; }
     if (!gameCode.trim()) { toast.error("Enter a game code"); return; }
     await joinGame(gameCode, validNames);
-    persistPlayerLinks();
     setView("waiting");
   };
 
@@ -117,54 +64,8 @@ const Lobby = () => {
     if (!name) { toast.error("Enter a player name"); return; }
     setAddingPlayer(true);
     await addPlayerToStation(name);
-    const idInput = newPlayerExternalId.trim();
     setNewPlayerName("");
-    setNewPlayerExternalId("");
     setAddingPlayer(false);
-    // Link after the session player row is in state
-    setTimeout(async () => {
-      const fresh = sessionPlayersRef.current;
-      const match = [...fresh].reverse().find(p => p.name === name && localPlayerIdsRef.current.includes(p.id));
-      if (!match) return;
-      try {
-        const player = await resolveOrCreatePlayer(idInput || undefined, name);
-        linkSessionToGlobalPlayer(match.id, player.id);
-      } catch (err) {
-        console.warn("link station player failed", err);
-      }
-    }, 250);
-  };
-
-  const handleLookupLoad = (result: PlayerLookupResult) => {
-    addLoadedPlayerToList(result.player.name, result.player.player_id);
-  };
-
-  const handleBrowseLoad = (p: BrowsePlayer) => {
-    addLoadedPlayerToList(p.name, p.player_id);
-    toast.success(`${p.name} added to game`);
-  };
-
-  const addLoadedPlayerToList = (name: string, externalId: string) => {
-    setPlayerNames(prev => {
-      const idx = prev.findIndex(n => !n.trim());
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = name;
-        return next;
-      }
-      if (prev.length >= 8) { toast.error("Max 8 players per device"); return prev; }
-      return [...prev, name];
-    });
-    setPlayerIds(prev => {
-      const idx = playerNames.findIndex(n => !n.trim());
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = externalId;
-        return next;
-      }
-      return [...prev, externalId];
-    });
-    if (view === "welcome") setView("create");
   };
 
   const handleRemovePlayer = async (playerId: string, playerName: string) => {
@@ -176,7 +77,6 @@ const Lobby = () => {
     await leaveSession();
     setView("welcome");
     setPlayerNames([""]);
-    setPlayerIds([""]);
     setGameCode("");
   };
 
@@ -225,7 +125,6 @@ const Lobby = () => {
               {t("lobby.players")} ({sessionPlayers.length})
             </div>
 
-            {/* Your station players */}
             {localPlayers.length > 0 && (
               <div className="space-y-1">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t("lobby.yourStation")}</p>
@@ -243,7 +142,6 @@ const Lobby = () => {
               </div>
             )}
 
-            {/* Other station players */}
             {otherPlayers.length > 0 && (
               <div className="space-y-1">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t("lobby.otherStations")}</p>
@@ -261,30 +159,19 @@ const Lobby = () => {
               </div>
             )}
 
-            {/* Add player to station */}
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  value={newPlayerName}
-                  onChange={e => setNewPlayerName(e.target.value)}
-                  placeholder={t("lobby.addToStation")}
-                  className="h-9 text-sm"
-                  maxLength={20}
-                  onKeyDown={e => e.key === "Enter" && handleAddPlayerToStation()}
-                />
-                <Button size="sm" className="h-9 gap-1 shrink-0" onClick={handleAddPlayerToStation} disabled={addingPlayer || !newPlayerName.trim()}>
-                  {addingPlayer ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Plus className="w-3 h-3" aria-hidden="true" />}
-                  {t("common.add")}
-                </Button>
-              </div>
+            <div className="flex gap-2">
               <Input
-                value={newPlayerExternalId}
-                onChange={e => setNewPlayerExternalId(e.target.value)}
-                placeholder="Player ID (optional)"
-                className="h-8 text-xs font-mono"
-                maxLength={32}
-                list="recent-player-ids"
+                value={newPlayerName}
+                onChange={e => setNewPlayerName(e.target.value)}
+                placeholder={t("lobby.addToStation")}
+                className="h-9 text-sm"
+                maxLength={20}
+                onKeyDown={e => e.key === "Enter" && handleAddPlayerToStation()}
               />
+              <Button size="sm" className="h-9 gap-1 shrink-0" onClick={handleAddPlayerToStation} disabled={addingPlayer || !newPlayerName.trim()}>
+                {addingPlayer ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <Plus className="w-3 h-3" aria-hidden="true" />}
+                {t("common.add")}
+              </Button>
             </div>
 
             <p className="text-xs text-muted-foreground text-center">
@@ -310,7 +197,6 @@ const Lobby = () => {
             <p className="text-xs text-center text-muted-foreground">{t("lobby.needPlayers")}</p>
           )}
 
-          {/* Leave button */}
           <Button
             variant="outline"
             className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
@@ -319,10 +205,6 @@ const Lobby = () => {
             <DoorOpen className="w-4 h-4" aria-hidden="true" /> {t("lobby.leaveGame")}
           </Button>
         </motion.div>
-        <datalist id="recent-player-ids">
-          {recentIds.map(id => <option key={id} value={id} />)}
-        </datalist>
-        <PlayerLookupDialog open={lookupOpen} onOpenChange={setLookupOpen} />
       </main>
     );
   }
@@ -331,51 +213,30 @@ const Lobby = () => {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-foreground">{t("lobby.playersAtStation")}</label>
-        <div className="flex gap-1">
-          <Button size="sm" variant="ghost" onClick={() => setLookupOpen(true)} className="text-xs gap-1 h-7">
-            <Search className="w-3 h-3" aria-hidden="true" /> Lookup
-          </Button>
-          <Button size="sm" variant="ghost" onClick={addNameField} className="text-xs gap-1 h-7">
-            <Plus className="w-3 h-3" aria-hidden="true" /> {t("lobby.addPlayer")}
-          </Button>
-        </div>
+        <Button size="sm" variant="ghost" onClick={addNameField} className="text-xs gap-1 h-7">
+          <Plus className="w-3 h-3" aria-hidden="true" /> {t("lobby.addPlayer")}
+        </Button>
       </div>
       <div className="space-y-2">
         {playerNames.map((name, idx) => (
-          <div key={idx} className="space-y-1">
-            <div className="flex gap-2">
-              <Input
-                value={name}
-                onChange={e => updateName(idx, e.target.value)}
-                placeholder={t("lobby.playerPlaceholder", { n: idx + 1 })}
-                className="h-10 text-sm"
-                maxLength={20}
-              />
-              {playerNames.length > 1 && (
-                <Button size="icon" variant="ghost" onClick={() => removeNameField(idx)} className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive" aria-label={t("lobby.removePlayerField")}>
-                  <Trash2 className="w-4 h-4" aria-hidden="true" />
-                </Button>
-              )}
-            </div>
+          <div key={idx} className="flex gap-2">
             <Input
-              value={playerIds[idx] || ""}
-              onChange={e => updateId(idx, e.target.value)}
-              placeholder="Player ID (optional — auto-generated if blank)"
-              className="h-8 text-xs font-mono"
-              maxLength={32}
-              list="recent-player-ids"
+              value={name}
+              onChange={e => updateName(idx, e.target.value)}
+              placeholder={t("lobby.playerPlaceholder", { n: idx + 1 })}
+              className="h-10 text-sm"
+              maxLength={20}
             />
+            {playerNames.length > 1 && (
+              <Button size="icon" variant="ghost" onClick={() => removeNameField(idx)} className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive" aria-label={t("lobby.removePlayerField")}>
+                <Trash2 className="w-4 h-4" aria-hidden="true" />
+              </Button>
+            )}
           </div>
         ))}
       </div>
       <p className="text-[10px] text-muted-foreground">{t("lobby.addAllPlayers")}</p>
     </div>
-  );
-
-  const recentIdsDatalist = (
-    <datalist id="recent-player-ids">
-      {recentIds.map(id => <option key={id} value={id} />)}
-    </datalist>
   );
 
   return (
@@ -396,43 +257,21 @@ const Lobby = () => {
               <p className="text-sm text-muted-foreground">{t("lobby.subtitle")}</p>
             </header>
 
-            <Tabs defaultValue="game" className="w-full">
-              <TabsList className="w-full">
-                <TabsTrigger value="game" className="flex-1 gap-1">
-                  <Plus className="w-3.5 h-3.5" aria-hidden="true" /> Current Game
-                </TabsTrigger>
-                <TabsTrigger value="players" className="flex-1 gap-1">
-                  <Database className="w-3.5 h-3.5" aria-hidden="true" /> Players
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="game" className="space-y-3 mt-4">
-                <Button
-                  className="w-full h-14 text-lg font-bold gap-3"
-                  onClick={() => setView("create")}
-                >
-                  <Plus className="w-5 h-5" aria-hidden="true" /> {t("lobby.createGame")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full h-14 text-lg font-bold gap-3"
-                  onClick={() => setView("join")}
-                >
-                  <LogIn className="w-5 h-5" aria-hidden="true" /> {t("lobby.joinGame")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full gap-2 text-sm"
-                  onClick={() => setLookupOpen(true)}
-                >
-                  <Search className="w-4 h-4" aria-hidden="true" /> Lookup Player by ID
-                </Button>
-              </TabsContent>
-
-              <TabsContent value="players" className="mt-4">
-                <PlayerBrowseTab onLoad={handleBrowseLoad} />
-              </TabsContent>
-            </Tabs>
+            <div className="space-y-3">
+              <Button
+                className="w-full h-14 text-lg font-bold gap-3"
+                onClick={() => setView("create")}
+              >
+                <Plus className="w-5 h-5" aria-hidden="true" /> {t("lobby.createGame")}
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full h-14 text-lg font-bold gap-3"
+                onClick={() => setView("join")}
+              >
+                <LogIn className="w-5 h-5" aria-hidden="true" /> {t("lobby.joinGame")}
+              </Button>
+            </div>
 
             <footer className="text-[10px] text-muted-foreground/70 text-center">
               {t("lobby.createdBy")}
@@ -514,8 +353,6 @@ const Lobby = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      {recentIdsDatalist}
-      <PlayerLookupDialog open={lookupOpen} onOpenChange={setLookupOpen} onLoad={handleLookupLoad} />
     </main>
   );
 };
