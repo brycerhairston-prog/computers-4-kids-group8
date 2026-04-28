@@ -108,7 +108,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const [sessionRes, playersRes, shotsRes] = await Promise.all([
       supabase.from("game_sessions").select().eq("id", sessionId).single(),
       supabase.from("session_players").select().eq("session_id", sessionId),
-      supabase.from("session_shots").select().eq("session_id", sessionId),
+      supabase.from("session_shots").select().eq("session_id", sessionId).order("created_at", { ascending: true }),
     ]);
 
     if (sessionRes.error || !sessionRes.data) {
