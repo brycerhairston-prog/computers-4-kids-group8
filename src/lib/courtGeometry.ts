@@ -227,13 +227,6 @@ ZONE_POLYGONS[4] = [
   LEFT_DIAGONAL_BOTTOM,                        // (58,400)
   { x: 0, y: 400 },
 ];
-  { x: 0, y: ARC.cy },
-  ...arcLeftOuter,                             // (0,50) -> (134,159)
-  ...arcUnderLeft,                             // (134,159) -> (200,225)
-  DIAGONAL_TOP,                                // (200,239)
-  LEFT_DIAGONAL_BOTTOM,                        // (58,400)
-  { x: 0, y: 400 },
-];
 
 export const ZONE_PATHS: Record<number, string> = Object.fromEntries(
   Object.entries(ZONE_POLYGONS).map(([zone, polygon]) => [Number(zone), pathFromPolygon(polygon)]),
