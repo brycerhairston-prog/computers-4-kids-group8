@@ -108,7 +108,7 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const [sessionRes, playersRes, shotsRes] = await Promise.all([
       supabase.from("game_sessions").select().eq("id", sessionId).single(),
       supabase.from("session_players").select().eq("session_id", sessionId),
-      supabase.from("session_shots").select().eq("session_id", sessionId),
+      supabase.from("session_shots").select().eq("session_id", sessionId).order("created_at", { ascending: true }),
     ]);
 
     if (sessionRes.error || !sessionRes.data) {
@@ -270,7 +270,8 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
         const { data: shots } = await supabase
           .from("session_shots")
           .select()
-          .eq("session_id", sessionData.id);
+          .eq("session_id", sessionData.id)
+          .order("created_at", { ascending: true });
         setSessionShots(shots || []);
 
         saveSessionToStorage(sessionData.id, existingFromDevice.map(p => p.id), sessionData.host_device_id === deviceId);
@@ -311,7 +312,8 @@ export const MultiplayerProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const { data: shots } = await supabase
         .from("session_shots")
         .select()
-        .eq("session_id", sessionData.id);
+        .eq("session_id", sessionData.id)
+        .order("created_at", { ascending: true });
       setSessionShots(shots || []);
 
       saveSessionToStorage(sessionData.id, playerData.map(p => p.id), sessionData.host_device_id === deviceId);
