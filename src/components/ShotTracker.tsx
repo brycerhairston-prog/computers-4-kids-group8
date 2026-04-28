@@ -378,23 +378,20 @@ const ShotTracker = () => {
             );
           })}
 
-          <AnimatePresence>
-            {courtShots.map(shot => (
-              <motion.circle key={shot.id}
-                cx={(shot.x / 100) * 400} cy={(shot.y / 100) * 500} r={shot.isPractice ? 5 : 6}
-                fill={shot.isPractice ? "hsl(var(--muted-foreground))" : (shot.made ? "hsl(var(--shot-made))" : "hsl(var(--shot-missed))")}
-                stroke="white" strokeWidth={shot.isPractice ? 1 : 1.5}
-                strokeDasharray={shot.isPractice ? "3 2" : undefined}
-                opacity={shot.isPractice ? 0.5 : 0.85}
-                initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: shot.isPractice ? 0.5 : 0.85 }}
-                exit={{ scale: 0, opacity: 0 }} transition={{ type: "spring", stiffness: 300 }} />
-            ))}
-          </AnimatePresence>
+          {courtShots.map(shot => (
+            <circle key={shot.id}
+              cx={(shot.x / 100) * 400} cy={(shot.y / 100) * 500} r={shot.isPractice ? 5 : 6}
+              fill={shot.isPractice ? "hsl(var(--muted-foreground))" : (shot.made ? "hsl(var(--shot-made))" : "hsl(var(--shot-missed))")}
+              stroke="white" strokeWidth={shot.isPractice ? 1 : 1.5}
+              strokeDasharray={shot.isPractice ? "3 2" : undefined}
+              opacity={shot.isPractice ? 0.5 : 0.85}
+              style={{ pointerEvents: "none" }} />
+          ))}
           {pendingPos && (
-            <motion.circle
+            <circle
               cx={(pendingPos.x / 100) * 400} cy={(pendingPos.y / 100) * 500} r="9"
               fill="hsl(var(--primary))" stroke="white" strokeWidth="2"
-              className="animate-pulse-glow" initial={{ scale: 0 }} animate={{ scale: 1 }} />
+              className="animate-pulse-glow" style={{ pointerEvents: "none" }} />
           )}
 
           {/* GPU-friendly ripple effect (transform + opacity only) */}
