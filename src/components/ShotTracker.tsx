@@ -2,7 +2,7 @@ import { useGame, ZONE_LABELS, ZONE_POINTS, INDIVIDUAL_SHOT_LIMIT, TEAM_SHOT_LIM
 import { useMultiplayer } from "@/context/MultiplayerContext";
 import { ZONE_PATHS, ZONE_LABEL_POS, COURT_VIEWBOX, getZoneFromPoint } from "@/lib/courtGeometry";
 import courtImage from "@/assets/court-layout.png";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Undo2, ChevronDown, ChevronRight, Lock, Ban } from "lucide-react";
@@ -29,10 +29,17 @@ const ShotTracker = () => {
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
   const [hoveredZone, setHoveredZone] = useState<number | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
-  // Synchronous guards to prevent rapid-fire double clicks beating React state updates
-  const lastClickTimeRef = useRef<number>(0);
+  // Synchronous integrity guard: tracks the last shot's zone per player so rapid same-zone
+  // clicks are blocked even before React/multiplayer state propagates. NOT a rate limit.
   const lastShotZoneRef = useRef<{ playerId: string; zone: number } | null>(null);
-  const CLICK_THROTTLE_MS = 350;
+  // Synchronous shot counter (per playerId) used to enforce hard caps optimistically.
+  const optimisticCountsRef = useRef<Record<string, number>>({});
+  // Brief visual "click pulse" on the court (non-blocking) to show feedback after each placement.
+  const [clickPulse, setClickPulse] = useState<{ x: number; y: number; id: number } | null>(null);
+  // Background queue for multiplayer sync — drains every 150ms so taps feel instant
+  // but we don't flood the network on rapid input.
+  const syncQueueRef = useRef<Array<Parameters<typeof mp.addMultiplayerShot>[0]>>([]);
+  const syncTimerRef = useRef<number | null>(null);
 
   // Active shots for current mode (for display on court)
   const activeShots = useMemo(() => {
@@ -104,21 +111,64 @@ const ShotTracker = () => {
     }
   })();
 
+  // ===== Background sync queue (multiplayer) =====
+  // Drains pending inserts in small batches every 150ms so taps feel instant
+  // locally but we don't fire one network call per click.
+  const flushSyncQueue = useCallback(() => {
+    syncTimerRef.current = null;
+    const batch = syncQueueRef.current;
+    if (batch.length === 0) return;
+    syncQueueRef.current = [];
+    for (const s of batch) {
+      mp.addMultiplayerShot(s).catch(() => {
+        // Realtime subscription will reconcile if the insert eventually fails.
+      });
+    }
+  }, [mp]);
+
+  const queueSync = useCallback((shotData: Parameters<typeof mp.addMultiplayerShot>[0]) => {
+    syncQueueRef.current.push(shotData);
+    if (syncTimerRef.current == null) {
+      syncTimerRef.current = window.setTimeout(flushSyncQueue, 150);
+    }
+  }, [flushSyncQueue, mp]);
+
+  // Flush + cleanup on unmount
+  useEffect(() => () => {
+    if (syncTimerRef.current != null) {
+      window.clearTimeout(syncTimerRef.current);
+      flushSyncQueue();
+    }
+  }, [flushSyncQueue]);
+
+  // Optimistic count helper — combines committed shots + in-flight queued shots
+  // so cap enforcement stays correct during the realtime echo lag.
+  const getOptimisticCount = useCallback((playerId: string) => {
+    return getPlayerShotCount(playerId) + (optimisticCountsRef.current[playerId] || 0);
+  }, [getPlayerShotCount]);
+
+  // Reset optimistic counter once context state catches up to it.
+  useEffect(() => {
+    optimisticCountsRef.current = {};
+  }, [individualShots.length, teamShots.length]);
+
+  // Auto-clear the click pulse after its animation
+  useEffect(() => {
+    if (!clickPulse) return;
+    const tid = window.setTimeout(() => setClickPulse(null), 400);
+    return () => window.clearTimeout(tid);
+  }, [clickPulse]);
+
   const handleCourtClick = (e: React.MouseEvent<SVGSVGElement>) => {
     if (!activePlayerId || !canShoot) return;
     // Block if a shot is currently pending confirmation
     if (pendingPos) return;
 
-    // Rate limit: ignore clicks faster than throttle window
-    const now = Date.now();
-    if (now - lastClickTimeRef.current < CLICK_THROTTLE_MS) {
-      return;
-    }
-
-    // Hard cap enforcement (synchronous) — prevents exceeding limits via rapid clicks
+    // Hard cap enforcement (synchronous + optimistic) — never exceed limits even
+    // under rapid-fire clicks. This is INTEGRITY, not rate limiting (no time delay).
     if (!inPractice) {
       if (gameMode === "individual") {
-        if (getPlayerShotCount(activePlayerId) >= INDIVIDUAL_SHOT_LIMIT) {
+        if (getOptimisticCount(activePlayerId) >= INDIVIDUAL_SHOT_LIMIT) {
           toast.error(t("shotTracker.individualLimitReached", { name: activePlayer?.name }));
           return;
         }
@@ -126,7 +176,7 @@ const ShotTracker = () => {
         const team = getPlayerTeam(activePlayerId);
         if (team && getTeamShotCount(team.id) >= TEAM_SHOT_LIMIT) return;
         const playerLimit = getPlayerShotLimit(activePlayerId);
-        if (getPlayerShotCount(activePlayerId) >= playerLimit) return;
+        if (getOptimisticCount(activePlayerId) >= playerLimit) return;
       }
     }
 
@@ -156,7 +206,8 @@ const ShotTracker = () => {
       return;
     }
 
-    lastClickTimeRef.current = now;
+    // INSTANT visual feedback — pulse the click point immediately. No throttle.
+    setClickPulse({ x: xPct, y: yPct, id: Date.now() });
     setPendingPos({ x: xPct, y: yPct, zone });
   };
 
@@ -171,17 +222,21 @@ const ShotTracker = () => {
       y: pendingPos.y,
       mode: shotMode,
     };
+    // Optimistic local commit + background batched sync.
     if (mp.isMultiplayer) {
-      mp.addMultiplayerShot(shotData);
+      // Bump optimistic counter so cap enforcement holds during realtime echo lag.
+      if (!inPractice) {
+        optimisticCountsRef.current[activePlayerId] =
+          (optimisticCountsRef.current[activePlayerId] || 0) + 1;
+      }
+      queueSync(shotData);
     } else {
       addShot(shotData);
     }
-    // Track last shot synchronously so rapid same-zone clicks are blocked
-    // even before context state propagates (esp. in multiplayer).
+    // Track last shot zone synchronously so rapid same-zone clicks are blocked.
     if (gameMode === "individual" && !inPractice) {
       lastShotZoneRef.current = { playerId: activePlayerId, zone: pendingPos.zone };
     }
-    lastClickTimeRef.current = Date.now();
     setPendingPos(null);
 
     // Toast when practice ends
@@ -425,6 +480,18 @@ const ShotTracker = () => {
               cx={(pendingPos.x / 100) * 400} cy={(pendingPos.y / 100) * 500} r="9"
               fill="hsl(var(--primary))" stroke="white" strokeWidth="2"
               className="animate-pulse-glow" initial={{ scale: 0 }} animate={{ scale: 1 }} />
+          )}
+          {/* Instant click ripple — non-blocking visual cooldown indicator */}
+          {clickPulse && (
+            <motion.circle
+              key={clickPulse.id}
+              cx={(clickPulse.x / 100) * 400} cy={(clickPulse.y / 100) * 500}
+              fill="none" stroke="hsl(var(--primary))" strokeWidth="2"
+              initial={{ r: 4, opacity: 0.9 }}
+              animate={{ r: 28, opacity: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              style={{ pointerEvents: "none" }}
+            />
           )}
         </svg>
 
