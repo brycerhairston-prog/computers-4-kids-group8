@@ -29,6 +29,10 @@ const ShotTracker = () => {
   const [pendingPos, setPendingPos] = useState<{ x: number; y: number; zone: number } | null>(null);
   const [hoveredZone, setHoveredZone] = useState<number | null>(null);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  // Synchronous guards to prevent rapid-fire double clicks beating React state updates
+  const lastClickTimeRef = useRef<number>(0);
+  const lastShotZoneRef = useRef<{ playerId: string; zone: number } | null>(null);
+  const CLICK_THROTTLE_MS = 350;
 
   // Active shots for current mode (for display on court)
   const activeShots = useMemo(() => {
@@ -102,6 +106,30 @@ const ShotTracker = () => {
 
   const handleCourtClick = (e: React.MouseEvent<SVGSVGElement>) => {
     if (!activePlayerId || !canShoot) return;
+    // Block if a shot is currently pending confirmation
+    if (pendingPos) return;
+
+    // Rate limit: ignore clicks faster than throttle window
+    const now = Date.now();
+    if (now - lastClickTimeRef.current < CLICK_THROTTLE_MS) {
+      return;
+    }
+
+    // Hard cap enforcement (synchronous) — prevents exceeding limits via rapid clicks
+    if (!inPractice) {
+      if (gameMode === "individual") {
+        if (getPlayerShotCount(activePlayerId) >= INDIVIDUAL_SHOT_LIMIT) {
+          toast.error(t("shotTracker.individualLimitReached", { name: activePlayer?.name }));
+          return;
+        }
+      } else {
+        const team = getPlayerTeam(activePlayerId);
+        if (team && getTeamShotCount(team.id) >= TEAM_SHOT_LIMIT) return;
+        const playerLimit = getPlayerShotLimit(activePlayerId);
+        if (getPlayerShotCount(activePlayerId) >= playerLimit) return;
+      }
+    }
+
     const svg = courtRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
@@ -110,9 +138,16 @@ const ShotTracker = () => {
     const zone = getZoneFromPoint(xPct, yPct);
 
     // Same-zone restriction (individual, non-practice)
-    if (lockedZone !== null && zone === lockedZone) {
-      toast.error(t("shotTracker.lockedZoneToast", { zone: zoneName(zone) }));
-      return;
+    // Check both reactive lockedZone AND synchronous ref to catch rapid clicks
+    // before React state has updated from the previous shot.
+    if (gameMode === "individual" && !inPractice) {
+      const syncLocked = lastShotZoneRef.current?.playerId === activePlayerId
+        ? lastShotZoneRef.current.zone
+        : null;
+      if ((lockedZone !== null && zone === lockedZone) || (syncLocked !== null && zone === syncLocked)) {
+        toast.error(t("shotTracker.lockedZoneToast", { zone: zoneName(zone) }));
+        return;
+      }
     }
 
     // Blocked zone (team mode)
@@ -121,6 +156,7 @@ const ShotTracker = () => {
       return;
     }
 
+    lastClickTimeRef.current = now;
     setPendingPos({ x: xPct, y: yPct, zone });
   };
 
@@ -140,6 +176,12 @@ const ShotTracker = () => {
     } else {
       addShot(shotData);
     }
+    // Track last shot synchronously so rapid same-zone clicks are blocked
+    // even before context state propagates (esp. in multiplayer).
+    if (gameMode === "individual" && !inPractice) {
+      lastShotZoneRef.current = { playerId: activePlayerId, zone: pendingPos.zone };
+    }
+    lastClickTimeRef.current = Date.now();
     setPendingPos(null);
 
     // Toast when practice ends
